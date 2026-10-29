@@ -1,0 +1,17 @@
+2026-10-29T18:28:03.164714Z [info     ] Performing upgrade to the metadata database [airflow.cli.commands.db_command] loc=db_command.py:134 url=sqlite:////tmp/erl-review-airflow/airflow.db
+2026-10-29T18:28:04.242586Z [info     ] Context impl SQLiteImpl.       [alembic.runtime.migration] loc=migration.py:205
+2026-10-29T18:28:04.242732Z [info     ] Will assume non-transactional DDL. [alembic.runtime.migration] loc=migration.py:208
+2026-10-29T18:28:05.721707Z [warning  ] Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead. [py.warnings] category=StarletteDeprecationWarning filename=/mnt/c/Users/ander/GitHub/enterprise-risk-liquidity/airflow/.venv/lib/python3.12/site-packages/fastapi/testclient.py lineno=1
+2026-10-29T18:28:06.440583Z [info     ] Context impl SQLiteImpl.       [alembic.runtime.migration] loc=migration.py:205
+2026-10-29T18:28:06.440713Z [info     ] Will assume non-transactional DDL. [alembic.runtime.migration] loc=migration.py:208
+2026-10-29T18:28:06.440979Z [info     ] Creating Airflow database tables from the ORM [airflow.utils.db] loc=db.py:749
+2026-10-29T18:28:06.441076Z [info     ] Creating global lock context   [airflow.utils.db] loc=db.py:730
+2026-10-29T18:28:06.441163Z [info     ] Pool status: Pool size: 5  Connections in pool: 0 Current Overflow: -4 Current Checked out connections: 1 [airflow.utils.db] loc=db.py:733
+2026-10-29T18:28:06.441227Z [info     ] Creating metadata              [airflow.utils.db] loc=db.py:735
+2026-10-29T18:28:06.468090Z [info     ] Getting alembic config         [airflow.utils.db] loc=db.py:738
+2026-10-29T18:28:06.470569Z [info     ] Stamping migration head        [airflow.utils.db] loc=db.py:741
+2026-10-29T18:28:06.479664Z [info     ] Context impl SQLiteImpl.       [alembic.runtime.migration] loc=migration.py:205
+2026-10-29T18:28:06.479776Z [info     ] Will assume non-transactional DDL. [alembic.runtime.migration] loc=migration.py:208
+2026-10-29T18:28:08.584553Z [info     ] Running stamp_revision  -> d2f4e1b3c5a7 [alembic.runtime.migration] loc=migration.py:611
+2026-10-29T18:28:08.585454Z [info     ] Airflow database tables created [airflow.utils.db] loc=db.py:744
+2026-10-29T18:28:08.593531Z [info     ] Database migration done!       [airflow.cli.commands.db_command] loc=db_command.py:152

@@ -1,0 +1,12 @@
+.........F                                                               [100%]
+=================================== FAILURES ===================================
+_________ test_10_removed_portfolio_disappears_from_gold_and_consumer __________
+tests/test_pipeline_e2e.py:209: in test_10_removed_portfolio_disappears_from_gold_and_consumer
+    assert ("PRT-0001",) not in rows
+E   AssertionError: assert ('PRT-0001',) not in [('PRT-0001',), ('PRT-0007',), ('PRT-0005',), ('PRT-0003',), ('PRT-0004',), ('PRT-0002',), ...]
+------------------------------ Captured log call -------------------------------
+WARNING  erl.ingestion.files:log.py:45 file_rejected
+WARNING  erl.ingestion.files:log.py:45 file_rejected
+=========================== short test summary info ============================
+FAILED tests/test_pipeline_e2e.py::test_10_removed_portfolio_disappears_from_gold_and_consumer
+1 failed, 9 passed in 241.61s (0:04:01)

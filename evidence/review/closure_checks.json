@@ -1,0 +1,23 @@
+{
+  "checked_at_utc": "2026-10-29T19:24:31.117531+00:00",
+  "review_fix_commit": "5fe19dbfd4fef498b2bb0d6c78d9aace768a351c",
+  "unit_test_summary": "================= 72 passed, 34 deselected in 69.20s (0:01:09) =================",
+  "terraform": {
+    "valid_roots": 3,
+    "mock_tests_passed": 13,
+    "aws_api_calls": false
+  },
+  "sensitive_scan": {
+    "findings": 0,
+    "review_evidence_hashes_verified": true
+  },
+  "local_aws_preflight": {
+    "profile": "data-dev",
+    "sso_configured": true,
+    "region": "sa-east-1",
+    "static_keys_in_profile_config": false,
+    "credential_environment_overrides": false,
+    "sso_login_performed": false,
+    "identity_permissions_quotas_inventory": "pending_authorisation"
+  }
+}

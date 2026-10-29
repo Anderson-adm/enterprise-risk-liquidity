@@ -1,0 +1,20 @@
+[
+  {
+    "name": "integration (real PostgreSQL + SQL Server containers)",
+    "status": "completed",
+    "conclusion": "success",
+    "html_url": "https://github.com/Anderson-adm/enterprise-risk-liquidity/actions/runs/40925344256/job/123629233683"
+  },
+  {
+    "name": "python (ruff, pytest, dbt on DuckDB)",
+    "status": "completed",
+    "conclusion": "success",
+    "html_url": "https://github.com/Anderson-adm/enterprise-risk-liquidity/actions/runs/40925344256/job/123629234081"
+  },
+  {
+    "name": "terraform (fmt, validate, tflint, checkov, test)",
+    "status": "completed",
+    "conclusion": "success",
+    "html_url": "https://github.com/Anderson-adm/enterprise-risk-liquidity/actions/runs/40925344256/job/123629234085"
+  }
+]

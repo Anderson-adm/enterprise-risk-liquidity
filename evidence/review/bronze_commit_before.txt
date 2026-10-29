@@ -1,0 +1,12 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+__________ test_bronze_without_commit_manifest_is_invisible_to_silver __________
+tests/test_review_regressions.py:155: in test_bronze_without_commit_manifest_is_invisible_to_silver
+    assert latest_rows(store, "fund_ops", "fund", "latest")["fund_name"].to_pylist() == before
+E   AssertionError: assert ['UNCOMMITTED...'UNCOMMITTED'] == ['Synthetic M...-In Mandates']
+E     
+E     At index 0 diff: 'UNCOMMITTED' != 'Synthetic Multimarket Alpha'
+E     Use -v to get more diff
+=========================== short test summary info ============================
+FAILED tests/test_review_regressions.py::test_bronze_without_commit_manifest_is_invisible_to_silver
+1 failed, 7 deselected in 2.83s

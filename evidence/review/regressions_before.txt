@@ -1,0 +1,47 @@
+.FFFFFF                                                                  [100%]
+=================================== FAILURES ===================================
+_ test_database_correction_and_empty_snapshot_replace_previous_delivery[True] __
+tests/test_review_regressions.py:50: in test_database_correction_and_empty_snapshot_replace_previous_delivery
+    assert latest_rows(store, "legacy_finance", "cash_balance").num_rows == 0
+E   assert 8 == 0
+E    +  where 8 = pyarrow.Table\ncod_cart: string\ndt_ref: string\nvl_saldo: string\ncd_moeda: string\nmeta_source_system: string\nmeta_entity...bf855.parquet","landing/db/legacy_finance/cash_balance/reference_date=2026-10-26/20261029T181530Z-abf855.parquet"]]\n....num_rows
+E    +    where pyarrow.Table\ncod_cart: string\ndt_ref: string\nvl_saldo: string\ncd_moeda: string\nmeta_source_system: string\nmeta_entity...bf855.parquet","landing/db/legacy_finance/cash_balance/reference_date=2026-10-26/20261029T181530Z-abf855.parquet"]]\n... = latest_rows(LocalStore(root=PosixPath('/tmp/pytest-of-anderson/pytest-32/test_database_correction_and_e1/lake')), 'legacy_finance', 'cash_balance')
+_____ test_reference_register_dedup_compares_current_delivery_across_dates _____
+tests/test_review_regressions.py:77: in test_reference_register_dedup_compares_current_delivery_across_dates
+    assert ingest(D1).status == bronze.ACCEPTED
+E   AssertionError: assert 'DUPLICATE' == 'ACCEPTED'
+E     
+E     - ACCEPTED
+E     + DUPLICATE
+______________ test_file_reversion_is_not_an_historical_duplicate ______________
+tests/test_review_regressions.py:96: in test_file_reversion_is_not_an_historical_duplicate
+    assert ingest(body).status == bronze.ACCEPTED
+E   AssertionError: assert 'DUPLICATE' == 'ACCEPTED'
+E     
+E     - ACCEPTED
+E     + DUPLICATE
+__________________ test_nonzero_dbt_exit_cannot_pass_the_gate __________________
+tests/test_review_regressions.py:103: in test_nonzero_dbt_exit_cannot_pass_the_gate
+    assert pipeline.evaluate_gate(transform)["status"] == "FAILED"
+E   AssertionError: assert 'PASSED' == 'FAILED'
+E     
+E     - FAILED
+E     + PASSED
+____________ test_transform_retry_cannot_reuse_previous_run_results ____________
+tests/test_review_regressions.py:116: in test_transform_retry_cannot_reuse_previous_run_results
+    with pytest.raises(ErlError, match="run_results"):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ErlError
+__________________ test_empty_publication_package_is_refused ___________________
+tests/test_review_regressions.py:122: in test_empty_publication_package_is_refused
+    with pytest.raises(PublicationError, match="empty"):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE PublicationError
+=========================== short test summary info ============================
+FAILED tests/test_review_regressions.py::test_database_correction_and_empty_snapshot_replace_previous_delivery[True]
+FAILED tests/test_review_regressions.py::test_reference_register_dedup_compares_current_delivery_across_dates
+FAILED tests/test_review_regressions.py::test_file_reversion_is_not_an_historical_duplicate
+FAILED tests/test_review_regressions.py::test_nonzero_dbt_exit_cannot_pass_the_gate
+FAILED tests/test_review_regressions.py::test_transform_retry_cannot_reuse_previous_run_results
+FAILED tests/test_review_regressions.py::test_empty_publication_package_is_refused
+6 failed, 1 passed in 3.03s

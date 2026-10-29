@@ -1,0 +1,26 @@
+{"Status":"exited","Running":false,"Paused":false,"Restarting":false,"OOMKilled":false,"Dead":false,"Pid":0,"ExitCode":137,"Error":"","StartedAt":"2026-10-29T18:40:04.358140822Z","FinishedAt":"2026-10-29T18:42:36.77484249Z","Health":{"Status":"unhealthy","FailingStreak":0,"Log":[{"Start":"2026-10-29T18:41:50.8862828Z","End":"2026-10-29T18:41:50.931611545Z","ExitCode":0,"Output":""},{"Start":"2026-10-29T18:42:00.930747045Z","End":"2026-10-29T18:42:00.975041735Z","ExitCode":0,"Output":""},{"Start":"2026-10-29T18:42:10.975728782Z","End":"2026-10-29T18:42:11.021818336Z","ExitCode":0,"Output":""},{"Start":"2026-10-29T18:42:21.022415224Z","End":"2026-10-29T18:42:21.075329531Z","ExitCode":0,"Output":""},{"Start":"2026-10-29T18:42:31.0746309Z","End":"2026-10-29T18:42:31.119218145Z","ExitCode":0,"Output":""}]}}
+2026-10-29 18:40:12.46 spid73s     0 transactions rolled back in database 'it_exposure_compliance' (9:0). This is an informational message only. No user action is required.
+2026-10-29 18:40:12.46 spid35s     0 transactions rolled back in database 'it_consumer_reporting' (10:0). This is an informational message only. No user action is required.
+2026-10-29 18:40:12.46 spid63s     Recovery is writing a checkpoint in database 'review_consumer_reporting' (16). This is an informational message only. No user action is required.
+2026-10-29 18:40:12.46 spid68s     Parallel redo is shutdown for database 'ev_exposure_compliance' with worker pool size [6].
+2026-10-29 18:40:12.46 spid62s     Parallel redo is shutdown for database 'ev_legacy_finance' with worker pool size [6].
+2026-10-29 18:40:12.47 spid72s     Parallel redo is shutdown for database 'ev_consumer_reporting' with worker pool size [6].
+2026-10-29 18:40:12.47 spid64s     Parallel redo is shutdown for database 'legacy_finance' with worker pool size [6].
+2026-10-29 18:40:12.47 spid69s     Recovery is writing a checkpoint in database 'it_legacy_finance' (8). This is an informational message only. No user action is required.
+2026-10-29 18:40:12.47 spid73s     Recovery is writing a checkpoint in database 'it_exposure_compliance' (9). This is an informational message only. No user action is required.
+2026-10-29 18:40:12.47 spid35s     Recovery is writing a checkpoint in database 'it_consumer_reporting' (10). This is an informational message only. No user action is required.
+2026-10-29 18:40:12.48 spid70s     Parallel redo is shutdown for database 'exposure_compliance' with worker pool size [6].
+2026-10-29 18:40:12.49 spid67s     Parallel redo is shutdown for database 'review_exposure_compliance' with worker pool size [6].
+2026-10-29 18:40:12.53 spid63s     Parallel redo is shutdown for database 'review_consumer_reporting' with worker pool size [6].
+2026-10-29 18:40:12.53 spid66s     Parallel redo is shutdown for database 'review_legacy_finance' with worker pool size [6].
+2026-10-29 18:40:12.54 spid73s     Parallel redo is shutdown for database 'it_exposure_compliance' with worker pool size [6].
+2026-10-29 18:40:12.54 spid69s     Recovery completed for database it_legacy_finance (database ID 8) in 2 second(s) (analysis 422 ms, redo 247 ms, undo 212 ms [system undo 0 ms, regular undo 0 ms].) ADR-enabled=0, Is primary=1, OL-Enabled=0. This is an informational message only. No user action is required.
+2026-10-29 18:40:12.54 spid35s     Recovery completed for database it_consumer_reporting (database ID 10) in 2 second(s) (analysis 624 ms, redo 124 ms, undo 74 ms [system undo 0 ms, regular undo 0 ms].) ADR-enabled=0, Is primary=1, OL-Enabled=0. This is an informational message only. No user action is required.
+2026-10-29 18:40:12.55 spid69s     Parallel redo is shutdown for database 'it_legacy_finance' with worker pool size [6].
+2026-10-29 18:40:12.55 spid35s     Parallel redo is shutdown for database 'it_consumer_reporting' with worker pool size [6].
+2026-10-29 18:40:13.07 spid37s     The tempdb database has 8 data file(s).
+2026-10-29 18:40:13.08 spid46s     The Service Broker endpoint is in disabled or stopped state.
+2026-10-29 18:40:13.08 spid46s     The Database Mirroring endpoint is in disabled or stopped state.
+2026-10-29 18:40:13.09 spid46s     Service Broker manager has started.
+2026-10-29 18:40:13.09 spid35s     Recovery is complete. This is an informational message only. No user action is required.
+

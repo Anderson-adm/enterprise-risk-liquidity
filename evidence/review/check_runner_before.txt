@@ -1,0 +1,58 @@
+FF.                                                                      [100%]
+=================================== FAILURES ===================================
+________________ test_terraform_checks_propagates_failures[fmt] ________________
+tests/test_review_regressions.py:219: in test_terraform_checks_propagates_failures
+    assert result.returncode != 0, result.stdout
+E   AssertionError: # 2026-10-29T18:25:02Z  Success, tflint 0.65
+E     ## terraform fmt -check -recursive
+E     ## modules/secure_bucket: validate
+E     Success
+E     ## modules/secure_bucket: test
+E     ## modules/secure_bucket: tflint
+E     TFLint version 0.65
+E     0 issues
+E     ## bootstrap: validate
+E     Success
+E     ## bootstrap: test
+E     ## bootstrap: tflint
+E     TFLint version 0.65
+E     0 issues
+E     ## environments/dev: validate
+E     Success
+E     ## environments/dev: test
+E     ## environments/dev: tflint
+E     TFLint version 0.65
+E     0 issues
+E     ## checkov 3.4.0
+E     Passed checks: 1
+E     
+E   assert 0 != 0
+E    +  where 0 = CompletedProcess(args=['bash', '/tmp/pytest-of-anderson/pytest-42/test_terraform_checks_propagat0/scripts/terraform_ch...ev: test\n## environments/dev: tflint\nTFLint version 0.65\n0 issues\n## checkov 3.4.0\nPassed checks: 1\n', stderr='').returncode
+______________ test_terraform_checks_propagates_failures[tflint] _______________
+tests/test_review_regressions.py:219: in test_terraform_checks_propagates_failures
+    assert result.returncode != 0, result.stdout
+E   AssertionError: # 2026-10-29T18:25:04Z  Success, tflint 0.65
+E     ## terraform fmt -check -recursive
+E     Success
+E     pass
+E     ## modules/secure_bucket: validate
+E     Success
+E     ## modules/secure_bucket: test
+E     ## modules/secure_bucket: tflint
+E     ## bootstrap: validate
+E     Success
+E     ## bootstrap: test
+E     ## bootstrap: tflint
+E     ## environments/dev: validate
+E     Success
+E     ## environments/dev: test
+E     ## environments/dev: tflint
+E     ## checkov 3.4.0
+E     Passed checks: 1
+E     
+E   assert 0 != 0
+E    +  where 0 = CompletedProcess(args=['bash', '/tmp/pytest-of-anderson/pytest-42/test_terraform_checks_propagat1/scripts/terraform_ch...ate\nSuccess\n## environments/dev: test\n## environments/dev: tflint\n## checkov 3.4.0\nPassed checks: 1\n', stderr='').returncode
+=========================== short test summary info ============================
+FAILED tests/test_review_regressions.py::test_terraform_checks_propagates_failures[fmt]
+FAILED tests/test_review_regressions.py::test_terraform_checks_propagates_failures[tflint]
+2 failed, 1 passed, 10 deselected in 2.86s

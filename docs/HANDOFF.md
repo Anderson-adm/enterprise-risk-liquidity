@@ -1,7 +1,10 @@
 # HANDOFF
 
-_Last update: 2026-10-29 by Claude Code (Opus 5.5). Branch `main`, pushed to
-`Anderson-adm/enterprise-risk-liquidity` (public). CI green (run 40925344256); see "CI on GitHub" below._
+_Last update: 2026-10-29 by Codex, review closure and AWS preparation. Review fixes are in
+`5fe19db`; documentation and review evidence accompany publication to `main`, authorised by
+the owner. Current remote validation: [GitHub Actions](https://github.com/Anderson-adm/enterprise-risk-liquidity/actions/workflows/ci.yml).
+The review baseline was `13f9820`; `evidence/review/verification.json` preserves that tested
+snapshot, before the publication-only documentation updates._
 
 ## State
 
@@ -9,19 +12,60 @@ Milestones 1–3 are implemented and validated locally, now also on **real Postg
 Server 2022 containers**. Milestone 4 (AWS) has **not** started: no Terraform apply/destroy, no AWS
 resource, no AWS call was made or is authorised.
 
+Independent review conclusion: **SIM COM RESSALVAS** for starting a controlled, explicitly
+authorised Milestone 4 validation. The repaired implementation passes local checks; AWS
+execution remains unverified. Full findings, before/after regressions and operational limits:
+[INDEPENDENT_REVIEW.md](INDEPENDENT_REVIEW.md), [../evidence/review/](../evidence/review/).
+Final Python results: 72 fast tests + 10 dbt end-to-end tests (82 local), and 24 real-database
+integration tests. The suite now collects 106 cases; 27 cases were added during the review.
+
 | Area | State |
 |---|---|
 | 7 sources, generator, 8 scenarios | validated locally on PostgreSQL + SQL Server containers and on SQLite stand-ins |
 | Extraction → landing → Bronze (manifests, checksums, duplicates, quarantine) | validated locally on both backends; identical Bronze content hashes across engines; S3 path with moto |
 | dbt Silver/Gold (DuckDB), quality gate, rejected records | validated locally |
 | Publication package + transactional/idempotent publisher | validated on a SQL Server 2022 container (incl. 4 concurrent publishers) and on SQLite |
-| Airflow DAG (local 3.3.2) | success + failure runs validated earlier with `airflow dags test` on the SQLite backend; **not re-run on the containers backend** |
+| Airflow DAG (local 3.3.2) | independently validated on real PostgreSQL + SQL Server: success, quality failure, blocked load/publish, failure alert and preserved consumer; isolated `review_*` databases and SQLite metadata under `/tmp` |
 | Lambda handlers + package | tested with moto; not run on AWS |
 | Glue jobs (db_ingest GB/TB, gold_load) | written; **not executed** |
-| Terraform bootstrap + dev + module | fmt/validate/TFLint/Checkov/`terraform test` pass; **never applied** |
-| CI (GitHub Actions) | python, integration (real containers) and terraform jobs — green on GitHub |
+| Terraform bootstrap + dev + module | fmt/validate/TFLint pass, 13 mocked tests pass, Checkov 148 passed / 0 failed / 36 skipped; **never applied** |
+| CI (GitHub Actions) | fixes and evidence published to main; closing response records the confirmed commit/run and the three job results |
 
-## Commands executed on 2026-10-29 (this session) and results
+## Independent review corrections (Codex, 2026-10-29)
+
+* Snapshot reversions A → B → A compare against the latest accepted delivery, scoped by XML
+  portfolio or by the current reference register across dates.
+* Bronze contract v2 includes an empty-snapshot marker. Silver excludes uncommitted Bronze
+  and filters markers only after choosing the latest delivery. Existing v1 nonempty files remain readable.
+* Gold removes disappeared keys in the same MERGE that upserts the date; both products and
+  preserved dates are covered by the local end-to-end scenario.
+* Gate rejects nonzero dbt exits and cannot reuse stale `run_results.json`. An entirely rejected
+  required market delivery blocks ingestion instead of silently reusing previous prices.
+  Empty publication products are refused. Reporting survives an incomplete warehouse.
+* Concurrent retries of one package use unique publication attempt ids; SQL Server regression
+  reproduces the old primary-key collision and passes after the fix.
+* Successful steps, completed extraction snapshots and completed ingestion deliveries are
+  reusable checkpoints. Collect/load also recognise completed immutable outputs.
+* Glue SDK dependencies are pinned to versions supporting conditional S3 writes. Bronze part
+  commits use conditional PUT rather than a racy HEAD/COPY; part listings are paginated.
+* Terraform declares the manifest control table, correct Glue 5.0 log groups and namespace-scoped
+  metric permissions. SNS's incompatible managed-key setting is replaced by a documented
+  synthetic-lab encryption exception. The original 33 Checkov skips were reassessed; the count
+  is now 36 (one new SNS skip plus two instances for the extra log group).
+* Explicit non-default SSO/runner profile, account checks on individual AWS steps, and region
+  restrictions prevent implicit use of default static credentials. Terraform providers/backend
+  examples are explicit too. No real AWS session was opened during the review.
+* Teardown excludes state buckets through lab-specific tags, checks exact database names and
+  propagates partial deletion errors. The local Terraform check runner no longer masks failures.
+
+Review evidence records the original failures as well as passing checks. The two local database
+containers were started under the existing authorisation, with other projects untouched; volumes
+are preserved. See `evidence/review/container_shutdown.txt` for their final state.
+
+## Earlier implementation session (Claude Code, before independent review)
+
+The following command counts, memory measurements and security review describe the earlier
+implementation session. Current review results are listed above and in `evidence/review/`.
 
 Containers (Docker Desktop 29.8.0 already running with WSL integration for Ubuntu; nothing
 installed or reconfigured; `.wslconfig` untouched; pre-existing volumes of other projects untouched):
@@ -108,25 +152,41 @@ publications for one date.
 
 ## Known issues / limitations
 
-* Athena/Iceberg compatibility of the dbt SQL is unverified; Glue scripts never ran; no AWS evidence.
-* Airflow DAG not re-tested against the containers backend (it only calls the same CLI steps).
+* Athena/Iceberg execution is unverified; offline Athena parse passes, but Glue Spark execution,
+  Ion manifest reads, dependency installation, IAM and actual alert delivery still need AWS evidence.
+  Athena decimal division operands now receive sufficient scale before division; this change is
+  based on Trino's documented typing rules and is not an AWS execution claim.
+  DuckDB ratios now use exact integer/decimal arithmetic instead of DOUBLE; the large-value
+  rounding regression and the end-to-end scenarios cover the local change.
 * Readers of `rpt.*` on SQL Server use READ COMMITTED without RCSI, so a report query may wait for
   a running publication (consistent, but blocking). Enabling `READ_COMMITTED_SNAPSHOT` on the
   consumer database would let readers see the previous version without waiting — not done.
-* AWS SSO tokens for `data-dev` were expired at preflight; the `default` profile holds static
-  access keys (recommend removing/rotating them; the project never uses `default`).
-* The Windows GitHub CLI token is invalid (`gh auth status`); pushes used Git Credential Manager.
-* Athena `merge` does not delete vanished rows (mitigated: Load exports only current-run rows).
+* AWS SSO tokens were expired at the earlier preflight; their status was not rechecked during
+  the independent review. The default profile is now refused by project runtime/provider settings.
+* The earlier Windows GitHub CLI token was invalid; publication uses the existing Git Credential
+  Manager through Windows Git, without changing credentials.
+* One pipeline at a time, including manual CLI invocations; sources must remain stable during
+  extraction. The CLI does not enforce a global lock, and source entities use separate SELECTs.
+* Failures before a manifest/state checkpoint may leave immutable uncommitted objects. Use a
+  new run id rather than overwriting them. Silver ignores uncommitted Bronze; Load requires a
+  committed publication manifest. Large-volume recovery/performance is not validated.
 * The local Airflow uses SQLite metadata (dev only).
+* Docker stopped SQL Server with exit 137 even with a 60-second timeout; `OOMKilled=false`.
+  Integration tests passed before shutdown; volumes were preserved. No Docker/WSL configuration
+  was changed; see `evidence/review/container_shutdown_diagnostics.txt`.
 
 ## AWS resources
 
-None created. Observed AWS cost: none.
+No resources were created by this review. The earlier implementation reports no AWS resources
+created; AWS inventory and account costs were not independently queried because AWS APIs were
+not authorised. No AWS cost measurement is claimed.
 
 ## Next concrete step
 
-1. Independent review by Codex following docs/CODEX_REVIEW.md.
-2. Milestone 4 following docs/AWS_VALIDATION.md — only with the owner's explicit authorisation
-   for each apply/destroy (account and region checked, saved plan reviewed first).
-3. Optional: `docker compose -f docker/compose.yaml down` when the databases are not needed
-   (volumes are kept).
+1. Obtain approval for `aws sso login --profile data-dev` and read-only account/region,
+   permission/quota and inventory checks. Local configuration passed; no SSO login or AWS API
+   was executed during preparation.
+2. Follow docs/AWS_VALIDATION.md: bootstrap saved plan → approval → bootstrap apply → lab
+   backend/plan → approval → lab apply → separately approved single-date paid validation.
+3. Preserve sanitised evidence locally before authorised teardown; retain the state bucket.
+   Preliminary first-date allowance: USD 1–3, subject to sa-east-1 pricing and actual job duration.

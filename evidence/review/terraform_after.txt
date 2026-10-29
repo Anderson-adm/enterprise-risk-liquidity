@@ -1,0 +1,13 @@
+tests/dev.tftest.hcl... in progress
+  run "secure_and_cost_controlled_defaults"... pass
+  run "iam_policies_have_no_service_wildcards"... pass
+  run "alert_email_enables_subscription_and_budget_notifications"... pass
+  run "rejects_prod_environment"... pass
+  run "rejects_malformed_account_id"... pass
+  run "rejects_too_small_athena_cutoff"... pass
+  run "rejects_untrusted_lambda_layer"... pass
+  run "rejects_oversized_glue_jobs"... pass
+tests/dev.tftest.hcl... tearing down
+tests/dev.tftest.hcl... pass
+
+Success! 8 passed, 0 failed.

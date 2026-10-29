@@ -68,6 +68,25 @@ key, only the most recent delivery (`meta_ingested_at`, then `meta_run_id`). Ref
 registers (funds, portfolios, crosswalk, instruments, limits) use the most recent delivery
 overall.
 
+Deduplication compares with the **current accepted snapshot**, not every historical hash.
+Thus A → B → A accepts the final A as a legitimate correction. XML snapshots are compared
+per portfolio; reference registers are compared across delivery dates.
+
+Contract v2 represents an empty database snapshot with one metadata-only control row
+(`meta_row_number = 0`, business columns NULL). Silver ranks deliveries before filtering
+that row out, so deleting every source row clears the corresponding Silver snapshot.
+Manifests continue to count business rows only. Existing nonempty v1 Bronze remains readable.
+Old file manifests without `snapshot_key` may be accepted once again after this change.
+
+An ACCEPTED ingestion manifest commits the entire delivery. Silver joins Bronze metadata to
+`bronze.ingestion_deliveries` before choosing the latest snapshot; files left behind by a
+failed ingestion cannot supersede an accepted delivery. Terraform declares this control table
+with the Ion SerDe (existing multiline JSON); DuckDB reads the same manifest files directly.
+
+Gold uses one MERGE per product to upsert the current keys and delete disappeared keys for
+the processed date. Deletion markers exist only in the MERGE source and cannot be inserted
+into Gold. Other dates are preserved. This is validated on DuckDB; Athena execution is pending.
+
 Example: run 1 for D2 receives the PRT-0008 statement with an XSD error (quarantined). On D3 the
 administrator retransmits the D2 statement; it is accepted into the **D2** partition and
 flagged `late_arrival`. D2's Gold does not change until D2 is explicitly reprocessed; the

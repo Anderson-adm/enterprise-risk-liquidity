@@ -1,0 +1,10 @@
+============================= test session starts ==============================
+platform linux -- Python 3.12.14, pytest-9.2.0, pluggy-1.7.0
+rootdir: /mnt/c/Users/ander/GitHub/enterprise-risk-liquidity
+configfile: pyproject.toml
+testpaths: tests
+collected 105 items / 95 deselected / 10 selected
+
+tests/test_pipeline_e2e.py ..........                                    [100%]
+
+================ 10 passed, 95 deselected in 253.32s (0:04:13) =================

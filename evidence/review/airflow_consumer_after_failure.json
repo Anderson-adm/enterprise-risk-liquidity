@@ -1,0 +1,22 @@
+{
+  "publications": [
+    {
+      "publication_id": "20261026-20261029T182856Z-dd2991-a1fbd21b666c40aaa61c87c9fcab51dd",
+      "status": "ACTIVE",
+      "liquidity_rows": 8,
+      "exposure_rows": 8
+    }
+  ],
+  "liquidity": [
+    {
+      "publication_id": "20261026-20261029T182856Z-dd2991-a1fbd21b666c40aaa61c87c9fcab51dd",
+      "rows": 8
+    }
+  ],
+  "exposure": [
+    {
+      "publication_id": "20261026-20261029T182856Z-dd2991-a1fbd21b666c40aaa61c87c9fcab51dd",
+      "rows": 8
+    }
+  ]
+}

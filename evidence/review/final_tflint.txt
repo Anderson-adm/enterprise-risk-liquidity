@@ -1,0 +1,8 @@
+TFLint version 0.65.0
++ ruleset.terraform (0.15.0-bundled)
+## modules/secure_bucket
+PASS: 0 issues
+## bootstrap
+PASS: 0 issues
+## environments/dev
+PASS: 0 issues

@@ -1,0 +1,323 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_____ test_concurrent_retries_of_the_same_package_have_unique_attempt_ids ______
+tests/test_integration_containers.py:362: in test_concurrent_retries_of_the_same_package_have_unique_attempt_ids
+    assert sorted(outcomes) == [publisher.ACTIVE] + [publisher.SKIPPED] * 3
+E   assert ['ACTIVE', 'e...e/e/21/gkpj)'] == ['ACTIVE', 'S...ED_IDENTICAL']
+E     
+E     At index 1 diff: 'error: publication 20261026-20261029T181534Z-412d53-1 rolled back: (pymssql.exceptions.IntegrityError) (2627, b"Violation of PRIMARY KEY constraint \'PK__publicat__84D51EC9FDB96432\'. Cannot insert duplicate key in object \'rpt.publication_log\'. The duplicate key value is (20261026-20261029T181534Z-412d53-1).DB-Lib error message 20018, severity 14:\\nGeneral SQL Server error: Check messages from the SQL Server\\n")\n[SQL: INSERT INTO rpt.publication_log (publication_id, reference_date, pipeline_run_id, status, content_sha256, package_uri, liquidity_ro...
+E     
+E     ...Full output truncated, use '-vv' to show
+------------------------------ Captured log call -------------------------------
+ERROR    erl.publish.publisher:publisher.py:406 could not record publication failure
+Traceback (most recent call last):
+  File "src/pymssql/_pymssql.pyx", line 485, in pymssql._pymssql.Cursor.execute
+  File "src/pymssql/_mssql.pyx", line 1217, in pymssql._mssql.MSSQLConnection.execute_query
+  File "src/pymssql/_mssql.pyx", line 1248, in pymssql._mssql.MSSQLConnection.execute_query
+  File "src/pymssql/_mssql.pyx", line 1381, in pymssql._mssql.MSSQLConnection.format_and_run_query
+  File "src/pymssql/_mssql.pyx", line 1976, in pymssql._mssql.check_cancel_and_raise
+  File "src/pymssql/_mssql.pyx", line 2022, in pymssql._mssql.raise_MSSQLDatabaseException
+pymssql._mssql.MSSQLDatabaseException: (2627, b"Violation of PRIMARY KEY constraint 'PK__publicat__84D51EC9FDB96432'. Cannot insert duplicate key in object 'rpt.publication_log'. The duplicate key value is (20261026-20261029T181534Z-412d53-1).DB-Lib error message 20018, severity 14:\nGeneral SQL Server error: Check messages from the SQL Server\n")
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/mnt/c/Users/ander/GitHub/enterprise-risk-liquidity/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1958, in _exec_single_context
+    self.dialect.do_execute(
+  File "/mnt/c/Users/ander/GitHub/enterprise-risk-liquidity/.venv/lib/python3.12/site-packages/sqlalchemy/engine/default.py", line 1192, in do_execute
+    cursor.execute(statement, parameters)
+  File "src/pymssql/_pymssql.pyx", line 502, in pymssql._pymssql.Cursor.execute
+pymssql.exceptions.IntegrityError: (2627, b"Violation of PRIMARY KEY constraint 'PK__publicat__84D51EC9FDB96432'. Cannot insert duplicate key in object 'rpt.publication_log'. The duplicate key value is (20261026-20261029T181534Z-412d53-1).DB-Lib error message 20018, severity 14:\nGeneral SQL Server error: Check messages from the SQL Server\n")
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/mnt/c/Users/ander/GitHub/enterprise-risk-liquidity/src/erl/publish/publisher.py", line 291, in publish
+    conn.execute(
+  File "/mnt/c/Users/ander/GitHub/enterprise-risk-liquidity/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1463, in execute
+    return meth(
+           ^^^^^
+  File "/mnt/c/Users/ander/GitHub/enterprise-risk-liquidity/.venv/lib/python3.12/site-packages/sqlalchemy/sql/elements.py", line 533, in _execute_on_connection
+    return connection._execute_clauseelement(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/Users/ander/GitHub/enterprise-risk-liquidity/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1683, in _execute_clauseelement
+    ret = self._execute_context(
+          ^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/Users/ander/GitHub/enterprise-risk-liquidity/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1837, in _execute_context
+    return self._exec_single_context(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/Users/ander/GitHub/enterprise-risk-liquidity/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1977, in _exec_single_context
+    self._handle_dbapi_exception(
+  File "/mnt/c/Users/ander/GitHub/enterprise-risk-liquidity/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 2347, in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+  File "/mnt/c/Users/ander/GitHub/enterprise-risk-liquidity/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1958, in _exec_single_context
+    self.dialect.do_execute(
+  File "/mnt/c/Users/ander/GitHub/enterprise-risk-liquidity/.venv/lib/python3.12/site-packages/sqlalchemy/engine/default.py", line 1192, in do_execute
+    cursor.execute(statement, parameters)
+  File "src/pymssql/_pymssql.pyx", line 502, in pymssql._pymssql.Cursor.execute
+sqlalchemy.exc.IntegrityError: (pymssql.exceptions.IntegrityError) (2627, b"Violation of PRIMARY KEY constraint 'PK__publicat__84D51EC9FDB96432'. Cannot insert duplicate key in object 'rpt.publication_log'. The duplicate key value is (20261026-20261029T181534Z-412d53-1).DB-Lib error message 20018, severity 14:\nGeneral SQL Server error: Check messages from the SQL Server\n")
+[SQL: INSERT INTO rpt.publication_log (publication_id, reference_date, pipeline_run_id, status, content_sha256, package_uri, liquidity_rows, exposure_rows, published_at, message) VALUES (%(publication_id)s, %(reference_date)s, %(pipeline_run_id)s, %(status)s, %(content_sha256)s, %(package_uri)s, %(liquidity_rows)s, %(exposure_rows)s, %(published_at)s, %(message)s)]
+[parameters: {'publication_id': '20261026-20261029T181534Z-412d53-1', 'reference_date': datetime.datetime(2026, 10, 26, 0, 0), 'pipeline_run_id': '20261029T181534Z-412d53', 'status': 'SKIPPED_IDENTICAL', 'content_sha256': '3672ad99d676714a15bd025d25e603da925e9c16cea7960235d9101159fca8e3', 'package_uri': '/tmp/pytest-of-anderson/pytest-33/it0/data/lake-same-package/publish/reference_date=2026-10-26/20261029T181534Z-412d53/manifest.json', 'liquidity_rows': 2, 'exposure_rows': 2, 'published_at': datetime.datetime(2026, 10, 29, 18, 15, 34, 860742), 'message': 'identical to active publication 20261026-20261029T181534Z-412d53-1'}]
+(Background on this error at: https://sqlalche.me/e/21/gkpj)
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "src/pymssql/_pymssql.pyx", line 485, in pymssql._pymssql.Cursor.execute
+  File "src/pymssql/_mssql.pyx", line 1217, in pymssql._mssql.MSSQLConnection.execute_query
+  File "src/pymssql/_mssql.pyx", line 1248, in pymssql._mssql.MSSQLConnection.execute_query
+  File "src/pymssql/_mssql.pyx", line 1381, in pymssql._mssql.MSSQLConnection.format_and_run_query
+  File "src/pymssql/_mssql.pyx", line 1976, in pymssql._mssql.check_cancel_and_raise
+  File "src/pymssql/_mssql.pyx", line 2022, in pymssql._mssql.raise_MSSQLDatabaseException
+pymssql._mssql.MSSQLDatabaseException: (2627, b"Violation of PRIMARY KEY constraint 'PK__publicat__84D51EC9FDB96432'. Cannot insert duplicate key in object 'rpt.publication_log'. The duplicate key value is (20261026-20261029T181534Z-412d53-1).DB-Lib error message 20018, severity 14:\nGeneral SQL Server error: Check messages from the SQL Server\n")
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/mnt/c/Users/ander/GitHub/enterprise-risk-liquidity/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1958, in _exec_single_context
+    self.dialect.do_execute(
+  File "/mnt/c/Users/ander/GitHub/enterprise-risk-liquidity/.venv/lib/python3.12/site-packages/sqlalchemy/engine/default.py", line 1192, in do_execute
+    cursor.execute(statement, parameters)
+  File "src/pymssql/_pymssql.pyx", line 502, in pymssql._pymssql.Cursor.execute
+pymssql.exceptions.IntegrityError: (2627, b"Violation of PRIMARY KEY constraint 'PK__publicat__84D51EC9FDB96432'. Cannot insert duplicate key in object 'rpt.publication_log'. The duplicate key value is (20261026-20261029T181534Z-412d53-1).DB-Lib error message 20018, severity 14:\nGeneral SQL Server error: Check messages from the SQL Server\n")
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/mnt/c/Users/ander/GitHub/enterprise-risk-liquidity/src/erl/publish/publisher.py", line 400, in _record_failure
+    conn.execute(
+  File "/mnt/c/Users/ander/GitHub/enterprise-risk-liquidity/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1463, in execute
+    return meth(
+           ^^^^^
+  File "/mnt/c/Users/ander/GitHub/enterprise-risk-liquidity/.venv/lib/python3.12/site-packages/sqlalchemy/sql/elements.py", line 533, in _execute_on_connection
+    return connection._execute_clauseelement(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/Users/ander/GitHub/enterprise-risk-liquidity/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1683, in _execute_clauseelement
+    ret = self._execute_context(
+          ^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/Users/ander/GitHub/enterprise-risk-liquidity/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1837, in _execute_context
+    return self._exec_single_context(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/Users/ander/GitHub/enterprise-risk-liquidity/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1977, in _exec_single_context
+    self._handle_dbapi_exception(
+  File "/mnt/c/Users/ander/GitHub/enterprise-risk-liquidity/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 2347, in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+  File "/mnt/c/Users/ander/GitHub/enterprise-risk-liquidity/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1958, in _exec_single_context
+    self.dialect.do_execute(
+  File "/mnt/c/Users/ander/GitHub/enterprise-risk-liquidity/.venv/lib/python3.12/site-packages/sqlalchemy/engine/default.py", line 1192, in do_execute
+    cursor.execute(statement, parameters)
+  File "src/pymssql/_pymssql.pyx", line 502, in pymssql._pymssql.Cursor.execute
+sqlalchemy.exc.IntegrityError: (pymssql.exceptions.IntegrityError) (2627, b"Violation of PRIMARY KEY constraint 'PK__publicat__84D51EC9FDB96432'. Cannot insert duplicate key in object 'rpt.publication_log'. The duplicate key value is (20261026-20261029T181534Z-412d53-1).DB-Lib error message 20018, severity 14:\nGeneral SQL Server error: Check messages from the SQL Server\n")
+[SQL: INSERT INTO rpt.publication_log (publication_id, reference_date, pipeline_run_id, status, content_sha256, package_uri, liquidity_rows, exposure_rows, published_at, message) VALUES (%(publication_id)s, %(reference_date)s, %(pipeline_run_id)s, %(status)s, %(content_sha256)s, %(package_uri)s, %(liquidity_rows)s, %(exposure_rows)s, %(published_at)s, %(message)s)]
+[parameters: {'publication_id': '20261026-20261029T181534Z-412d53-1', 'reference_date': datetime.datetime(2026, 10, 26, 0, 0), 'pipeline_run_id': '20261029T181534Z-412d53', 'status': 'FAILED', 'content_sha256': '3672ad99d676714a15bd025d25e603da925e9c16cea7960235d9101159fca8e3', 'package_uri': '/tmp/pytest-of-anderson/pytest-33/it0/data/lake-same-package/publish/reference_date=2026-10-26/20261029T181534Z-412d53/manifest.json', 'liquidity_rows': 2, 'exposure_rows': 2, 'published_at': datetime.datetime(2026, 10, 29, 18, 15, 34, 866455), 'message': 'IntegrityError: (pymssql.exceptions.IntegrityError) (2627, b"Violation of PRIMARY KEY constraint \'PK__publicat__84D51EC9FDB96432\'. Cannot insert du ... (1167 characters truncated) ... , \'message\': \'identical to active publication 20261026-20261029T181534Z-412d53-1\'}]\n(Background on this error at: https://sqlalche.me/e/21/gkpj)'}]
+(Background on this error at: https://sqlalche.me/e/21/gkpj)
+ERROR    erl.publish.publisher:publisher.py:406 could not record publication failure
+Traceback (most recent call last):
+  File "src/pymssql/_pymssql.pyx", line 485, in pymssql._pymssql.Cursor.execute
+  File "src/pymssql/_mssql.pyx", line 1217, in pymssql._mssql.MSSQLConnection.execute_query
+  File "src/pymssql/_mssql.pyx", line 1248, in pymssql._mssql.MSSQLConnection.execute_query
+  File "src/pymssql/_mssql.pyx", line 1381, in pymssql._mssql.MSSQLConnection.format_and_run_query
+  File "src/pymssql/_mssql.pyx", line 1976, in pymssql._mssql.check_cancel_and_raise
+  File "src/pymssql/_mssql.pyx", line 2022, in pymssql._mssql.raise_MSSQLDatabaseException
+pymssql._mssql.MSSQLDatabaseException: (2627, b"Violation of PRIMARY KEY constraint 'PK__publicat__84D51EC9FDB96432'. Cannot insert duplicate key in object 'rpt.publication_log'. The duplicate key value is (20261026-20261029T181534Z-412d53-1).DB-Lib error message 20018, severity 14:\nGeneral SQL Server error: Check messages from the SQL Server\n")
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/mnt/c/Users/ander/GitHub/enterprise-risk-liquidity/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1958, in _exec_single_context
+    self.dialect.do_execute(
+  File "/mnt/c/Users/ander/GitHub/enterprise-risk-liquidity/.venv/lib/python3.12/site-packages/sqlalchemy/engine/default.py", line 1192, in do_execute
+    cursor.execute(statement, parameters)
+  File "src/pymssql/_pymssql.pyx", line 502, in pymssql._pymssql.Cursor.execute
+pymssql.exceptions.IntegrityError: (2627, b"Violation of PRIMARY KEY constraint 'PK__publicat__84D51EC9FDB96432'. Cannot insert duplicate key in object 'rpt.publication_log'. The duplicate key value is (20261026-20261029T181534Z-412d53-1).DB-Lib error message 20018, severity 14:\nGeneral SQL Server error: Check messages from the SQL Server\n")
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/mnt/c/Users/ander/GitHub/enterprise-risk-liquidity/src/erl/publish/publisher.py", line 291, in publish
+    conn.execute(
+  File "/mnt/c/Users/ander/GitHub/enterprise-risk-liquidity/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1463, in execute
+    return meth(
+           ^^^^^
+  File "/mnt/c/Users/ander/GitHub/enterprise-risk-liquidity/.venv/lib/python3.12/site-packages/sqlalchemy/sql/elements.py", line 533, in _execute_on_connection
+    return connection._execute_clauseelement(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/Users/ander/GitHub/enterprise-risk-liquidity/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1683, in _execute_clauseelement
+    ret = self._execute_context(
+          ^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/Users/ander/GitHub/enterprise-risk-liquidity/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1837, in _execute_context
+    return self._exec_single_context(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/Users/ander/GitHub/enterprise-risk-liquidity/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1977, in _exec_single_context
+    self._handle_dbapi_exception(
+  File "/mnt/c/Users/ander/GitHub/enterprise-risk-liquidity/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 2347, in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+  File "/mnt/c/Users/ander/GitHub/enterprise-risk-liquidity/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1958, in _exec_single_context
+    self.dialect.do_execute(
+  File "/mnt/c/Users/ander/GitHub/enterprise-risk-liquidity/.venv/lib/python3.12/site-packages/sqlalchemy/engine/default.py", line 1192, in do_execute
+    cursor.execute(statement, parameters)
+  File "src/pymssql/_pymssql.pyx", line 502, in pymssql._pymssql.Cursor.execute
+sqlalchemy.exc.IntegrityError: (pymssql.exceptions.IntegrityError) (2627, b"Violation of PRIMARY KEY constraint 'PK__publicat__84D51EC9FDB96432'. Cannot insert duplicate key in object 'rpt.publication_log'. The duplicate key value is (20261026-20261029T181534Z-412d53-1).DB-Lib error message 20018, severity 14:\nGeneral SQL Server error: Check messages from the SQL Server\n")
+[SQL: INSERT INTO rpt.publication_log (publication_id, reference_date, pipeline_run_id, status, content_sha256, package_uri, liquidity_rows, exposure_rows, published_at, message) VALUES (%(publication_id)s, %(reference_date)s, %(pipeline_run_id)s, %(status)s, %(content_sha256)s, %(package_uri)s, %(liquidity_rows)s, %(exposure_rows)s, %(published_at)s, %(message)s)]
+[parameters: {'publication_id': '20261026-20261029T181534Z-412d53-1', 'reference_date': datetime.datetime(2026, 10, 26, 0, 0), 'pipeline_run_id': '20261029T181534Z-412d53', 'status': 'SKIPPED_IDENTICAL', 'content_sha256': '3672ad99d676714a15bd025d25e603da925e9c16cea7960235d9101159fca8e3', 'package_uri': '/tmp/pytest-of-anderson/pytest-33/it0/data/lake-same-package/publish/reference_date=2026-10-26/20261029T181534Z-412d53/manifest.json', 'liquidity_rows': 2, 'exposure_rows': 2, 'published_at': datetime.datetime(2026, 10, 29, 18, 15, 34, 866072), 'message': 'identical to active publication 20261026-20261029T181534Z-412d53-1'}]
+(Background on this error at: https://sqlalche.me/e/21/gkpj)
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "src/pymssql/_pymssql.pyx", line 485, in pymssql._pymssql.Cursor.execute
+  File "src/pymssql/_mssql.pyx", line 1217, in pymssql._mssql.MSSQLConnection.execute_query
+  File "src/pymssql/_mssql.pyx", line 1248, in pymssql._mssql.MSSQLConnection.execute_query
+  File "src/pymssql/_mssql.pyx", line 1381, in pymssql._mssql.MSSQLConnection.format_and_run_query
+  File "src/pymssql/_mssql.pyx", line 1976, in pymssql._mssql.check_cancel_and_raise
+  File "src/pymssql/_mssql.pyx", line 2022, in pymssql._mssql.raise_MSSQLDatabaseException
+pymssql._mssql.MSSQLDatabaseException: (2627, b"Violation of PRIMARY KEY constraint 'PK__publicat__84D51EC9FDB96432'. Cannot insert duplicate key in object 'rpt.publication_log'. The duplicate key value is (20261026-20261029T181534Z-412d53-1).DB-Lib error message 20018, severity 14:\nGeneral SQL Server error: Check messages from the SQL Server\n")
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/mnt/c/Users/ander/GitHub/enterprise-risk-liquidity/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1958, in _exec_single_context
+    self.dialect.do_execute(
+  File "/mnt/c/Users/ander/GitHub/enterprise-risk-liquidity/.venv/lib/python3.12/site-packages/sqlalchemy/engine/default.py", line 1192, in do_execute
+    cursor.execute(statement, parameters)
+  File "src/pymssql/_pymssql.pyx", line 502, in pymssql._pymssql.Cursor.execute
+pymssql.exceptions.IntegrityError: (2627, b"Violation of PRIMARY KEY constraint 'PK__publicat__84D51EC9FDB96432'. Cannot insert duplicate key in object 'rpt.publication_log'. The duplicate key value is (20261026-20261029T181534Z-412d53-1).DB-Lib error message 20018, severity 14:\nGeneral SQL Server error: Check messages from the SQL Server\n")
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/mnt/c/Users/ander/GitHub/enterprise-risk-liquidity/src/erl/publish/publisher.py", line 400, in _record_failure
+    conn.execute(
+  File "/mnt/c/Users/ander/GitHub/enterprise-risk-liquidity/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1463, in execute
+    return meth(
+           ^^^^^
+  File "/mnt/c/Users/ander/GitHub/enterprise-risk-liquidity/.venv/lib/python3.12/site-packages/sqlalchemy/sql/elements.py", line 533, in _execute_on_connection
+    return connection._execute_clauseelement(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/Users/ander/GitHub/enterprise-risk-liquidity/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1683, in _execute_clauseelement
+    ret = self._execute_context(
+          ^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/Users/ander/GitHub/enterprise-risk-liquidity/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1837, in _execute_context
+    return self._exec_single_context(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/Users/ander/GitHub/enterprise-risk-liquidity/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1977, in _exec_single_context
+    self._handle_dbapi_exception(
+  File "/mnt/c/Users/ander/GitHub/enterprise-risk-liquidity/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 2347, in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+  File "/mnt/c/Users/ander/GitHub/enterprise-risk-liquidity/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1958, in _exec_single_context
+    self.dialect.do_execute(
+  File "/mnt/c/Users/ander/GitHub/enterprise-risk-liquidity/.venv/lib/python3.12/site-packages/sqlalchemy/engine/default.py", line 1192, in do_execute
+    cursor.execute(statement, parameters)
+  File "src/pymssql/_pymssql.pyx", line 502, in pymssql._pymssql.Cursor.execute
+sqlalchemy.exc.IntegrityError: (pymssql.exceptions.IntegrityError) (2627, b"Violation of PRIMARY KEY constraint 'PK__publicat__84D51EC9FDB96432'. Cannot insert duplicate key in object 'rpt.publication_log'. The duplicate key value is (20261026-20261029T181534Z-412d53-1).DB-Lib error message 20018, severity 14:\nGeneral SQL Server error: Check messages from the SQL Server\n")
+[SQL: INSERT INTO rpt.publication_log (publication_id, reference_date, pipeline_run_id, status, content_sha256, package_uri, liquidity_rows, exposure_rows, published_at, message) VALUES (%(publication_id)s, %(reference_date)s, %(pipeline_run_id)s, %(status)s, %(content_sha256)s, %(package_uri)s, %(liquidity_rows)s, %(exposure_rows)s, %(published_at)s, %(message)s)]
+[parameters: {'publication_id': '20261026-20261029T181534Z-412d53-1', 'reference_date': datetime.datetime(2026, 10, 26, 0, 0), 'pipeline_run_id': '20261029T181534Z-412d53', 'status': 'FAILED', 'content_sha256': '3672ad99d676714a15bd025d25e603da925e9c16cea7960235d9101159fca8e3', 'package_uri': '/tmp/pytest-of-anderson/pytest-33/it0/data/lake-same-package/publish/reference_date=2026-10-26/20261029T181534Z-412d53/manifest.json', 'liquidity_rows': 2, 'exposure_rows': 2, 'published_at': datetime.datetime(2026, 10, 29, 18, 15, 34, 870975), 'message': 'IntegrityError: (pymssql.exceptions.IntegrityError) (2627, b"Violation of PRIMARY KEY constraint \'PK__publicat__84D51EC9FDB96432\'. Cannot insert du ... (1167 characters truncated) ... , \'message\': \'identical to active publication 20261026-20261029T181534Z-412d53-1\'}]\n(Background on this error at: https://sqlalche.me/e/21/gkpj)'}]
+(Background on this error at: https://sqlalche.me/e/21/gkpj)
+ERROR    erl.publish.publisher:publisher.py:406 could not record publication failure
+Traceback (most recent call last):
+  File "src/pymssql/_pymssql.pyx", line 485, in pymssql._pymssql.Cursor.execute
+  File "src/pymssql/_mssql.pyx", line 1217, in pymssql._mssql.MSSQLConnection.execute_query
+  File "src/pymssql/_mssql.pyx", line 1248, in pymssql._mssql.MSSQLConnection.execute_query
+  File "src/pymssql/_mssql.pyx", line 1381, in pymssql._mssql.MSSQLConnection.format_and_run_query
+  File "src/pymssql/_mssql.pyx", line 1976, in pymssql._mssql.check_cancel_and_raise
+  File "src/pymssql/_mssql.pyx", line 2022, in pymssql._mssql.raise_MSSQLDatabaseException
+pymssql._mssql.MSSQLDatabaseException: (2627, b"Violation of PRIMARY KEY constraint 'PK__publicat__84D51EC9FDB96432'. Cannot insert duplicate key in object 'rpt.publication_log'. The duplicate key value is (20261026-20261029T181534Z-412d53-1).DB-Lib error message 20018, severity 14:\nGeneral SQL Server error: Check messages from the SQL Server\n")
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/mnt/c/Users/ander/GitHub/enterprise-risk-liquidity/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1958, in _exec_single_context
+    self.dialect.do_execute(
+  File "/mnt/c/Users/ander/GitHub/enterprise-risk-liquidity/.venv/lib/python3.12/site-packages/sqlalchemy/engine/default.py", line 1192, in do_execute
+    cursor.execute(statement, parameters)
+  File "src/pymssql/_pymssql.pyx", line 502, in pymssql._pymssql.Cursor.execute
+pymssql.exceptions.IntegrityError: (2627, b"Violation of PRIMARY KEY constraint 'PK__publicat__84D51EC9FDB96432'. Cannot insert duplicate key in object 'rpt.publication_log'. The duplicate key value is (20261026-20261029T181534Z-412d53-1).DB-Lib error message 20018, severity 14:\nGeneral SQL Server error: Check messages from the SQL Server\n")
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/mnt/c/Users/ander/GitHub/enterprise-risk-liquidity/src/erl/publish/publisher.py", line 291, in publish
+    conn.execute(
+  File "/mnt/c/Users/ander/GitHub/enterprise-risk-liquidity/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1463, in execute
+    return meth(
+           ^^^^^
+  File "/mnt/c/Users/ander/GitHub/enterprise-risk-liquidity/.venv/lib/python3.12/site-packages/sqlalchemy/sql/elements.py", line 533, in _execute_on_connection
+    return connection._execute_clauseelement(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/Users/ander/GitHub/enterprise-risk-liquidity/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1683, in _execute_clauseelement
+    ret = self._execute_context(
+          ^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/Users/ander/GitHub/enterprise-risk-liquidity/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1837, in _execute_context
+    return self._exec_single_context(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/Users/ander/GitHub/enterprise-risk-liquidity/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1977, in _exec_single_context
+    self._handle_dbapi_exception(
+  File "/mnt/c/Users/ander/GitHub/enterprise-risk-liquidity/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 2347, in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+  File "/mnt/c/Users/ander/GitHub/enterprise-risk-liquidity/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1958, in _exec_single_context
+    self.dialect.do_execute(
+  File "/mnt/c/Users/ander/GitHub/enterprise-risk-liquidity/.venv/lib/python3.12/site-packages/sqlalchemy/engine/default.py", line 1192, in do_execute
+    cursor.execute(statement, parameters)
+  File "src/pymssql/_pymssql.pyx", line 502, in pymssql._pymssql.Cursor.execute
+sqlalchemy.exc.IntegrityError: (pymssql.exceptions.IntegrityError) (2627, b"Violation of PRIMARY KEY constraint 'PK__publicat__84D51EC9FDB96432'. Cannot insert duplicate key in object 'rpt.publication_log'. The duplicate key value is (20261026-20261029T181534Z-412d53-1).DB-Lib error message 20018, severity 14:\nGeneral SQL Server error: Check messages from the SQL Server\n")
+[SQL: INSERT INTO rpt.publication_log (publication_id, reference_date, pipeline_run_id, status, content_sha256, package_uri, liquidity_rows, exposure_rows, published_at, message) VALUES (%(publication_id)s, %(reference_date)s, %(pipeline_run_id)s, %(status)s, %(content_sha256)s, %(package_uri)s, %(liquidity_rows)s, %(exposure_rows)s, %(published_at)s, %(message)s)]
+[parameters: {'publication_id': '20261026-20261029T181534Z-412d53-1', 'reference_date': datetime.datetime(2026, 10, 26, 0, 0), 'pipeline_run_id': '20261029T181534Z-412d53', 'status': 'SKIPPED_IDENTICAL', 'content_sha256': '3672ad99d676714a15bd025d25e603da925e9c16cea7960235d9101159fca8e3', 'package_uri': '/tmp/pytest-of-anderson/pytest-33/it0/data/lake-same-package/publish/reference_date=2026-10-26/20261029T181534Z-412d53/manifest.json', 'liquidity_rows': 2, 'exposure_rows': 2, 'published_at': datetime.datetime(2026, 10, 29, 18, 15, 34, 869939), 'message': 'identical to active publication 20261026-20261029T181534Z-412d53-1'}]
+(Background on this error at: https://sqlalche.me/e/21/gkpj)
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "src/pymssql/_pymssql.pyx", line 485, in pymssql._pymssql.Cursor.execute
+  File "src/pymssql/_mssql.pyx", line 1217, in pymssql._mssql.MSSQLConnection.execute_query
+  File "src/pymssql/_mssql.pyx", line 1248, in pymssql._mssql.MSSQLConnection.execute_query
+  File "src/pymssql/_mssql.pyx", line 1381, in pymssql._mssql.MSSQLConnection.format_and_run_query
+  File "src/pymssql/_mssql.pyx", line 1976, in pymssql._mssql.check_cancel_and_raise
+  File "src/pymssql/_mssql.pyx", line 2022, in pymssql._mssql.raise_MSSQLDatabaseException
+pymssql._mssql.MSSQLDatabaseException: (2627, b"Violation of PRIMARY KEY constraint 'PK__publicat__84D51EC9FDB96432'. Cannot insert duplicate key in object 'rpt.publication_log'. The duplicate key value is (20261026-20261029T181534Z-412d53-1).DB-Lib error message 20018, severity 14:\nGeneral SQL Server error: Check messages from the SQL Server\n")
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/mnt/c/Users/ander/GitHub/enterprise-risk-liquidity/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1958, in _exec_single_context
+    self.dialect.do_execute(
+  File "/mnt/c/Users/ander/GitHub/enterprise-risk-liquidity/.venv/lib/python3.12/site-packages/sqlalchemy/engine/default.py", line 1192, in do_execute
+    cursor.execute(statement, parameters)
+  File "src/pymssql/_pymssql.pyx", line 502, in pymssql._pymssql.Cursor.execute
+pymssql.exceptions.IntegrityError: (2627, b"Violation of PRIMARY KEY constraint 'PK__publicat__84D51EC9FDB96432'. Cannot insert duplicate key in object 'rpt.publication_log'. The duplicate key value is (20261026-20261029T181534Z-412d53-1).DB-Lib error message 20018, severity 14:\nGeneral SQL Server error: Check messages from the SQL Server\n")
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/mnt/c/Users/ander/GitHub/enterprise-risk-liquidity/src/erl/publish/publisher.py", line 400, in _record_failure
+    conn.execute(
+  File "/mnt/c/Users/ander/GitHub/enterprise-risk-liquidity/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1463, in execute
+    return meth(
+           ^^^^^
+  File "/mnt/c/Users/ander/GitHub/enterprise-risk-liquidity/.venv/lib/python3.12/site-packages/sqlalchemy/sql/elements.py", line 533, in _execute_on_connection
+    return connection._execute_clauseelement(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/Users/ander/GitHub/enterprise-risk-liquidity/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1683, in _execute_clauseelement
+    ret = self._execute_context(
+          ^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/Users/ander/GitHub/enterprise-risk-liquidity/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1837, in _execute_context
+    return self._exec_single_context(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/Users/ander/GitHub/enterprise-risk-liquidity/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1977, in _exec_single_context
+    self._handle_dbapi_exception(
+  File "/mnt/c/Users/ander/GitHub/enterprise-risk-liquidity/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 2347, in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+  File "/mnt/c/Users/ander/GitHub/enterprise-risk-liquidity/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1958, in _exec_single_context
+    self.dialect.do_execute(
+  File "/mnt/c/Users/ander/GitHub/enterprise-risk-liquidity/.venv/lib/python3.12/site-packages/sqlalchemy/engine/default.py", line 1192, in do_execute
+    cursor.execute(statement, parameters)
+  File "src/pymssql/_pymssql.pyx", line 502, in pymssql._pymssql.Cursor.execute
+sqlalchemy.exc.IntegrityError: (pymssql.exceptions.IntegrityError) (2627, b"Violation of PRIMARY KEY constraint 'PK__publicat__84D51EC9FDB96432'. Cannot insert duplicate key in object 'rpt.publication_log'. The duplicate key value is (20261026-20261029T181534Z-412d53-1).DB-Lib error message 20018, severity 14:\nGeneral SQL Server error: Check messages from the SQL Server\n")
+[SQL: INSERT INTO rpt.publication_log (publication_id, reference_date, pipeline_run_id, status, content_sha256, package_uri, liquidity_rows, exposure_rows, published_at, message) VALUES (%(publication_id)s, %(reference_date)s, %(pipeline_run_id)s, %(status)s, %(content_sha256)s, %(package_uri)s, %(liquidity_rows)s, %(exposure_rows)s, %(published_at)s, %(message)s)]
+[parameters: {'publication_id': '20261026-20261029T181534Z-412d53-1', 'reference_date': datetime.datetime(2026, 10, 26, 0, 0), 'pipeline_run_id': '20261029T181534Z-412d53', 'status': 'FAILED', 'content_sha256': '3672ad99d676714a15bd025d25e603da925e9c16cea7960235d9101159fca8e3', 'package_uri': '/tmp/pytest-of-anderson/pytest-33/it0/data/lake-same-package/publish/reference_date=2026-10-26/20261029T181534Z-412d53/manifest.json', 'liquidity_rows': 2, 'exposure_rows': 2, 'published_at': datetime.datetime(2026, 10, 29, 18, 15, 34, 873350), 'message': 'IntegrityError: (pymssql.exceptions.IntegrityError) (2627, b"Violation of PRIMARY KEY constraint \'PK__publicat__84D51EC9FDB96432\'. Cannot insert du ... (1167 characters truncated) ... , \'message\': \'identical to active publication 20261026-20261029T181534Z-412d53-1\'}]\n(Background on this error at: https://sqlalche.me/e/21/gkpj)'}]
+(Background on this error at: https://sqlalche.me/e/21/gkpj)
+ERROR    erl.publish.publisher:log.py:45 publication_failed
+ERROR    erl.publish.publisher:log.py:45 publication_failed
+ERROR    erl.publish.publisher:log.py:45 publication_failed
+=========================== short test summary info ============================
+FAILED tests/test_integration_containers.py::test_concurrent_retries_of_the_same_package_have_unique_attempt_ids
+1 failed, 10 deselected in 4.22s

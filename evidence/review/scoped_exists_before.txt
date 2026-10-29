@@ -1,0 +1,14 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+___________ test_s3_exists_works_with_prefix_scoped_list_permission ____________
+tests/test_aws_components.py:170: in test_s3_exists_works_with_prefix_scoped_list_permission
+    assert not store.exists("landing/file.json")
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/erl/storage.py:107: in exists
+    self._s3.head_object(Bucket=self.bucket, Key=key)
+tests/test_aws_components.py:163: in head_denied
+    raise ClientError({"Error": {"Code": "403"}}, "HeadObject")
+E   botocore.exceptions.ClientError: An error occurred (403) when calling the HeadObject operation: Unknown
+=========================== short test summary info ============================
+FAILED tests/test_aws_components.py::test_s3_exists_works_with_prefix_scoped_list_permission
+1 failed, 9 deselected in 5.10s

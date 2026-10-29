@@ -1,0 +1,51 @@
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+___________ test_successful_step_retry_reuses_the_committed_outcome ____________
+src/erl/storage.py:47: in put
+    fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o644)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   FileExistsError: [Errno 17] File exists: '/tmp/pytest-of-anderson/pytest-45/test_successful_step_retry_reu0/data/lake/landing/files/market_data/delivery_date=2026-10-26/20261029T183042Z-c841e3/market_data_20261026.csv'
+
+The above exception was the direct cause of the following exception:
+tests/test_review_regressions.py:246: in test_successful_step_retry_reuses_the_committed_outcome
+    assert pipeline.run_step("collect", pipeline.step_collect, settings, D1, run) == first
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/erl/pipeline.py:70: in run_step
+    result = fn(settings, ref, run_id)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+src/erl/pipeline.py:150: in step_collect
+    store.put(
+src/erl/storage.py:49: in put
+    raise ObjectExistsError(f"refusing to overwrite {self.uri(key)}") from exc
+E   erl.errors.ObjectExistsError: refusing to overwrite /tmp/pytest-of-anderson/pytest-45/test_successful_step_retry_reu0/data/lake/landing/files/market_data/delivery_date=2026-10-26/20261029T183042Z-c841e3/market_data_20261026.csv
+------------------------------ Captured log call -------------------------------
+ERROR    erl.pipeline:log.py:45 step_failed
+____ test_incomplete_warehouse_does_not_mask_the_original_pipeline_failure _____
+tests/test_review_regressions.py:252: in test_incomplete_warehouse_does_not_mask_the_original_pipeline_failure
+    state = pipeline.run_all(D1, settings=settings)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/erl/pipeline.py:388: in run_all
+    run_step("report", step_report, settings, ref, run_id)  # always produce evidence
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/erl/pipeline.py:70: in run_step
+    result = fn(settings, ref, run_id)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+src/erl/pipeline.py:345: in step_report
+    report["rejected_records"] = rejected_summary(settings, ref)
+                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/erl/pipeline.py:354: in rejected_summary
+    with duckdb.connect(str(settings.warehouse_path), read_only=True) as con:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/erl/pipeline.py:355: in rejected_summary
+    rows = con.execute(
+E   _duckdb.CatalogException: Catalog Error: Table with name "silver.silver_rejected_records" does not exist because schema "silver" does not exist.
+E   
+E   LINE 1: SELECT entity, source_system, reject_reason, count(*) FROM silver.silver_rejected_records WHERE reference_date = ?...
+E                                                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+------------------------------ Captured log call -------------------------------
+ERROR    erl.pipeline:log.py:45 step_failed
+ERROR    erl.pipeline:log.py:45 step_failed
+=========================== short test summary info ============================
+FAILED tests/test_review_regressions.py::test_successful_step_retry_reuses_the_committed_outcome
+FAILED tests/test_review_regressions.py::test_incomplete_warehouse_does_not_mask_the_original_pipeline_failure
+2 failed, 14 deselected in 2.86s

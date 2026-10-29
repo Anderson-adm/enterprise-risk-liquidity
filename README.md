@@ -67,7 +67,7 @@ flowchart LR
 | Silver / Gold | dbt, portable SQL, DuckDB locally; Athena + Iceberg target configured | Validated locally on DuckDB; **Athena/Iceberg not validated** |
 | Quality gate | dbt tests on write-audit-publish candidates + gate step | Validated locally |
 | Publication | staging, in-DB checks, single transaction, content-hash idempotency, publication lock, publication log | Validated locally on a SQL Server 2022 container (incl. concurrent publishers) and on SQLite |
-| Airflow | local Airflow 3.3.2, one task per step, retries, alerts, failure watcher | Validated locally (`airflow dags test`, success and failure runs) |
+| Airflow | local Airflow 3.3.2, one task per step, retries, alerts, failure watcher | Validated locally on PostgreSQL + SQL Server (`airflow dags test`, success and quality-failure runs) |
 | CloudWatch / SNS | log groups, Lambda error alarms, Glue failure EventBridge rule, DAG failure → SNS | **Implemented, not validated** (locally the alert is a structured log line) |
 | Terraform | bootstrap + dev root module + 1 module | fmt/validate/TFLint/Checkov/`terraform test` (mocked) pass; **never applied** |
 | CI | GitHub Actions (Python, dbt on DuckDB, PostgreSQL + SQL Server integration, Terraform checks), actions pinned by SHA | Green on GitHub |
@@ -182,8 +182,12 @@ Terraform design, ownership, security controls, Checkov exceptions and cost mode
 * Athena/Iceberg, Glue, Lambda on AWS, CloudWatch and SNS have not been executed. dbt SQL is
   written in the DuckDB/Trino common subset with engine differences isolated in
   `dbt/macros/platform.sql`, but Athena compilation/execution is unverified.
-* On Athena the Gold upsert (`merge`) does not delete rows that vanish upstream; the Load step
-  exports only rows written by the current run, so such rows are never published.
+* Gold now deletes vanished keys in the same MERGE that upserts the audited snapshot. The
+  removal scenario passes on DuckDB; the Athena/Iceberg execution remains unvalidated.
+* Keep one pipeline active at a time (including manual CLI runs), and keep source data stable
+  during extraction. Airflow enforces one active DAG run; the CLI has no global pipeline lock.
+* Successful steps are reusable checkpoints for the same run. An interruption before that
+  checkpoint can leave immutable objects; restart with a new run id rather than overwriting them.
 * Silver is rebuilt from Bronze on every run (small data). A degraded delivery therefore also
   changes Silver until a corrected delivery arrives; Gold and the consumer are protected by the
   gate.
@@ -207,3 +211,6 @@ Terraform checks: [evidence/terraform/checks.txt](evidence/terraform/checks.txt)
 
 Project working agreements for humans and coding agents: [AGENTS.md](AGENTS.md).
 Handoff state: [docs/HANDOFF.md](docs/HANDOFF.md).
+
+Independent engineering review (2026-10-29), corrections and reproduced checks:
+[docs/INDEPENDENT_REVIEW.md](docs/INDEPENDENT_REVIEW.md), [evidence/review/](evidence/review/).

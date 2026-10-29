@@ -1,0 +1,15 @@
+============================= test session starts ==============================
+platform linux -- Python 3.12.14, pytest-9.2.0, pluggy-1.7.0
+rootdir: /mnt/c/Users/ander/GitHub/enterprise-risk-liquidity
+configfile: pyproject.toml
+testpaths: tests
+collected 106 items / 34 deselected / 72 selected
+
+tests/test_aws_components.py ..........                                  [ 13%]
+tests/test_contracts_and_gate.py ..............                          [ 33%]
+tests/test_extract.py ........                                           [ 44%]
+tests/test_file_ingestion.py ..........                                  [ 58%]
+tests/test_publisher.py ...........                                      [ 73%]
+tests/test_review_regressions.py ...................                     [100%]
+
+================= 72 passed, 34 deselected in 71.01s (0:01:11) =================

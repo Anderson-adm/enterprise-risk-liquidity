@@ -1,0 +1,7 @@
+ Container erl-postgres-1 Stopping 
+ Container erl-sqlserver-1 Stopping 
+ Container erl-postgres-1 Stopped 
+ Container erl-sqlserver-1 Stopped 
+NAME              IMAGE                                        COMMAND                  SERVICE     CREATED          STATUS                                PORTS
+erl-postgres-1    postgres:17-alpine                           "docker-entrypoint.s…"   postgres    30 minutes ago   Exited (0) About a minute ago         
+erl-sqlserver-1   mcr.microsoft.com/mssql/server:2022-latest   "/opt/mssql/bin/laun…"   sqlserver   30 minutes ago   Exited (137) Less than a second ago   

@@ -1,0 +1,201 @@
+{
+  "generated_at_utc": "2026-10-29T18:54:08.924985+00:00",
+  "baseline_commit": "13f9820758d31017b6f14cb85dbb37f0e665db6e",
+  "python": "3.12.14 (main, Sep  1 2026, 14:16:52) [Clang 22.1.3 ]",
+  "versions": {
+    "dbt-core": "1.12.6",
+    "dbt-athena": "1.11.1",
+    "dbt-duckdb": "1.11.1",
+    "duckdb": "2.0.0",
+    "boto3": "1.43.121",
+    "lxml": "6.1.3",
+    "pytest": "9.2.0",
+    "ruff": "0.17.3"
+  },
+  "short_checks": [
+    {
+      "command": [
+        ".venv/bin/ruff",
+        "check",
+        "src",
+        "tests",
+        "airflow",
+        "glue",
+        "scripts"
+      ],
+      "exit_code": 0,
+      "output": "All checks passed!\n"
+    },
+    {
+      "command": [
+        ".venv/bin/ruff",
+        "format",
+        "--check",
+        "src",
+        "tests",
+        "airflow",
+        "glue",
+        "scripts"
+      ],
+      "exit_code": 0,
+      "output": "40 files already formatted\n"
+    },
+    {
+      "command": [
+        "terraform",
+        "fmt",
+        "-check",
+        "-recursive",
+        "infra"
+      ],
+      "exit_code": 0,
+      "output": ""
+    },
+    {
+      "command": [
+        "git",
+        "diff",
+        "--check"
+      ],
+      "exit_code": 0,
+      "output": ""
+    }
+  ],
+  "pytest_runs": [
+    {
+      "file": "final_unit.txt",
+      "command": [
+        ".venv/bin/pytest",
+        "--tb=short",
+        "-m",
+        "not dbt and not integration"
+      ],
+      "observed_summary": "================= 72 passed, 34 deselected in 71.01s (0:01:11) =================",
+      "passed": 72
+    },
+    {
+      "file": "final_dbt.txt",
+      "command": [
+        ".venv/bin/pytest",
+        "--tb=short",
+        "-m",
+        "dbt and not integration"
+      ],
+      "observed_summary": "================ 10 passed, 95 deselected in 253.32s (0:04:13) =================",
+      "passed": 10
+    },
+    {
+      "file": "final_integration.txt",
+      "command": [
+        ".venv/bin/pytest",
+        "--tb=short",
+        "-m",
+        "integration"
+      ],
+      "observed_summary": "================= 24 passed, 80 deselected in 83.23s (0:01:23) =================",
+      "passed": 24
+    }
+  ],
+  "terraform_mock_tests_passed": 13,
+  "checkov": {
+    "passed": 148,
+    "failed": 0,
+    "skipped": 36
+  },
+  "airflow_real_databases": {
+    "success": "success",
+    "quality_failure": "failed",
+    "last_valid_consumer_preserved": true
+  },
+  "aws_execution_performed": false,
+  "apply_or_destroy_performed": false,
+  "push_performed": false,
+  "local_changes_sha256": {
+    "README.md": "d7412d9373a39586de10d53e16db7ebcdae9bc84f4260fd3302c56932d476f5c",
+    "dbt/macros/platform.sql": "2f0525145e34b32921a906b891a24ae1175a6259203efee07c9bbee6dbe735ea",
+    "dbt/models/gold/gold_exposure_compliance.sql": "e26cb922af14ff760fe730e3d9175a688748feff77f281d0dd3df516d27a5714",
+    "dbt/models/gold/gold_exposure_compliance_candidate.sql": "20ded842aef91e523b495d93311abdb4513e1e1b4f5da3c72beb177e6f03c312",
+    "dbt/models/gold/gold_liquidity_summary.sql": "c45cac68d3cd11e4bd1b29254c91615d7db12554090af136dec13cf54fce195c",
+    "dbt/models/gold/gold_liquidity_summary_candidate.sql": "7da5c35fb857f1cce06414a4f898fca89c7aca7dff57f10704217f15d082128a",
+    "dbt/models/staging/_sources.yml": "9e4f85e2ee9897549be150c84ccaa56a322aa074dfa9d03a3f0ae15c1c305e6d",
+    "docs/AWS_VALIDATION.md": "eab5f28c1895c292be7d4f9ed5211d5652014e033e68a536a7d450781fa494a8",
+    "docs/DATA_MODEL.md": "12780852b85f1159aa03195c5869f06e09b9dcc6011fd8bb8054c66b3e49a30f",
+    "docs/HANDOFF.md": "98ed84ebe49df4a5e4fe698d98b4e542940d504a768b1df13f35bc03ef895479",
+    "docs/INDEPENDENT_REVIEW.md": "2893b76e009a03d452ede699ea56e9a9200f7f63c6c2d97fc76ac8880d3be2e4",
+    "docs/TERRAFORM.md": "5a60e932676b956a4c2ee6650e0889e61cea72db6fde5d172014ea1c9ab741c4",
+    "glue/jobs/db_ingest.py": "1d5113ecc53d003c6e6fcfc738db1b477c0c9d9e32aad704c87a389ab00517c8",
+    "glue/requirements.txt": "e04041f7a7f136166adc89601cd49c170410a52cd71222f8e3013a51a3ede8b3",
+    "infra/bootstrap/main.tf": "566152a130570c68621b9e1eae73db07fb34079af0cd9714dc3494c653f6fce8",
+    "infra/bootstrap/variables.tf": "42438c4ccc51d8271fa8d8c3958cfb14e73692c053554e8062084dfdd305d61a",
+    "infra/environments/dev/backend.hcl.example": "30af1bfa7a8efc8a20f9463b235e20d6305824e622871302bc4ee3d95c61b37f",
+    "infra/environments/dev/catalog.tf": "21bb1245f3345817ee49684183c2f55c8f9ae3f0a95a328a3e4d418dac2774a3",
+    "infra/environments/dev/glue.tf": "4a32b8c59e601904bb14031f034d5870d9784c6066da89594d9633081f159fb7",
+    "infra/environments/dev/iam.tf": "2071549a9f573d0f244a48e689aa8aca6fcdcc86e1c46bd774776ef61b36f1a1",
+    "infra/environments/dev/observability.tf": "4839e27a9fb54a91e6a53af6b1c7e0fda35fa4c656335cfbb3ad253e0f3b1fe4",
+    "infra/environments/dev/providers.tf": "2f169d829d9a8127346d9385af8ba652389e38c10967313b50c2e9ace2727da9",
+    "infra/environments/dev/tests/dev.tftest.hcl": "ff69c9c05087e902d362561176178817d26463077eba7e0a623e7cef89be3837",
+    "infra/environments/dev/variables.tf": "02ab840803c79d981909c5b82f63bfad7f66ca00e6ba5f3bdf7437f186cb2584",
+    "scripts/teardown_aws.py": "f4d720f072da74fc079f595e24f44db776185e37571aaeea8977496c7bc064c7",
+    "scripts/terraform_checks.sh": "bcf46747af803bf198af256e85586c102cdb19544720d9083e09800c47b98e0f",
+    "src/erl/aws/runtime.py": "ede63458fa979b294ef5b4d04c9760e35f4410f5c78ff0f3c179f461c16eb1cf",
+    "src/erl/cli.py": "4bb058345b467c281fc99c0c8362977e6de7790b8950cf8458d9c0aa706bfe75",
+    "src/erl/config.py": "fee0f2ad25a982a1c2c0add41ae67fc8ed377af576c88246a88235f2a8f09117",
+    "src/erl/contracts/bronze_contract.json": "8f4cddd2b767b70e2e72037f935622d158bee0d82b64329e2eebbad6dacb1e3a",
+    "src/erl/ingestion/bronze.py": "c427d5b85c2af62cdc3d06860aabf5ee943fda5697d2d9404ae0e662696f5bc6",
+    "src/erl/ingestion/database.py": "a4e499e8040a24fd4a0e858fe396851c25fe330e0bad3bca16c2d71572d10650",
+    "src/erl/ingestion/files.py": "f17a37f00c3ab1d82902f39272d6d9694fcf516117be8df105bc0a270ded857a",
+    "src/erl/pipeline.py": "88ece4bf23aba0f6c5dff4bb5b0d9c1885b55771dd35fa8479793dd766553d22",
+    "src/erl/publish/publisher.py": "0d07468d431ce6433087b0f41ccbb0d61b07961cd2ab74c0c113ad2ad49bf990",
+    "src/erl/sources/extract.py": "57c9cfe8cf62fb0fd3b81d53e67ad82291881ca0f5b175572cc1d8a742fec8eb",
+    "src/erl/storage.py": "0d3e53bcac1d79948fec18cd12089424708c6b0950b04f504b7a096e1df90f02",
+    "tests/test_aws_components.py": "f42cb33301f275959b00fb1a3ad76bc37829c5e0bf0119fd2d153408c3be4aa7",
+    "tests/test_integration_containers.py": "674b38fdff0b05490a04e5479f853d4fa4a5eedfd5ea6ac677fc6ac2eebd175e",
+    "tests/test_pipeline_e2e.py": "0b9cd91386ec1328f7dfcb9d150e042b48680c519eb4610d443fb8ce69cb3cd2",
+    "tests/test_review_regressions.py": "6b31a865bc2ebaffc5a2f9fd1a2b3b81b3e7ca2609dac4ece8572cefaec20522"
+  },
+  "evidence_sha256": {
+    "airflow_consumer_after_failure.json": "e727f2590c56be9d400b6bdb143fdf14c1dbe2748484727872ee02aae295fbda",
+    "airflow_failure.txt": "f1087b05aa03b4ebadc2c70b47b38f5d44f5c85c94ae43f794a9439dea83f60a",
+    "airflow_migrate.txt": "a4542855f5e7139ab633c88bdec33974011d7b3fcfb97bcc4fd2dd90e87817ee",
+    "airflow_success.txt": "9eeec9b2f474de2e1abccb1465bf3419692591cb07a4a7f07697382926d639c5",
+    "airflow_summary.json": "e83a519c93ceed1f35c4bd6bf5d2b85372f1d2d756c589729acc9022130ab98b",
+    "athena_parse.txt": "aebe08115f77a10f19a7235c2da6ebaf7bcb696133ad1ebf974a04e9bc8e02f5",
+    "aws_profile_before.txt": "a5c91b228d1f3cba52ef78b6448e1207442ff67ca06814def694bae8b5d21b26",
+    "baseline_dbt.txt": "be2cef7d10b8f0a22b12a96b3278acb2c3e6624292aa8a87155cdb91899d0956",
+    "baseline_integration.txt": "1e4311de2e322c244a466fae44b58df70b88b8cd4c0a528fad1f0cd1136bf8a0",
+    "baseline_integration_rerun.txt": "5233df9889d2eafca407f9aa44d1339b2178eef8b157855a78f4e0f361237d8e",
+    "bronze_commit_before.txt": "215f2e860ef0df78b30d6ef917f2f22bced26e6947f7195efe11803a151cc4d4",
+    "check_runner_before.txt": "cabbf043a4a0698e8d37601efa9601be1ea4e6ab7700dec75e8c7ddace1f2440",
+    "checkov_after.txt": "8bac2747be3ec7f5064cf3b27584965c016d5e33b4000104ef0d05e915f9bc65",
+    "concurrent_retry_after.txt": "e5f2d1c4199538b891c0c9004ba9e8b780af24271d2891141e451e6221391dd9",
+    "concurrent_retry_before.txt": "7ca76c7f1c57149252d896117021ae5b61e2a1bf2a4c04bb2d65744153070a4b",
+    "container_final_start.txt": "8b0b84fd04c1c78d631e429211ca2d9ce20fa96f27f282ab56458fe617dd00d8",
+    "container_shutdown.txt": "a66594862431236b398967cfcef32fffb00215c80a550eddfb5cd68ea72ecaca",
+    "container_shutdown_diagnostics.txt": "b36aa936870ce5b7242b0ffc7d7d0467b6ccfaa6a3f62d732c13f2d38c3f4e11",
+    "decimal_ratio_after.txt": "8dff9c5fee6b22d40269c1924a8ed5fcdb66e191f497bd9eb1a8935e4b6dd9df",
+    "decimal_ratio_before.txt": "44efec063e4f4d2989f086641c38c96c89540eaca7becf393ee2c1c6ac396cc3",
+    "final_checkov.txt": "c25bdc62d8d1c6352ba8b1b48ac9bdc55ddb047818b8da06a93664dfd90e7c68",
+    "final_dbt.txt": "ce26f2921530f5de28dcd76c61fef8c8ffe1c92ce7b13d1141b61735761b9956",
+    "final_integration.txt": "847fc8cb18992a9bd72ae91219f6ccadb36670f27a642dcd9efc26a499c59c98",
+    "final_regressions.txt": "14908f0cf4eb727e169379513aca07f64e262e4dcc2ea0bc6f310c71f34924e7",
+    "final_terraform.txt": "3366507d13cff5f2a78de0c3b9ab70567ea252667cf260a80c50e05b338fa649",
+    "final_tflint.txt": "bc6f5e7afc86528eb60e601efee861e87a4a8a24efdc66fdd74d65a642d3e9a8",
+    "final_unit.txt": "1e26c317178d8aad55608f1f66df4d9860dc010cf6dd8af66a876cfbce3f5a7b",
+    "github_ci_jobs.json": "c9f0c60f110ce1b01ee77f4d1aea1ce488d99bfcd22b2cbcb591ec9f5712d7fc",
+    "github_ci_run.json": "168a20351d5fbf39e616abc6a01c2cc9cb830e4a02ae93793f038fca1a4b5d37",
+    "gold_removal_before.txt": "3d1661dc86a101c1abe54c347e4a4f2c89f118ebcf122175d3ba671064c298de",
+    "lambda_build.txt": "0cb29b0d1e40cf816cfb5024b0ab1e32e41501ae1f321b9d4cfbd884372deb6f",
+    "partial_retry_before.txt": "e7e8a5f4b15532b422c03e78a6b4873d09523171e9eb40c2a7af59938fe10dba",
+    "regressions_after.txt": "a12e9cb5e9924401ad5208f23d278fa48338efdf9c5c2e2b00ab11a59caefe0f",
+    "regressions_before.txt": "54d980915924957b7c968ccc32d2b845e3be6e8ec347c5f4d179d54fcc87c74b",
+    "required_delivery_before.txt": "a614412b28245bcecb31225aabc00c44eba328f536d38d59fa0a62852b4bdb74",
+    "scoped_exists_before.txt": "f7e67f85ee919e7338a9cd0d65a1ae0c664216c34bd2ca26d458dd1aa3a9263f",
+    "step_retry_and_report_before.txt": "fb18e5996a7f9cc569a4d1dcac7c38a8db375a99edaf84f8e6049c8cb06814e8",
+    "teardown_before.txt": "aa7e1f01fc3bd5ab608f5d30ca3af1219d5436c9e42095b9e132e829e1225997",
+    "terraform_after.txt": "7cbb008ef6e20b5baed93906370531b1680b217fe304274395b6f10a97116a6d",
+    "tflint_after.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "tflint_versions.txt": "0085ac73c176cdbe1674590e125e367ea6a93f4f3caee08311cb8a1c2e3af6bc"
+  },
+  "lambda_zip_sha256": "9c3a3d219c297ccaa7944877060c8b37bd92705b890a0206ec308cb58a8e9d3f",
+  "lambda_bundled_sources_match_current": true
+}

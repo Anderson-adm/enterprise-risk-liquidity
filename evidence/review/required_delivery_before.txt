@@ -1,0 +1,12 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+____ test_rejected_required_market_delivery_cannot_fall_back_to_old_prices _____
+tests/test_review_regressions.py:238: in test_rejected_required_market_delivery_cannot_fall_back_to_old_prices
+    with pytest.raises(ContractError, match="market_data"):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ContractError
+------------------------------ Captured log call -------------------------------
+WARNING  erl.ingestion.files:log.py:45 file_rejected
+=========================== short test summary info ============================
+FAILED tests/test_review_regressions.py::test_rejected_required_market_delivery_cannot_fall_back_to_old_prices
+1 failed, 13 deselected in 4.04s

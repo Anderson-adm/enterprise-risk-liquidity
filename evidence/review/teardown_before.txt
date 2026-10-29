@@ -1,0 +1,16 @@
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+____ test_teardown_rejects_the_state_bucket_even_with_matching_project_tags ____
+tests/test_review_regressions.py:173: in test_teardown_rejects_the_state_bucket_even_with_matching_project_tags
+    with pytest.raises(SystemExit, match="refusing"):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE SystemExit
+________ test_teardown_does_not_claim_success_when_s3_rejects_deletions ________
+tests/test_review_regressions.py:186: in test_teardown_does_not_claim_success_when_s3_rejects_deletions
+    with pytest.raises(RuntimeError, match="AccessDenied"):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE RuntimeError
+=========================== short test summary info ============================
+FAILED tests/test_review_regressions.py::test_teardown_rejects_the_state_bucket_even_with_matching_project_tags
+FAILED tests/test_review_regressions.py::test_teardown_does_not_claim_success_when_s3_rejects_deletions
+2 failed, 8 deselected in 4.85s

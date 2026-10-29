@@ -1,0 +1,33 @@
+fmt PASS
+## modules/secure_bucket
+Success! The configuration is valid.
+
+tests/secure_bucket.tftest.hcl... in progress
+  run "secure_defaults"... pass
+  run "prefix_retention_rules"... pass
+  run "invalid_bucket_name_is_rejected"... pass
+tests/secure_bucket.tftest.hcl... tearing down
+tests/secure_bucket.tftest.hcl... pass
+
+Success! 3 passed, 0 failed.
+## bootstrap
+Success! The configuration is valid.
+
+## environments/dev
+Success! The configuration is valid.
+
+tests/dev.tftest.hcl... in progress
+  run "secure_and_cost_controlled_defaults"... pass
+  run "iam_policies_have_no_service_wildcards"... pass
+  run "alert_email_enables_subscription_and_budget_notifications"... pass
+  run "rejects_prod_environment"... pass
+  run "rejects_default_profile"... pass
+  run "rejects_other_regions"... pass
+  run "rejects_malformed_account_id"... pass
+  run "rejects_too_small_athena_cutoff"... pass
+  run "rejects_untrusted_lambda_layer"... pass
+  run "rejects_oversized_glue_jobs"... pass
+tests/dev.tftest.hcl... tearing down
+tests/dev.tftest.hcl... pass
+
+Success! 10 passed, 0 failed.

@@ -1,0 +1,4 @@
+[0m18:44:43  Running with dbt=1.12.6
+[0m18:44:51  Registered adapter: athena=1.11.1
+[0m18:45:03  Unable to do partial parsing because change detected to override macro. Starting full parse.
+[0m18:45:05  Performance info: /tmp/erl-review-athena-parse/perf_info.json

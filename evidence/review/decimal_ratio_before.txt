@@ -1,0 +1,10 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+________ test_local_financial_ratios_do_not_round_through_binary_float _________
+tests/test_review_regressions.py:293: in test_local_financial_ratios_do_not_round_through_binary_float
+    assert value == Decimal("333333333333.330000")
+E   AssertionError: assert Decimal('333333333333.330048') == Decimal('333333333333.330000')
+E    +  where Decimal('333333333333.330000') = Decimal('333333333333.330000')
+=========================== short test summary info ============================
+FAILED tests/test_review_regressions.py::test_local_financial_ratios_do_not_round_through_binary_float
+1 failed, 18 deselected in 3.09s

@@ -1,0 +1,68 @@
+2026-10-29 15:22:02,782 [MainThread  ] [WARNI]  Failed to get the checkov mappings and guidelines from https://api0.prismacloud.io/bridgecrew/api/v2/guidelines. Skips using BC_* IDs will not work.
+Traceback (most recent call last):
+  File "/home/anderson/.cache/uv/archive-v0/C_TKDrDP-2AAOvdE/lib/python3.12/site-packages/urllib3/connection.py", line 239, in _new_conn
+    sock = connection.create_connection(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/anderson/.cache/uv/archive-v0/C_TKDrDP-2AAOvdE/lib/python3.12/site-packages/urllib3/util/connection.py", line 60, in create_connection
+    for res in socket.getaddrinfo(host, port, family, socket.SOCK_STREAM):
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/anderson/.local/share/uv/python/cpython-3.12.14-linux-x86_64-gnu/lib/python3.12/socket.py", line 978, in getaddrinfo
+    for res in _socket.getaddrinfo(host, port, family, type, proto, flags):
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+socket.gaierror: [Errno -2] Name or service not known
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/anderson/.cache/uv/archive-v0/C_TKDrDP-2AAOvdE/lib/python3.12/site-packages/urllib3/connectionpool.py", line 793, in urlopen
+    response = self._make_request(
+               ^^^^^^^^^^^^^^^^^^^
+  File "/home/anderson/.cache/uv/archive-v0/C_TKDrDP-2AAOvdE/lib/python3.12/site-packages/urllib3/connectionpool.py", line 494, in _make_request
+    raise new_e
+  File "/home/anderson/.cache/uv/archive-v0/C_TKDrDP-2AAOvdE/lib/python3.12/site-packages/urllib3/connectionpool.py", line 470, in _make_request
+    self._validate_conn(conn)
+  File "/home/anderson/.cache/uv/archive-v0/C_TKDrDP-2AAOvdE/lib/python3.12/site-packages/urllib3/connectionpool.py", line 1125, in _validate_conn
+    conn.connect()
+  File "/home/anderson/.cache/uv/archive-v0/C_TKDrDP-2AAOvdE/lib/python3.12/site-packages/urllib3/connection.py", line 827, in connect
+    self.sock = sock = self._new_conn()
+                       ^^^^^^^^^^^^^^^^
+  File "/home/anderson/.cache/uv/archive-v0/C_TKDrDP-2AAOvdE/lib/python3.12/site-packages/urllib3/connection.py", line 246, in _new_conn
+    raise NameResolutionError(self.host, self, e) from e
+urllib3.exceptions.NameResolutionError: HTTPSConnection(host='api0.prismacloud.io', port=443): Failed to resolve 'api0.prismacloud.io' ([Errno -2] Name or service not known)
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/anderson/.cache/uv/archive-v0/C_TKDrDP-2AAOvdE/lib/python3.12/site-packages/checkov/common/bridgecrew/platform_integration.py", line 1276, in get_public_run_config
+    request = self.http.request("GET", self.guidelines_api_url, headers=headers)  # type:ignore[no-untyped-call]
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/anderson/.cache/uv/archive-v0/C_TKDrDP-2AAOvdE/lib/python3.12/site-packages/urllib3/_request_methods.py", line 135, in request
+    return self.request_encode_url(
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/anderson/.cache/uv/archive-v0/C_TKDrDP-2AAOvdE/lib/python3.12/site-packages/urllib3/_request_methods.py", line 182, in request_encode_url
+    return self.urlopen(method, url, **extra_kw)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/anderson/.cache/uv/archive-v0/C_TKDrDP-2AAOvdE/lib/python3.12/site-packages/urllib3/poolmanager.py", line 459, in urlopen
+    response = conn.urlopen(method, u.request_uri, **kw)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/anderson/.cache/uv/archive-v0/C_TKDrDP-2AAOvdE/lib/python3.12/site-packages/urllib3/connectionpool.py", line 886, in urlopen
+    return self.urlopen(
+           ^^^^^^^^^^^^^
+  File "/home/anderson/.cache/uv/archive-v0/C_TKDrDP-2AAOvdE/lib/python3.12/site-packages/urllib3/connectionpool.py", line 886, in urlopen
+    return self.urlopen(
+           ^^^^^^^^^^^^^
+  File "/home/anderson/.cache/uv/archive-v0/C_TKDrDP-2AAOvdE/lib/python3.12/site-packages/urllib3/connectionpool.py", line 886, in urlopen
+    return self.urlopen(
+           ^^^^^^^^^^^^^
+  File "/home/anderson/.cache/uv/archive-v0/C_TKDrDP-2AAOvdE/lib/python3.12/site-packages/urllib3/connectionpool.py", line 847, in urlopen
+    retries = retries.increment(
+              ^^^^^^^^^^^^^^^^^^
+  File "/home/anderson/.cache/uv/archive-v0/C_TKDrDP-2AAOvdE/lib/python3.12/site-packages/urllib3/util/retry.py", line 555, in increment
+    raise MaxRetryError(_pool, url, reason) from reason  # type: ignore[arg-type]
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+urllib3.exceptions.MaxRetryError: HTTPSConnectionPool(host='api0.prismacloud.io', port=443): Max retries exceeded with url: /bridgecrew/api/v2/guidelines (Caused by NameResolutionError("HTTPSConnection(host='api0.prismacloud.io', port=443): Failed to resolve 'api0.prismacloud.io' ([Errno -2] Name or service not known)"))
+terraform scan results:
+
+Passed checks: 148, Failed checks: 0, Skipped checks: 36
+
+

@@ -1,0 +1,40 @@
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+________ test_partial_ingest_retry_reuses_each_completed_file_delivery _________
+src/erl/storage.py:47: in put
+    fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o644)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   FileExistsError: [Errno 17] File exists: '/tmp/pytest-of-anderson/pytest-50/test_partial_ingest_retry_reus0/lake/bronze/raw/market_data/bronze_reference_date=2026-10-26/20261029T183659Z-3a6bee/market_data_20261026.csv'
+
+The above exception was the direct cause of the following exception:
+tests/test_review_regressions.py:264: in test_partial_ingest_retry_reuses_each_completed_file_delivery
+    assert files.ingest_file(store, **args) == first
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/erl/ingestion/files.py:196: in ingest_file
+    raw_key = bronze.write_raw(store, source_system, run_reference_date, run_id, object_name, data)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/erl/ingestion/bronze.py:137: in write_raw
+    store.put(key, data)
+src/erl/storage.py:49: in put
+    raise ObjectExistsError(f"refusing to overwrite {self.uri(key)}") from exc
+E   erl.errors.ObjectExistsError: refusing to overwrite /tmp/pytest-of-anderson/pytest-50/test_partial_ingest_retry_reus0/lake/bronze/raw/market_data/bronze_reference_date=2026-10-26/20261029T183659Z-3a6bee/market_data_20261026.csv
+_________ test_partial_extraction_retry_reuses_each_completed_snapshot _________
+src/erl/storage.py:47: in put
+    fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o644)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   FileExistsError: [Errno 17] File exists: '/tmp/pytest-of-anderson/pytest-50/test_partial_extraction_retry_0/lake/landing/db/fund_ops/fund/reference_date=2026-10-26/20261029T183700Z-94ce7b.parquet'
+
+The above exception was the direct cause of the following exception:
+tests/test_review_regressions.py:273: in test_partial_extraction_retry_reuses_each_completed_snapshot
+    assert extract.extract_entity(engine, store, "fund_ops", "fund", D1, run) == first
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/erl/sources/extract.py:150: in extract_entity
+    data_key = store.put(prefix + f"{run_id}.parquet", payload)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/erl/storage.py:49: in put
+    raise ObjectExistsError(f"refusing to overwrite {self.uri(key)}") from exc
+E   erl.errors.ObjectExistsError: refusing to overwrite /tmp/pytest-of-anderson/pytest-50/test_partial_extraction_retry_0/lake/landing/db/fund_ops/fund/reference_date=2026-10-26/20261029T183700Z-94ce7b.parquet
+=========================== short test summary info ============================
+FAILED tests/test_review_regressions.py::test_partial_ingest_retry_reuses_each_completed_file_delivery
+FAILED tests/test_review_regressions.py::test_partial_extraction_retry_reuses_each_completed_snapshot
+2 failed, 16 deselected in 2.81s

@@ -1,0 +1,16 @@
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+________ test_aws_session_refuses_implicit_or_default_credentials[None] ________
+tests/test_aws_components.py:104: in test_aws_session_refuses_implicit_or_default_credentials
+    with pytest.raises(ConfigurationError, match="AWS_PROFILE"):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ConfigurationError
+______ test_aws_session_refuses_implicit_or_default_credentials[default] _______
+tests/test_aws_components.py:104: in test_aws_session_refuses_implicit_or_default_credentials
+    with pytest.raises(ConfigurationError, match="AWS_PROFILE"):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ConfigurationError
+=========================== short test summary info ============================
+FAILED tests/test_aws_components.py::test_aws_session_refuses_implicit_or_default_credentials[None]
+FAILED tests/test_aws_components.py::test_aws_session_refuses_implicit_or_default_credentials[default]
+2 failed, 4 deselected in 5.44s

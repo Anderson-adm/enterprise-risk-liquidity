@@ -1,0 +1,39 @@
+============================= test session starts ==============================
+platform linux -- Python 3.12.14, pytest-9.2.0, pluggy-1.7.0
+rootdir: /mnt/c/Users/ander/GitHub/enterprise-risk-liquidity
+configfile: pyproject.toml
+testpaths: tests
+collected 79 items / 56 deselected / 23 selected
+
+tests/test_extract.py EEEEEEE                                            [ 30%]
+tests/test_integration_containers.py EEEEEEEEEE                          [ 73%]
+tests/test_publisher.py EEEEEE                                           [100%]
+
+
+Initial sandbox attempt: TCP connections to localhost were blocked. Verbose driver tracebacks were removed to avoid retaining connection credentials. The rerun with local network permission is recorded in baseline_integration_rerun.txt.
+
+=========================== short test summary info ============================
+ERROR tests/test_extract.py::test_every_database_entity_in_the_contract_has_an_extract[containers]
+ERROR tests/test_extract.py::test_extraction_keeps_exact_decimals_and_counts[containers]
+ERROR tests/test_extract.py::test_chunked_extraction_produces_the_same_content[containers]
+ERROR tests/test_extract.py::test_risk_extraction_waits_for_completed_batch[containers]
+ERROR tests/test_extract.py::test_unreachable_database_is_source_unavailable[containers]
+ERROR tests/test_extract.py::test_snapshot_ingestion_and_duplicate_detection[containers]
+ERROR tests/test_extract.py::test_tampered_landing_object_is_refused[containers]
+ERROR tests/test_integration_containers.py::test_sources_are_real_postgres_and_sqlserver
+ERROR tests/test_integration_containers.py::test_source_column_types_are_exact_in_the_catalog
+ERROR tests/test_integration_containers.py::test_consumer_column_types_follow_the_contract
+ERROR tests/test_integration_containers.py::test_legacy_sql_server_exposes_views_and_extraction_reads_them
+ERROR tests/test_integration_containers.py::test_extraction_is_identical_to_the_sqlite_stand_in
+ERROR tests/test_integration_containers.py::test_source_decimals_keep_full_precision_through_extraction
+ERROR tests/test_integration_containers.py::test_consumer_decimals_keep_full_precision
+ERROR tests/test_integration_containers.py::test_concurrent_publications_are_serialised_and_leave_one_consistent_version
+ERROR tests/test_integration_containers.py::test_publication_lock_also_serialises_a_postgresql_consumer
+ERROR tests/test_integration_containers.py::test_pipeline_publishes_to_sql_server_and_is_idempotent
+ERROR tests/test_publisher.py::test_first_publication_is_active[containers]
+ERROR tests/test_publisher.py::test_identical_content_is_not_republished[containers]
+ERROR tests/test_publisher.py::test_new_content_supersedes_previous_version_for_the_same_date_only[containers]
+ERROR tests/test_publisher.py::test_failure_mid_publication_preserves_the_last_valid_version[containers-before_replace:liquidity_summary]
+ERROR tests/test_publisher.py::test_failure_mid_publication_preserves_the_last_valid_version[containers-after_replace:exposure_compliance]
+ERROR tests/test_publisher.py::test_database_refuses_two_active_publications_for_one_date[containers]
+====================== 56 deselected, 23 errors in 27.28s ======================
