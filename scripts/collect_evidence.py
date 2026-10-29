@@ -124,6 +124,9 @@ def main() -> int:
         "scenarios": summary,
     }
     (OUT / "summary.json").write_text(json.dumps(meta, indent=2))
+    for f in OUT.rglob("*"):  # no machine-specific absolute paths in versioned evidence
+        if f.is_file():
+            f.write_text(f.read_text().replace(str(ROOT), "<repo>"))
     return 0
 
 

@@ -30,8 +30,8 @@ jobs:
         run: uv sync --frozen
       - name: Ruff
         run: |
-          uv run ruff check src tests airflow glue
-          uv run ruff format --check src tests airflow glue
+          uv run ruff check src tests airflow glue scripts
+          uv run ruff format --check src tests airflow glue scripts
       - name: dbt parse (configuration check, no warehouse needed)
         run: uv run dbt parse --project-dir dbt --profiles-dir dbt --target local
       - name: Unit and contract tests
