@@ -1,0 +1,71 @@
+version: 2
+
+models:
+  - name: silver_portfolio
+    description: Portfolio register with fund attributes and the system of record for positions.
+    columns:
+      - name: portfolio_id
+        data_tests: [unique, not_null]
+      - name: position_source_system
+        data_tests:
+          - accepted_values:
+              arguments: {values: [portfolio_risk, internal_xml, external_xml]}
+
+  - name: silver_market_price
+    description: Validated market data, one row per instrument and date.
+    data_tests:
+      - unique_combination:
+          arguments: {columns: [reference_date, instrument_code]}
+    columns:
+      - name: close_price
+        data_tests: [not_null]
+
+  - name: silver_position
+    description: Valid positions (latest processing version, system of record only).
+    data_tests:
+      - unique_combination:
+          arguments: {columns: [reference_date, portfolio_id, instrument_code]}
+    columns:
+      - name: portfolio_id
+        data_tests:
+          - not_null
+          - relationships:
+              arguments: {to: ref('silver_portfolio'), field: portfolio_id}
+      - name: market_value
+        data_tests: [not_null]
+      - name: quantity
+        data_tests: [not_null]
+
+  - name: silver_cash_balance
+    data_tests:
+      - unique_combination:
+          arguments: {columns: [reference_date, portfolio_id]}
+
+  - name: silver_pending_redemption
+    data_tests:
+      - unique_combination:
+          arguments: {columns: [reference_date, redemption_id]}
+
+  - name: silver_compliance_position
+    columns:
+      - name: exposure_value
+        data_tests: [not_null]
+      - name: portfolio_id
+        data_tests:
+          - relationships:
+              arguments: {to: ref('silver_portfolio'), field: portfolio_id}
+
+  - name: silver_rejected_records
+    description: >
+      Record-level quarantine. Every record excluded from Silver with reason code, source
+      system, Bronze run id, source object and row number for investigation.
+    columns:
+      - name: reject_reason
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [INVALID_VALUE, UNMAPPED_PORTFOLIO, NOT_SOURCE_OF_RECORD, CONFLICTING_RECORDS,
+                         DUPLICATE_RECORD, MISSING_MARKET_DATA, UNKNOWN_INSTRUMENT]
+      - name: meta_run_id
+        data_tests: [not_null]

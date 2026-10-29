@@ -1,0 +1,46 @@
+name: erl
+version: "0.1.0"
+config-version: 2
+profile: erl
+
+model-paths: ["models"]
+macro-paths: ["macros"]
+seed-paths: ["seeds"]
+test-paths: ["tests"]
+target-path: target
+clean-targets: [target]
+
+vars:
+  # Reference date being processed; the pipeline always passes it explicitly.
+  reference_date: "1900-01-01"
+  pipeline_run_id: "manual"
+  # Synthetic, demonstrative parameters (NOT regulatory requirements).
+  max_rejected_ratio: 0.15          # critical gate: share of rejected position records per date
+  equity_volume_participation: 0.20 # share of average daily volume assumed sellable in one day
+
+models:
+  erl:
+    +persist_docs: {relation: true, columns: true}
+    staging:
+      +schema: silver
+      +materialized: view
+    silver:
+      +schema: silver
+      +materialized: table
+      +table_type: iceberg   # Athena only; ignored by DuckDB
+    gold:
+      +schema: gold
+      +table_type: iceberg
+
+seeds:
+  erl:
+    +schema: silver
+    liquidity_rules:
+      +column_types:
+        instrument_type: varchar(20)
+        liquidity_method: varchar(10)
+        liquidity_factor: decimal(9,6)
+
+tests:
+  erl:
+    +severity: error

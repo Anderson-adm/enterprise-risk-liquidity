@@ -1,0 +1,70 @@
+version: 2
+
+# Critical tests on *_candidate models block the incremental Gold tables (dbt build skips
+# downstream nodes of a failed test) and therefore block the Load/publication step.
+
+models:
+  - name: gold_liquidity_summary_candidate
+    description: Liquidity summary for the reference date being processed (audited before publish).
+    data_tests:
+      - not_empty
+      - unique_combination:
+          arguments: {columns: [reference_date, portfolio_id]}
+      - reconciles_liquidity_totals
+      - rejection_ratio_within:
+          arguments: {max_ratio: "{{ var('max_rejected_ratio') }}"}
+      - expression_is_true:
+          arguments: {expression: "liquid_value <= total_value"}
+    columns:
+      - name: portfolio_id
+        data_tests:
+          - not_null
+          - relationships:
+              arguments: {to: ref('silver_portfolio'), field: portfolio_id}
+      - name: liquidity_ratio
+        data_tests:
+          - not_null
+          - value_between:
+              arguments: {min_value: 0, max_value: 1}
+      - name: total_value
+        data_tests: [not_null]
+      - name: lineage_bronze_runs
+        data_tests: [not_null]
+
+  - name: gold_exposure_compliance_candidate
+    description: Exposure and synthetic concentration checks for the reference date.
+    data_tests:
+      - not_empty
+      - single_active_limit
+      - unique_combination:
+          arguments: {columns: [reference_date, portfolio_id]}
+    columns:
+      - name: portfolio_id
+        data_tests:
+          - not_null
+          - relationships:
+              arguments: {to: ref('silver_portfolio'), field: portfolio_id}
+      - name: top_issuer_pct
+        data_tests:
+          - value_between:
+              arguments: {min_value: 0, max_value: 1}
+      - name: concentration_check
+        data_tests:
+          - accepted_values:
+              arguments: {values: [PASS, BREACH]}
+      - name: reconciliation_status
+        data_tests:
+          - accepted_values:
+              arguments: {values: [MATCHED, MISMATCH, NOT_AVAILABLE]}
+
+  - name: gold_liquidity_summary
+    description: Liquidity summary per portfolio and reference date (consumption layer).
+    data_tests:
+      - unique_combination:
+          arguments: {columns: [reference_date, portfolio_id]}
+
+  - name: gold_exposure_compliance
+    description: Exposure and synthetic concentration checks per portfolio and date (consumption layer).
+    data_tests:
+      - unique_combination:
+          arguments: {columns: [reference_date, portfolio_id]}

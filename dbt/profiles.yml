@@ -1,0 +1,20 @@
+# No secrets here: local uses a DuckDB file, Athena uses the ambient AWS credentials
+# (AWS_PROFILE=data-dev via SSO). Values come from environment variables set by `erl`.
+erl:
+  target: local
+  outputs:
+    local:
+      type: duckdb
+      path: "{{ env_var('ERL_DUCKDB_PATH', '../data/warehouse/erl.duckdb') }}"
+      threads: 1
+    athena:
+      type: athena
+      region_name: "{{ env_var('ERL_AWS_REGION', 'sa-east-1') }}"
+      database: awsdatacatalog
+      schema: "{{ env_var('ERL_GLUE_DB_PREFIX', 'erl_dev') }}_silver"
+      work_group: "{{ env_var('ERL_ATHENA_WORKGROUP', 'erl-dev') }}"
+      s3_staging_dir: "{{ env_var('ERL_ATHENA_RESULTS_S3', 's3://unset-results-bucket/') }}"
+      s3_data_dir: "{{ env_var('ERL_LAKEHOUSE_S3', 's3://unset-data-bucket/lakehouse/') }}"
+      s3_data_naming: schema_table_unique
+      threads: 1
+      num_retries: 1

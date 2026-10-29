@@ -1,0 +1,5 @@
+instrument_type,liquidity_method,liquidity_factor
+GOV_BOND,FULL,1.000000
+CORP_BOND,FACTOR,0.300000
+FUND_QUOTA,FACTOR,0.000000
+EQUITY,VOLUME,0.000000

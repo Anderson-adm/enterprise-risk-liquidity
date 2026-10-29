@@ -1,0 +1,35 @@
+version: 2
+
+# Bronze tables. On Athena they are Glue Catalog tables owned by Terraform
+# (infra/environments/dev/bronze_tables.tf, generated from the same Bronze contract).
+# On DuckDB they are read straight from the local lake directory.
+sources:
+  - name: bronze
+    schema: "{{ env_var('ERL_GLUE_DB_PREFIX', 'erl_dev') }}_bronze"
+    config:
+      external_location: "read_parquet('{{ env_var('ERL_LAKE_DIR', '../data/lake') }}/bronze/structured/{bronze_path}/*/*.parquet', hive_partitioning = true, union_by_name = true)"
+    tables:
+      - name: fund_ops__fund
+        config: {bronze_path: fund_ops/fund}
+      - name: fund_ops__portfolio
+        config: {bronze_path: fund_ops/portfolio}
+      - name: fund_ops__source_identity_map
+        config: {bronze_path: fund_ops/source_identity_map}
+      - name: portfolio_risk__processed_position
+        config: {bronze_path: portfolio_risk/processed_position}
+      - name: legacy_finance__cash_balance
+        config: {bronze_path: legacy_finance/cash_balance}
+      - name: legacy_finance__pending_redemption
+        config: {bronze_path: legacy_finance/pending_redemption}
+      - name: exposure_compliance__instrument_registry
+        config: {bronze_path: exposure_compliance/instrument_registry}
+      - name: exposure_compliance__stock_position
+        config: {bronze_path: exposure_compliance/stock_position}
+      - name: exposure_compliance__concentration_limit
+        config: {bronze_path: exposure_compliance/concentration_limit}
+      - name: market_data__daily_price
+        config: {bronze_path: market_data/daily_price}
+      - name: internal_xml__portfolio_position
+        config: {bronze_path: internal_xml/portfolio_position}
+      - name: external_xml__transfer_in_position
+        config: {bronze_path: external_xml/transfer_in_position}
