@@ -67,6 +67,7 @@ def run_step(
     except Exception as exc:
         category = exc.category if isinstance(exc, ErlError) else "unexpected"
         outcome = {
+            **(exc.details if isinstance(exc, ErlError) else {}),
             "status": "FAILED",
             "error_type": category,
             "error": f"{type(exc).__name__}: {exc}"[:2000],
@@ -266,7 +267,7 @@ def step_gate(settings: Settings, ref: date, run_id: str) -> dict:
     gate = evaluate_gate(transform)
     if gate["status"] != "PASSED":
         raise QualityGateError(
-            f"critical quality checks failed: {[f['node'] for f in transform['failures']]}"
+            f"critical quality checks failed: {gate['tests_failed']}", details={"quality_gate": gate}
         )
     return {"quality_gate": gate}
 

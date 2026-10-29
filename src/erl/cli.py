@@ -26,6 +26,34 @@ def _print(obj) -> None:
     print(json.dumps(obj, indent=2, default=str))
 
 
+def notify_failure(settings: config.Settings, step: str, run_id: str, ref: str, airflow_run: str) -> dict:
+    import logging
+    import os
+
+    state = pipeline.load_state(settings, run_id)["steps"].get(step, {})
+    message = {
+        "alert": "erl pipeline step failed",
+        "step": step,
+        "run_id": run_id,
+        "reference_date": ref,
+        "airflow_run": airflow_run,
+        "error_type": state.get("error_type", "unknown"),
+        "error": state.get("error", "see task log")[:500],
+    }
+    log.event(logging.getLogger("erl.alert"), "step_failure_alert", logging.ERROR, **message)
+    topic = os.environ.get("ERL_ALERTS_TOPIC_ARN")
+    if settings.mode == "aws" and topic:
+        import boto3
+
+        boto3.client("sns", region_name=settings.aws_region).publish(
+            TopicArn=topic,
+            Subject=f"[erl] {step} failed for {ref}"[:100],
+            Message=json.dumps(message, indent=2),
+        )
+        message["sns_topic"] = topic
+    return message
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="erl", description="Enterprise Risk & Liquidity data platform")
     parser.add_argument("--log-level", default="INFO")
@@ -48,6 +76,12 @@ def main(argv: list[str] | None = None) -> int:
     sc.add_argument("--date", required=True)
 
     sub.add_parser("new-run-id", help="print a new run id")
+
+    n = sub.add_parser("notify", help="alert about a failed step (SNS in aws mode, log otherwise)")
+    n.add_argument("--step", required=True)
+    n.add_argument("--run-id", required=True)
+    n.add_argument("--date", required=True)
+    n.add_argument("--airflow-run", default="")
     sub.add_parser("publications", help="list the consumer publication log")
 
     args = parser.parse_args(argv)
@@ -83,6 +117,8 @@ def main(argv: list[str] | None = None) -> int:
             _print(fn(settings, ref))
         elif args.command == "new-run-id":
             print(bronze.new_run_id())
+        elif args.command == "notify":
+            _print(notify_failure(settings, args.step, args.run_id, args.date, args.airflow_run))
         elif args.command == "publications":
             from erl.publish import publisher
 

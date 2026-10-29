@@ -8,7 +8,7 @@ from datetime import date, datetime, timedelta
 from decimal import Decimal
 from pathlib import Path
 
-from sqlalchemy import Engine, create_engine, func, insert, select, text
+from sqlalchemy import Engine, create_engine, func, insert, make_url, select, text
 
 from erl import log
 from erl.config import DB_SOURCES, Settings
@@ -51,8 +51,49 @@ def write_inbox(settings: Settings, ds: synthetic.SyntheticDataset) -> int:
     return len(ds.files)
 
 
+LOGICAL_DATABASES = {
+    "fund_ops",
+    "portfolio_risk",
+    "legacy_finance",
+    "exposure_compliance",
+    "consumer_reporting",
+}
+
+
+def ensure_databases(settings: Settings) -> list[str]:
+    """Create the logical databases inside the shared container instances (idempotent)."""
+    if settings.source_backend != "containers":
+        return []
+    created = []
+    urls = {s: settings.source_url(s) for s in DB_SOURCES} | {"consumer_reporting": settings.consumer_url()}
+    for name, url in urls.items():
+        if name not in LOGICAL_DATABASES:  # names are interpolated into DDL below
+            raise ValueError(name)
+        engine = create_engine(
+            make_url(url).set(database="postgres" if url.startswith("postgresql") else "master"),
+            isolation_level="AUTOCOMMIT",
+        )
+        try:
+            with engine.connect() as conn:
+                if engine.dialect.name == "postgresql":
+                    exists = conn.execute(
+                        text("SELECT 1 FROM pg_database WHERE datname = :n"), {"n": name}
+                    ).scalar()
+                    if not exists:
+                        conn.execute(text(f'CREATE DATABASE "{name}"'))
+                        created.append(name)
+                else:
+                    if conn.execute(text("SELECT DB_ID(:n)"), {"n": name}).scalar() is None:
+                        conn.execute(text(f"CREATE DATABASE [{name}]"))
+                        created.append(name)
+        finally:
+            engine.dispose()
+    return created
+
+
 def generate_all(settings: Settings, dates: tuple[date, ...] = synthetic.DEFAULT_DATES) -> dict:
     ds = synthetic.generate(dates)
+    ensure_databases(settings)
     summary: dict[str, object] = {}
     for source in DB_SOURCES:
         engine = engine_for(settings.source_url(source))
