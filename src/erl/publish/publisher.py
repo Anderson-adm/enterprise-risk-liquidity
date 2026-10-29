@@ -33,6 +33,7 @@ from sqlalchemy import (
     Date,
     DateTime,
     Engine,
+    Index,
     Integer,
     MetaData,
     String,
@@ -120,6 +121,16 @@ publication_log = Table(
     Column("superseded_by", String(80), nullable=True),
     Column("message", String(2000), nullable=True),
     schema="rpt",
+)
+# At most one ACTIVE publication per reference date, enforced by the database itself
+# (filtered unique index) in addition to the row lock taken inside the transaction.
+Index(
+    "ux_publication_log_active_date",
+    publication_log.c.reference_date,
+    unique=True,
+    mssql_where=publication_log.c.status == ACTIVE,
+    sqlite_where=publication_log.c.status == ACTIVE,
+    postgresql_where=publication_log.c.status == ACTIVE,
 )
 
 

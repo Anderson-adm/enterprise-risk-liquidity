@@ -71,7 +71,8 @@ def test_risk_extraction_waits_for_completed_batch(seeded, store):
     engine = seed.engine_for(seeded.source_url("portfolio_risk"))
     with engine.begin() as conn:
         conn.execute(
-            text("UPDATE processing_batch SET status = 'RUNNING' WHERE reference_date = :d"), {"d": D1}
+            text("UPDATE processing_batch SET status = 'RUNNING' WHERE reference_date = :d"),
+            {"d": D1.isoformat()},
         )
     engine.dispose()
     with pytest.raises(SourceUnavailableError, match="RUNNING"):

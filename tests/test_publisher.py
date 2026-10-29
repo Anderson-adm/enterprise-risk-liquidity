@@ -141,3 +141,14 @@ def test_content_hash_ignores_row_order(store):
     a = product_rows("liquidity_summary", D1, ["PRT-0001", "PRT-0002"])
     b = a.take([1, 0])
     assert publisher.content_hash({"x": a}) == publisher.content_hash({"x": b})
+
+
+def test_database_refuses_two_active_publications_for_one_date(store, engine):
+    from sqlalchemy import insert
+    from sqlalchemy.exc import IntegrityError
+
+    first = publisher.publish(engine, _package(store, D1, ["PRT-0001"]))
+    row = {k: v for k, v in _log(engine)[0].items()} | {"publication_id": "concurrent-writer"}
+    with pytest.raises(IntegrityError), publisher._connect(engine) as conn, conn.begin():
+        conn.execute(insert(publisher.publication_log).values(**row))
+    assert [r["publication_id"] for r in _log(engine) if r["status"] == "ACTIVE"] == [first["publication_id"]]
