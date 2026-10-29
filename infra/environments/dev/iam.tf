@@ -127,7 +127,7 @@ resource "aws_iam_role_policy" "glue_db_ingest" {
       {
         Sid      = "CleanOwnTemporaryOutput"
         Effect   = "Allow"
-        Action   = ["s3:DeleteObject"]
+        Action   = ["s3:DeleteObject", "s3:AbortMultipartUpload"]
         Resource = ["${local.data_arn}/tmp/glue/*"]
       },
       {
@@ -177,13 +177,19 @@ resource "aws_iam_role_policy" "glue_gold_load" {
         Effect    = "Allow"
         Action    = ["s3:ListBucket"]
         Resource  = [local.data_arn]
-        Condition = { StringLike = { "s3:prefix" = ["lakehouse/*"] } }
+        Condition = { StringLike = { "s3:prefix" = ["lakehouse/*", "tmp/glue/*"] } }
       },
       {
         Sid      = "WritePublicationPackage"
         Effect   = "Allow"
         Action   = ["s3:PutObject"]
         Resource = ["${local.data_arn}/publish/*"]
+      },
+      {
+        Sid      = "SparkTemporaryOutput"
+        Effect   = "Allow"
+        Action   = ["s3:GetObject", "s3:PutObject", "s3:DeleteObject", "s3:AbortMultipartUpload"]
+        Resource = ["${local.data_arn}/tmp/glue/*"]
       },
       {
         Sid      = "GlueManagedLogGroups"

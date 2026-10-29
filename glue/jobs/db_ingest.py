@@ -20,7 +20,7 @@ import base64
 import json
 import re
 import sys
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import boto3
 from awsglue.context import GlueContext
@@ -39,7 +39,9 @@ ROWS_PER_PART = 1_000_000  # TB profile: target rows per Bronze part file
 
 
 def log(event, **fields):
-    print(json.dumps({"ts": datetime.now(timezone.utc).isoformat(), "event": event, "job": ARGS["JOB_NAME"], **fields}))
+    print(
+        json.dumps({"ts": datetime.now(UTC).isoformat(), "event": event, "job": ARGS["JOB_NAME"], **fields})
+    )
 
 
 def get_json(key):
@@ -66,8 +68,10 @@ def safe_name(name):
 
 def manifest_key(m):
     obj = safe_name(m["input_object"].rsplit("/", 1)[-1])
-    return (f"manifests/ingestion/{m['source_system']}/{m['entity']}/"
-            f"bronze_reference_date={m['reference_date']}/{m['run_id']}__{obj}.json")
+    return (
+        f"manifests/ingestion/{m['source_system']}/{m['entity']}/"
+        f"bronze_reference_date={m['reference_date']}/{m['run_id']}__{obj}.json"
+    )
 
 
 def s3_sha256_hex(key):
@@ -95,12 +99,23 @@ def ingest(landing_manifest_key, contract):
     source, entity, ref, run_id = lm["source_system"], lm["entity"], lm["reference_date"], lm["run_id"]
     spec = contract["entities"][f"{source}__{entity}"]
     base = {
-        "run_id": run_id, "source_system": source, "entity": entity, "reference_date": ref,
-        "component": f"glue:{ARGS['JOB_NAME']}", "input_object": lm["object"], "input_sha256": lm["content_sha256"],
-        "records_read": 0, "records_written": 0, "records_rejected": 0, "bronze_object": None,
-        "raw_object": lm["object"], "late_arrival": False, "duplicate_of_run": None,
-        "rejection_reason": None, "rejection_detail": None,
-        "ingested_at": datetime.now(timezone.utc).isoformat(timespec="microseconds"),
+        "run_id": run_id,
+        "source_system": source,
+        "entity": entity,
+        "reference_date": ref,
+        "component": f"glue:{ARGS['JOB_NAME']}",
+        "input_object": lm["object"],
+        "input_sha256": lm["content_sha256"],
+        "records_read": 0,
+        "records_written": 0,
+        "records_rejected": 0,
+        "bronze_object": None,
+        "raw_object": lm["object"],
+        "late_arrival": False,
+        "duplicate_of_run": None,
+        "rejection_reason": None,
+        "rejection_detail": None,
+        "ingested_at": datetime.now(UTC).isoformat(timespec="microseconds"),
     }
     if s3_sha256_hex(lm["object"]) != lm["object_sha256"]:
         raise RuntimeError(f"landing object {lm['object']} does not match its manifest checksum")
@@ -109,7 +124,13 @@ def ingest(landing_manifest_key, contract):
     if dup is not None:
         m = dict(base, status="DUPLICATE", records_read=lm["rows"], duplicate_of_run=dup["run_id"])
         put_json_if_absent(manifest_key(m), m)
-        log("snapshot_duplicate_skipped", run_id=run_id, source_system=source, entity=entity, reference_date=ref)
+        log(
+            "snapshot_duplicate_skipped",
+            run_id=run_id,
+            source_system=source,
+            entity=entity,
+            reference_date=ref,
+        )
         return m
 
     df = spark.read.parquet(f"s3://{BUCKET}/{lm['object']}")
@@ -118,9 +139,13 @@ def ingest(landing_manifest_key, contract):
         raise RuntimeError(f"{source}__{entity}: landing columns {df.columns} != {expected}")
 
     meta = {
-        "meta_source_system": source, "meta_entity": entity, "meta_run_id": run_id,
-        "meta_ingested_at": base["ingested_at"], "meta_component": base["component"],
-        "meta_source_object": lm["object"], "meta_source_sha256": lm["object_sha256"],
+        "meta_source_system": source,
+        "meta_entity": entity,
+        "meta_run_id": run_id,
+        "meta_ingested_at": base["ingested_at"],
+        "meta_component": base["component"],
+        "meta_source_object": lm["object"],
+        "meta_source_sha256": lm["object_sha256"],
         "meta_snapshot_key": f"{source}/{entity}/{ref}",
     }
     for name, value in meta.items():
@@ -134,13 +159,16 @@ def ingest(landing_manifest_key, contract):
     df.repartition(parts).write.mode("errorifexists").parquet(f"s3://{BUCKET}/{tmp_prefix}")
 
     part_keys = sorted(
-        o["Key"] for o in s3.list_objects_v2(Bucket=BUCKET, Prefix=tmp_prefix).get("Contents", [])
+        o["Key"]
+        for o in s3.list_objects_v2(Bucket=BUCKET, Prefix=tmp_prefix).get("Contents", [])
         if o["Key"].endswith(".parquet")
     )
     target_dir = f"bronze/structured/{source}/{entity}/bronze_reference_date={ref}/"
     targets = []
     for i, key in enumerate(part_keys):
-        target = target_dir + (f"{run_id}.parquet" if len(part_keys) == 1 else f"{run_id}-part-{i:05d}.parquet")
+        target = target_dir + (
+            f"{run_id}.parquet" if len(part_keys) == 1 else f"{run_id}-part-{i:05d}.parquet"
+        )
         if exists(target):  # append-only: a run never replaces Bronze objects
             raise RuntimeError(f"refusing to overwrite s3://{BUCKET}/{target}")
         s3.copy_object(Bucket=BUCKET, Key=target, CopySource={"Bucket": BUCKET, "Key": key})
@@ -148,10 +176,19 @@ def ingest(landing_manifest_key, contract):
     for o in s3.list_objects_v2(Bucket=BUCKET, Prefix=tmp_prefix).get("Contents", []):
         s3.delete_object(Bucket=BUCKET, Key=o["Key"])
 
-    m = dict(base, status="ACCEPTED", records_read=rows, records_written=rows, bronze_object=",".join(targets))
+    m = dict(
+        base, status="ACCEPTED", records_read=rows, records_written=rows, bronze_object=",".join(targets)
+    )
     put_json_if_absent(manifest_key(m), m)
-    log("snapshot_ingested", run_id=run_id, source_system=source, entity=entity, reference_date=ref,
-        records_written=rows, parts=len(targets))
+    log(
+        "snapshot_ingested",
+        run_id=run_id,
+        source_system=source,
+        entity=entity,
+        reference_date=ref,
+        records_written=rows,
+        parts=len(targets),
+    )
     return m
 
 

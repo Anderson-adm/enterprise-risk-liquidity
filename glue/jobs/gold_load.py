@@ -17,7 +17,7 @@ Arguments: --bucket --run_id --reference_date --quality_gate (JSON) --gold_datab
 import hashlib
 import json
 import sys
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import boto3
 from awsglue.context import GlueContext
@@ -27,7 +27,15 @@ from pyspark.sql import functions as F
 
 ARGS = getResolvedOptions(
     sys.argv,
-    ["JOB_NAME", "bucket", "run_id", "reference_date", "quality_gate", "gold_database", "consumer_contract_s3_key"],
+    [
+        "JOB_NAME",
+        "bucket",
+        "run_id",
+        "reference_date",
+        "quality_gate",
+        "gold_database",
+        "consumer_contract_s3_key",
+    ],
 )
 BUCKET = ARGS["bucket"]
 s3 = boto3.client("s3")
@@ -35,7 +43,9 @@ spark = GlueContext(SparkContext.getOrCreate()).spark_session
 
 
 def log(event, **fields):
-    print(json.dumps({"ts": datetime.now(timezone.utc).isoformat(), "event": event, "job": ARGS["JOB_NAME"], **fields}))
+    print(
+        json.dumps({"ts": datetime.now(UTC).isoformat(), "event": event, "job": ARGS["JOB_NAME"], **fields})
+    )
 
 
 def main():
@@ -50,14 +60,19 @@ def main():
         cols = [c["name"] for c in spec["columns"]]
         df = (
             spark.table(f"glue_catalog.{ARGS['gold_database']}.{spec['gold_model']}")
-            .where((F.col("reference_date") == F.lit(ref).cast("date")) & (F.col("pipeline_run_id") == run_id))
+            .where(
+                (F.col("reference_date") == F.lit(ref).cast("date")) & (F.col("pipeline_run_id") == run_id)
+            )
             .select(*cols)
             .orderBy("portfolio_id")
         )
         tmp = f"tmp/glue/{run_id}/publish/{name}/"
         df.coalesce(1).write.mode("errorifexists").parquet(f"s3://{BUCKET}/{tmp}")
-        part = next(o["Key"] for o in s3.list_objects_v2(Bucket=BUCKET, Prefix=tmp)["Contents"]
-                    if o["Key"].endswith(".parquet"))
+        part = next(
+            o["Key"]
+            for o in s3.list_objects_v2(Bucket=BUCKET, Prefix=tmp)["Contents"]
+            if o["Key"].endswith(".parquet")
+        )
         data = s3.get_object(Bucket=BUCKET, Key=part)["Body"].read()
         key = prefix + f"{name}.parquet"
         s3.put_object(Bucket=BUCKET, Key=key, Body=data, IfNoneMatch="*")
@@ -71,11 +86,20 @@ def main():
         "producer": f"glue:{ARGS['JOB_NAME']}",
         "quality_gate": gate,
         "products": products,
-        "created_at": datetime.now(timezone.utc).isoformat(timespec="microseconds"),
+        "created_at": datetime.now(UTC).isoformat(timespec="microseconds"),
     }
-    s3.put_object(Bucket=BUCKET, Key=prefix + "manifest.json", Body=json.dumps(manifest, indent=2).encode(),
-                  IfNoneMatch="*")
-    log("publication_package_built", run_id=run_id, reference_date=ref, rows={k: v["rows"] for k, v in products.items()})
+    s3.put_object(
+        Bucket=BUCKET,
+        Key=prefix + "manifest.json",
+        Body=json.dumps(manifest, indent=2).encode(),
+        IfNoneMatch="*",
+    )
+    log(
+        "publication_package_built",
+        run_id=run_id,
+        reference_date=ref,
+        rows={k: v["rows"] for k, v in products.items()},
+    )
 
 
 main()
