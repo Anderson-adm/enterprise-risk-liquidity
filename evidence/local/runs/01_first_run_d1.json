@@ -1,0 +1,79 @@
+{
+  "run_id": "20261029T145456Z-45ee63",
+  "reference_date": "2026-10-26",
+  "mode": "local",
+  "steps": {
+    "validate": "SUCCEEDED",
+    "extract": "SUCCEEDED",
+    "collect": "SUCCEEDED",
+    "ingest": "SUCCEEDED",
+    "transform": "SUCCEEDED",
+    "gate": "SUCCEEDED",
+    "load": "SUCCEEDED",
+    "publish": "SUCCEEDED"
+  },
+  "records_read": {
+    "fund_ops": {
+      "fund": 4,
+      "portfolio": 8,
+      "source_identity_map": 34
+    },
+    "portfolio_risk": {
+      "processing_batch": 1,
+      "processed_position": 23
+    },
+    "legacy_finance": {
+      "cash_balance": 8,
+      "pending_redemption": 2
+    },
+    "exposure_compliance": {
+      "instrument_registry": 16,
+      "stock_position": 31,
+      "concentration_limit": 1
+    }
+  },
+  "ingestion": {
+    "by_status": {
+      "ACCEPTED": 14
+    },
+    "records_written": 154,
+    "files_rejected": [],
+    "late_arrivals": []
+  },
+  "quality_gate": {
+    "status": "PASSED",
+    "dbt_invocation_id": "fff81473-37d4-4c0a-a507-4386c0b9539b",
+    "tests_failed": [],
+    "warnings": []
+  },
+  "publication": {
+    "publication_status": "ACTIVE",
+    "publication_id": "20261026-20261029T145456Z-45ee63-1",
+    "superseded": null,
+    "rows": {
+      "liquidity_summary": 8,
+      "exposure_compliance": 8
+    },
+    "content_sha256": "298c1fb367a86090e7cbc2b1f514b5b53d120fa00cab66c37647d3a1ecbfb5e4"
+  },
+  "rejected_records": [
+    {
+      "entity": "portfolio_position",
+      "source_system": "portfolio_risk",
+      "reason": "UNMAPPED_PORTFOLIO",
+      "records": 2
+    }
+  ],
+  "step_elapsed_seconds": {
+    "validate": 0.0,
+    "extract": 0.658,
+    "collect": 0.147,
+    "ingest": 2.822,
+    "transform": 34.602,
+    "gate": 0.004,
+    "load": 0.11,
+    "publish": 0.169,
+    "report": 0.039
+  },
+  "total_elapsed_seconds": 38.65
+}
