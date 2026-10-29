@@ -1,0 +1,103 @@
+# 2026-10-29T17:43:50Z  uv run pytest -v   (default: SQLite stand-ins + DuckDB; container variants skip)
+tests/test_aws_components.py::test_s3_store_refuses_overwrite PASSED
+tests/test_aws_components.py::test_lambda_handler_ingests_market_data_into_s3_bronze PASSED
+tests/test_aws_components.py::test_lambda_handler_rejects_objects_outside_its_scope PASSED
+tests/test_aws_components.py::test_wrong_aws_account_is_refused PASSED
+tests/test_contracts_and_gate.py::test_consumer_columns_exist_in_gold_models PASSED
+tests/test_contracts_and_gate.py::test_bronze_contract_is_consistent PASSED
+tests/test_contracts_and_gate.py::test_dbt_sources_cover_the_bronze_contract PASSED
+tests/test_contracts_and_gate.py::test_gate_passes_with_warnings_only PASSED
+tests/test_contracts_and_gate.py::test_gate_fails_on_test_failure_or_skipped_nodes[kw0] PASSED
+tests/test_contracts_and_gate.py::test_gate_fails_on_test_failure_or_skipped_nodes[kw1] PASSED
+tests/test_contracts_and_gate.py::test_run_results_summary PASSED
+tests/test_contracts_and_gate.py::test_invalid_reference_dates_are_rejected[2026-13-01] PASSED
+tests/test_contracts_and_gate.py::test_invalid_reference_dates_are_rejected[26/10/2026] PASSED
+tests/test_contracts_and_gate.py::test_invalid_reference_dates_are_rejected[2999-01-01] PASSED
+tests/test_contracts_and_gate.py::test_container_backend_requires_password PASSED
+tests/test_contracts_and_gate.py::test_database_names_taken_from_urls_are_validated_before_ddl PASSED
+tests/test_contracts_and_gate.py::test_synthetic_data_is_deterministic PASSED
+tests/test_contracts_and_gate.py::test_synthetic_codes_are_clearly_fictitious PASSED
+tests/test_extract.py::test_every_database_entity_in_the_contract_has_an_extract[sqlite] PASSED
+tests/test_extract.py::test_every_database_entity_in_the_contract_has_an_extract[containers] SKIPPED
+tests/test_extract.py::test_extraction_keeps_exact_decimals_and_counts[sqlite] PASSED
+tests/test_extract.py::test_extraction_keeps_exact_decimals_and_counts[containers] SKIPPED
+tests/test_extract.py::test_chunked_extraction_produces_the_same_content[sqlite] PASSED
+tests/test_extract.py::test_chunked_extraction_produces_the_same_content[containers] SKIPPED
+tests/test_extract.py::test_float_values_are_refused PASSED
+tests/test_extract.py::test_risk_extraction_waits_for_completed_batch[sqlite] PASSED
+tests/test_extract.py::test_risk_extraction_waits_for_completed_batch[containers] SKIPPED
+tests/test_extract.py::test_unreachable_database_is_source_unavailable[sqlite] PASSED
+tests/test_extract.py::test_unreachable_database_is_source_unavailable[containers] SKIPPED
+tests/test_extract.py::test_snapshot_ingestion_and_duplicate_detection[sqlite] PASSED
+tests/test_extract.py::test_snapshot_ingestion_and_duplicate_detection[containers] SKIPPED
+tests/test_extract.py::test_tampered_landing_object_is_refused[sqlite] PASSED
+tests/test_extract.py::test_tampered_landing_object_is_refused[containers] SKIPPED
+tests/test_file_ingestion.py::test_market_data_is_accepted_with_metadata PASSED
+tests/test_file_ingestion.py::test_redelivery_of_identical_file_is_skipped_as_duplicate PASSED
+tests/test_file_ingestion.py::test_stale_market_data_is_rejected_and_quarantined PASSED
+tests/test_file_ingestion.py::test_csv_header_mismatch_is_a_contract_rejection PASSED
+tests/test_file_ingestion.py::test_truncated_internal_xml_is_quarantined PASSED
+tests/test_file_ingestion.py::test_external_xml_failing_xsd_is_quarantined PASSED
+tests/test_file_ingestion.py::test_late_external_xml_lands_in_its_own_reference_date PASSED
+tests/test_file_ingestion.py::test_future_reference_date_is_rejected PASSED
+tests/test_file_ingestion.py::test_xml_external_entities_are_not_resolved PASSED
+tests/test_file_ingestion.py::test_bronze_is_append_only PASSED
+tests/test_integration_containers.py::test_sources_are_real_postgres_and_sqlserver SKIPPED
+tests/test_integration_containers.py::test_source_column_types_are_exact_in_the_catalog SKIPPED
+tests/test_integration_containers.py::test_consumer_column_types_follow_the_contract SKIPPED
+tests/test_integration_containers.py::test_legacy_sql_server_exposes_views_and_extraction_reads_them SKIPPED
+tests/test_integration_containers.py::test_extraction_is_identical_to_the_sqlite_stand_in SKIPPED
+tests/test_integration_containers.py::test_source_decimals_keep_full_precision_through_extraction SKIPPED
+tests/test_integration_containers.py::test_consumer_decimals_keep_full_precision SKIPPED
+tests/test_integration_containers.py::test_concurrent_publications_are_serialised_and_leave_one_consistent_version SKIPPED
+tests/test_integration_containers.py::test_publication_lock_also_serialises_a_postgresql_consumer SKIPPED
+tests/test_integration_containers.py::test_pipeline_publishes_to_sql_server_and_is_idempotent SKIPPED
+tests/test_pipeline_e2e.py::test_01_first_three_days_publish PASSED
+tests/test_pipeline_e2e.py::test_02_all_seven_sources_contribute PASSED
+tests/test_pipeline_e2e.py::test_03_d2_scenarios_are_handled PASSED
+tests/test_pipeline_e2e.py::test_04_business_results PASSED
+tests/test_pipeline_e2e.py::test_05_late_arrival_reprocessing_supersedes_d2 PASSED
+tests/test_pipeline_e2e.py::test_06_rerun_is_idempotent PASSED
+tests/test_pipeline_e2e.py::test_07_correction_of_published_position PASSED
+tests/test_pipeline_e2e.py::test_08_critical_quality_failure_blocks_publication_and_keeps_last_version PASSED
+tests/test_pipeline_e2e.py::test_09_unavailable_source_fails_before_transformation PASSED
+tests/test_publisher.py::test_first_publication_is_active[sqlite] PASSED
+tests/test_publisher.py::test_first_publication_is_active[containers] SKIPPED
+tests/test_publisher.py::test_identical_content_is_not_republished[sqlite] PASSED
+tests/test_publisher.py::test_identical_content_is_not_republished[containers] SKIPPED
+tests/test_publisher.py::test_new_content_supersedes_previous_version_for_the_same_date_only[sqlite] PASSED
+tests/test_publisher.py::test_new_content_supersedes_previous_version_for_the_same_date_only[containers] SKIPPED
+tests/test_publisher.py::test_failure_mid_publication_preserves_the_last_valid_version[sqlite-before_replace:liquidity_summary] PASSED
+tests/test_publisher.py::test_failure_mid_publication_preserves_the_last_valid_version[sqlite-after_replace:exposure_compliance] PASSED
+tests/test_publisher.py::test_failure_mid_publication_preserves_the_last_valid_version[containers-before_replace:liquidity_summary] SKIPPED
+tests/test_publisher.py::test_failure_mid_publication_preserves_the_last_valid_version[containers-after_replace:exposure_compliance] SKIPPED
+tests/test_publisher.py::test_package_without_passed_gate_is_refused PASSED
+tests/test_publisher.py::test_tampered_package_is_refused PASSED
+tests/test_publisher.py::test_contract_violations_are_refused PASSED
+tests/test_publisher.py::test_missing_manifest_means_no_package PASSED
+tests/test_publisher.py::test_content_hash_ignores_row_order PASSED
+tests/test_publisher.py::test_database_refuses_two_active_publications_for_one_date[sqlite] PASSED
+tests/test_publisher.py::test_database_refuses_two_active_publications_for_one_date[containers] SKIPPED
+SKIPPED [1] tests/test_extract.py:33: set ERL_IT_CONTAINERS=1 with containers up
+SKIPPED [1] tests/test_extract.py:44: set ERL_IT_CONTAINERS=1 with containers up
+SKIPPED [1] tests/test_extract.py:58: set ERL_IT_CONTAINERS=1 with containers up
+SKIPPED [1] tests/test_extract.py:71: set ERL_IT_CONTAINERS=1 with containers up
+SKIPPED [1] tests/test_extract.py:85: set ERL_IT_CONTAINERS=1 with containers up
+SKIPPED [1] tests/test_extract.py:91: set ERL_IT_CONTAINERS=1 with containers up
+SKIPPED [1] tests/test_extract.py:104: set ERL_IT_CONTAINERS=1 with containers up
+SKIPPED [1] tests/test_integration_containers.py:79: set ERL_IT_CONTAINERS=1 with containers up
+SKIPPED [1] tests/test_integration_containers.py:136: set ERL_IT_CONTAINERS=1 with containers up
+SKIPPED [1] tests/test_integration_containers.py:148: set ERL_IT_CONTAINERS=1 with containers up
+SKIPPED [1] tests/test_integration_containers.py:155: set ERL_IT_CONTAINERS=1 with containers up
+SKIPPED [1] tests/test_integration_containers.py:177: set ERL_IT_CONTAINERS=1 with containers up
+SKIPPED [1] tests/test_integration_containers.py:206: set ERL_IT_CONTAINERS=1 with containers up
+SKIPPED [1] tests/test_integration_containers.py:243: set ERL_IT_CONTAINERS=1 with containers up
+SKIPPED [1] tests/test_integration_containers.py:309: set ERL_IT_CONTAINERS=1 with containers up
+SKIPPED [1] tests/test_integration_containers.py:327: set ERL_IT_CONTAINERS=1 with containers up
+SKIPPED [1] tests/test_integration_containers.py:349: set ERL_IT_CONTAINERS=1 with containers up
+SKIPPED [1] tests/test_publisher.py:49: set ERL_IT_CONTAINERS=1 with containers up
+SKIPPED [1] tests/test_publisher.py:59: set ERL_IT_CONTAINERS=1 with containers up
+SKIPPED [1] tests/test_publisher.py:67: set ERL_IT_CONTAINERS=1 with containers up
+SKIPPED [2] tests/test_publisher.py:85: set ERL_IT_CONTAINERS=1 with containers up
+SKIPPED [1] tests/test_publisher.py:150: set ERL_IT_CONTAINERS=1 with containers up
+================== 56 passed, 23 skipped in 311.93s (0:05:11) ==================

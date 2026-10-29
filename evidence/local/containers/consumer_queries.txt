@@ -1,5 +1,7 @@
+-- consumer engine: mssql
+
 -- liquidity_summary_d2
-SELECT reference_date, portfolio_id, total_value, liquid_value, liquidity_ratio, pending_redemptions, redemption_coverage, lineage_sources FROM liquidity_summary WHERE reference_date = '2026-10-27' ORDER BY portfolio_id
+SELECT reference_date, portfolio_id, total_value, liquid_value, liquidity_ratio, pending_redemptions, redemption_coverage, lineage_sources FROM rpt.liquidity_summary WHERE reference_date = '2026-10-27' ORDER BY portfolio_id
 reference_date | portfolio_id | total_value | liquid_value | liquidity_ratio | pending_redemptions | redemption_coverage | lineage_sources
 2026-10-27 | PRT-0001 | 5095640.21 | 4515053.49 | 0.886062 | 800000.00 | 5.643817 | fund_ops,legacy_finance,market_data,portfolio_risk
 2026-10-27 | PRT-0002 | 3747293.82 | 3572101.77 | 0.953248 | 0.00 |  | fund_ops,legacy_finance,market_data,portfolio_risk
@@ -11,7 +13,7 @@ reference_date | portfolio_id | total_value | liquid_value | liquidity_ratio | p
 2026-10-27 | PRT-0008 | 1913870.34 | 1913870.34 | 1.000000 | 0.00 |  | external_xml,fund_ops,legacy_finance,market_data
 
 -- exposure_compliance_d3
-SELECT reference_date, portfolio_id, total_exposure, top_issuer_code, top_issuer_pct, concentration_limit_pct, concentration_check, reconciliation_status, quality_status FROM exposure_compliance WHERE reference_date = '2026-10-28' ORDER BY portfolio_id
+SELECT reference_date, portfolio_id, total_exposure, top_issuer_code, top_issuer_pct, concentration_limit_pct, concentration_check, reconciliation_status, quality_status FROM rpt.exposure_compliance WHERE reference_date = '2026-10-28' ORDER BY portfolio_id
 reference_date | portfolio_id | total_exposure | top_issuer_code | top_issuer_pct | concentration_limit_pct | concentration_check | reconciliation_status | quality_status
 2026-10-28 | PRT-0001 | 3843523.84 | ISS-A | 0.220380 | 0.250000 | PASS | MISMATCH | WARN
 2026-10-28 | PRT-0002 | 3279810.69 | ISS-E | 0.166707 | 0.250000 | PASS | MATCHED | OK
@@ -23,18 +25,18 @@ reference_date | portfolio_id | total_exposure | top_issuer_code | top_issuer_pc
 2026-10-28 | PRT-0008 | 1844860.44 | ISS-E | 0.177824 | 0.250000 | PASS | MATCHED | OK
 
 -- publication_log
-SELECT reference_date, publication_id, status, liquidity_rows, exposure_rows, superseded_by, message FROM publication_log ORDER BY reference_date, published_at
+SELECT reference_date, publication_id, status, liquidity_rows, exposure_rows, superseded_by, message FROM rpt.publication_log ORDER BY reference_date, published_at
 reference_date | publication_id | status | liquidity_rows | exposure_rows | superseded_by | message
-2026-10-26 | 20261026-20261029T145456Z-45ee63-1 | ACTIVE | 8 | 8 |  | 
-2026-10-27 | 20261027-20261029T145535Z-060798-1 | SUPERSEDED | 7 | 8 | 20261027-20261029T145656Z-fc614d-1 | 
-2026-10-27 | 20261027-20261029T145656Z-fc614d-1 | ACTIVE | 8 | 8 |  | 
-2026-10-27 | 20261027-20261029T145736Z-dfd132-1 | SKIPPED_IDENTICAL | 8 | 8 |  | identical to active publication 20261027-20261029T145656Z-fc614d-1
-2026-10-28 | 20261028-20261029T145614Z-c0ce8b-1 | SUPERSEDED | 8 | 8 | 20261028-20261029T145820Z-a8c596-1 | 
-2026-10-28 | 20261028-20261029T145820Z-a8c596-1 | ACTIVE | 8 | 8 |  | 
+2026-10-26 | 20261026-20261029T171542Z-23835c-1 | ACTIVE | 8 | 8 |  | 
+2026-10-27 | 20261027-20261029T171624Z-3b211c-1 | SUPERSEDED | 7 | 8 | 20261027-20261029T171758Z-8a2b7f-1 | 
+2026-10-27 | 20261027-20261029T171758Z-8a2b7f-1 | ACTIVE | 8 | 8 |  | 
+2026-10-27 | 20261027-20261029T171848Z-d3dbc7-1 | SKIPPED_IDENTICAL | 8 | 8 |  | identical to active publication 20261027-20261029T171758Z-8a2b7f-1
+2026-10-28 | 20261028-20261029T171708Z-7746d6-1 | SUPERSEDED | 8 | 8 | 20261028-20261029T171940Z-3094fa-1 | 
+2026-10-28 | 20261028-20261029T171940Z-3094fa-1 | ACTIVE | 8 | 8 |  | 
 
 -- active_version_per_date
-SELECT reference_date, publication_id, pipeline_run_id, content_sha256 FROM publication_log WHERE status = 'ACTIVE' ORDER BY reference_date
+SELECT reference_date, publication_id, pipeline_run_id, content_sha256 FROM rpt.publication_log WHERE status = 'ACTIVE' ORDER BY reference_date
 reference_date | publication_id | pipeline_run_id | content_sha256
-2026-10-26 | 20261026-20261029T145456Z-45ee63-1 | 20261029T145456Z-45ee63 | 298c1fb367a86090e7cbc2b1f514b5b53d120fa00cab66c37647d3a1ecbfb5e4
-2026-10-27 | 20261027-20261029T145656Z-fc614d-1 | 20261029T145656Z-fc614d | 0a4c344a3076439df16b08373fb67e16ffc8907f2a8a8d5ca1b2c968fa9fc2bb
-2026-10-28 | 20261028-20261029T145820Z-a8c596-1 | 20261029T145820Z-a8c596 | fcdfa81041d2eb391a7036b3531403d1f5d77b7e63444ce2a9fd1c4e2d4f3d9a
+2026-10-26 | 20261026-20261029T171542Z-23835c-1 | 20261029T171542Z-23835c | 87e0c517e2a8d6fec69c68517d32d7e570c6d95233713850bbdfd87bd4860e79
+2026-10-27 | 20261027-20261029T171758Z-8a2b7f-1 | 20261029T171758Z-8a2b7f | f977d0d7f4a889ada23b8a3c46bfc5f21344bc9a683c5552196e008d5b2c7949
+2026-10-28 | 20261028-20261029T171940Z-3094fa-1 | 20261029T171940Z-3094fa | 54559636fb2f92b77ff6eabc9b0c065c617a5caa88261bc10c07a5ae034a8b1e

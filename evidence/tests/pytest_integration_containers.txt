@@ -1,0 +1,26 @@
+# 2026-10-29T17:28:35Z  ERL_IT_CONTAINERS=1 uv run pytest -m integration -v
+# engines: PostgreSQL 17.11 (postgres:17-alpine) + SQL Server 2022 CU27 (mssql/server:2022-latest), Docker Desktop 29.8.0 / WSL2
+tests/test_extract.py::test_every_database_entity_in_the_contract_has_an_extract[containers] PASSED
+tests/test_extract.py::test_extraction_keeps_exact_decimals_and_counts[containers] PASSED
+tests/test_extract.py::test_chunked_extraction_produces_the_same_content[containers] PASSED
+tests/test_extract.py::test_risk_extraction_waits_for_completed_batch[containers] PASSED
+tests/test_extract.py::test_unreachable_database_is_source_unavailable[containers] PASSED
+tests/test_extract.py::test_snapshot_ingestion_and_duplicate_detection[containers] PASSED
+tests/test_extract.py::test_tampered_landing_object_is_refused[containers] PASSED
+tests/test_integration_containers.py::test_sources_are_real_postgres_and_sqlserver PASSED
+tests/test_integration_containers.py::test_source_column_types_are_exact_in_the_catalog PASSED
+tests/test_integration_containers.py::test_consumer_column_types_follow_the_contract PASSED
+tests/test_integration_containers.py::test_legacy_sql_server_exposes_views_and_extraction_reads_them PASSED
+tests/test_integration_containers.py::test_extraction_is_identical_to_the_sqlite_stand_in PASSED
+tests/test_integration_containers.py::test_source_decimals_keep_full_precision_through_extraction PASSED
+tests/test_integration_containers.py::test_consumer_decimals_keep_full_precision PASSED
+tests/test_integration_containers.py::test_concurrent_publications_are_serialised_and_leave_one_consistent_version PASSED
+tests/test_integration_containers.py::test_publication_lock_also_serialises_a_postgresql_consumer PASSED
+tests/test_integration_containers.py::test_pipeline_publishes_to_sql_server_and_is_idempotent PASSED
+tests/test_publisher.py::test_first_publication_is_active[containers] PASSED
+tests/test_publisher.py::test_identical_content_is_not_republished[containers] PASSED
+tests/test_publisher.py::test_new_content_supersedes_previous_version_for_the_same_date_only[containers] PASSED
+tests/test_publisher.py::test_failure_mid_publication_preserves_the_last_valid_version[containers-before_replace:liquidity_summary] PASSED
+tests/test_publisher.py::test_failure_mid_publication_preserves_the_last_valid_version[containers-after_replace:exposure_compliance] PASSED
+tests/test_publisher.py::test_database_refuses_two_active_publications_for_one_date[containers] PASSED
+================= 23 passed, 55 deselected in 81.11s (0:01:21) =================

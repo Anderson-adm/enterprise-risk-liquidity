@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 """Run every documented scenario from a clean data directory and store the evidence.
 
-    uv run python scripts/collect_evidence.py            # writes evidence/local/
+    uv run python scripts/collect_evidence.py      # writes evidence/local/<ERL_SOURCE_BACKEND>/
 
+ERL_SOURCE_BACKEND=sqlite (default) uses the SQLite stand-ins; =containers uses the PostgreSQL
+and SQL Server containers, in separate ``ev_*`` databases (development data is not touched).
 Everything written here is produced by this run (measured timings, real outputs). The
-backend label in the summary states which engines were used (sqlite stand-ins vs containers).
+backend label in the summary states which engines were used.
 """
 
 from __future__ import annotations
@@ -12,22 +14,24 @@ from __future__ import annotations
 import json
 import os
 import shutil
-import sqlite3
 import sys
 import time
 from datetime import UTC, date, datetime
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-OUT = ROOT / "evidence" / "local"
-DATA = ROOT / "data" / "evidence-run"
+BACKEND = os.environ.setdefault("ERL_SOURCE_BACKEND", "sqlite")
+OUT = ROOT / "evidence" / "local" / BACKEND
+DATA = ROOT / "data" / f"evidence-run-{BACKEND}"
 
 os.environ["ERL_DATA_DIR"] = str(DATA)
 os.environ.setdefault("ERL_MODE", "local")
-os.environ.setdefault("ERL_SOURCE_BACKEND", "sqlite")
 sys.path.insert(0, str(ROOT / "src"))
 
+from sqlalchemy import make_url, text  # noqa: E402
+
 from erl import config, log, pipeline  # noqa: E402
+from erl.publish import publisher  # noqa: E402
 from erl.sources import seed  # noqa: E402
 
 D1, D2, D3 = date(2026, 10, 26), date(2026, 10, 27), date(2026, 10, 28)
@@ -46,32 +50,48 @@ SCENARIOS = [
 CONSUMER_QUERIES = {
     "liquidity_summary_d2": (
         "SELECT reference_date, portfolio_id, total_value, liquid_value, liquidity_ratio, "
-        "pending_redemptions, redemption_coverage, lineage_sources FROM liquidity_summary "
+        "pending_redemptions, redemption_coverage, lineage_sources FROM {rpt}liquidity_summary "
         "WHERE reference_date = '2026-10-27' ORDER BY portfolio_id"
     ),
     "exposure_compliance_d3": (
         "SELECT reference_date, portfolio_id, total_exposure, top_issuer_code, top_issuer_pct, "
         "concentration_limit_pct, concentration_check, reconciliation_status, quality_status "
-        "FROM exposure_compliance WHERE reference_date = '2026-10-28' ORDER BY portfolio_id"
+        "FROM {rpt}exposure_compliance WHERE reference_date = '2026-10-28' ORDER BY portfolio_id"
     ),
     "publication_log": (
         "SELECT reference_date, publication_id, status, liquidity_rows, exposure_rows, "
-        "superseded_by, message FROM publication_log ORDER BY reference_date, published_at"
+        "superseded_by, message FROM {rpt}publication_log ORDER BY reference_date, published_at"
     ),
     "active_version_per_date": (
         "SELECT reference_date, publication_id, pipeline_run_id, content_sha256 "
-        "FROM publication_log WHERE status = 'ACTIVE' ORDER BY reference_date"
+        "FROM {rpt}publication_log WHERE status = 'ACTIVE' ORDER BY reference_date"
     ),
 }
+
+
+def _isolate_databases() -> None:
+    """Point every database at an ``ev_`` copy on the same servers."""
+    base = config.load()
+    urls = {f"ERL_{s.upper()}_URL": base.source_url(s) for s in config.DB_SOURCES}
+    urls["ERL_CONSUMER_URL"] = base.consumer_url()
+    for var, url in urls.items():
+        u = make_url(url)
+        os.environ[var] = u.set(database=f"ev_{u.database}").render_as_string(hide_password=False)
 
 
 def main() -> int:
     shutil.rmtree(DATA, ignore_errors=True)
     shutil.rmtree(OUT, ignore_errors=True)
     (OUT / "runs").mkdir(parents=True)
+    if BACKEND == "containers":
+        _isolate_databases()
     settings = config.load()
     log.configure("WARNING", settings.data_dir / "logs" / "erl.jsonl")
     seed.generate_all(settings)
+    consumer = seed.engine_for(settings.consumer_url())
+    with publisher._connect(consumer) as conn:  # clean consumer (sqlite: new file; containers: ev_ db)
+        publisher.metadata.drop_all(conn)
+        conn.commit()
 
     summary = []
     for label, ref, scenario in SCENARIOS:
@@ -100,15 +120,16 @@ def main() -> int:
         )
         print(json.dumps(summary[-1]))
 
-    db = settings.consumer_url().removeprefix("sqlite:///")
-    with sqlite3.connect(db) as con:
-        lines = []
-        for name, sql in CONSUMER_QUERIES.items():
-            cur = con.execute(sql)
-            cols = [c[0] for c in cur.description]
-            lines += [f"-- {name}", sql, " | ".join(cols)]
-            lines += [" | ".join("" if v is None else str(v) for v in row) for row in cur.fetchall()]
+    rpt = "" if consumer.dialect.name == "sqlite" else "rpt."
+    lines = [f"-- consumer engine: {consumer.dialect.name}", ""]
+    with consumer.connect() as con:
+        for name, template in CONSUMER_QUERIES.items():
+            sql = template.format(rpt=rpt)
+            result = con.execute(text(sql))
+            lines += [f"-- {name}", sql, " | ".join(result.keys())]
+            lines += [" | ".join("" if v is None else str(v) for v in row) for row in result]
             lines.append("")
+    consumer.dispose()
     (OUT / "consumer_queries.txt").write_text("\n".join(lines))
 
     meta = {

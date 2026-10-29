@@ -1,5 +1,5 @@
 {
-  "run_id": "20261029T145535Z-060798",
+  "run_id": "20261029T172409Z-d39eb0",
   "reference_date": "2026-10-27",
   "mode": "local",
   "steps": {
@@ -34,10 +34,10 @@
   },
   "ingestion": {
     "by_status": {
-      "ACCEPTED": 13,
+      "DUPLICATE": 13,
       "REJECTED": 2
     },
-    "records_written": 156,
+    "records_written": 0,
     "files_rejected": [
       {
         "source_system": "external_xml",
@@ -54,21 +54,19 @@
   },
   "quality_gate": {
     "status": "PASSED",
-    "dbt_invocation_id": "8bd183a3-404a-4713-bbc3-277fe9057599",
+    "dbt_invocation_id": "f9df33e0-fd66-46e2-a888-34d84d25dd46",
     "tests_failed": [],
-    "warnings": [
-      "test.erl.assert_active_portfolios_have_positions"
-    ]
+    "warnings": []
   },
   "publication": {
     "publication_status": "ACTIVE",
-    "publication_id": "20261027-20261029T145535Z-060798-1",
-    "superseded": null,
+    "publication_id": "20261027-20261029T172409Z-d39eb0-1",
+    "superseded": "20261027-20261029T172230Z-304c66-1",
     "rows": {
-      "liquidity_summary": 7,
+      "liquidity_summary": 8,
       "exposure_compliance": 8
     },
-    "content_sha256": "38f0a375df0d4f5d764050cb8f5f55f51d3c3853403ec72a1424b1c90c0579ca"
+    "content_sha256": "8dc3df476711c2c0915b66460adffc5021f130f81a4f099e7b8ff56deb138760"
   },
   "rejected_records": [
     {
@@ -92,14 +90,14 @@
   ],
   "step_elapsed_seconds": {
     "validate": 0.0,
-    "extract": 0.575,
-    "collect": 0.174,
-    "ingest": 3.21,
-    "transform": 35.229,
+    "extract": 0.772,
+    "collect": 0.189,
+    "ingest": 5.761,
+    "transform": 41.375,
     "gate": 0.004,
-    "load": 0.098,
-    "publish": 0.099,
-    "report": 0.039
+    "load": 0.11,
+    "publish": 0.117,
+    "report": 0.046
   },
-  "total_elapsed_seconds": 39.53
+  "total_elapsed_seconds": 48.61
 }

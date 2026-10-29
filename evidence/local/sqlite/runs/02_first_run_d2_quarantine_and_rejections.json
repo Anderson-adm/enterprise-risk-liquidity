@@ -1,5 +1,5 @@
 {
-  "run_id": "20261029T145736Z-dfd132",
+  "run_id": "20261029T172230Z-304c66",
   "reference_date": "2026-10-27",
   "mode": "local",
   "steps": {
@@ -34,10 +34,10 @@
   },
   "ingestion": {
     "by_status": {
-      "DUPLICATE": 13,
+      "ACCEPTED": 13,
       "REJECTED": 2
     },
-    "records_written": 0,
+    "records_written": 156,
     "files_rejected": [
       {
         "source_system": "external_xml",
@@ -54,19 +54,21 @@
   },
   "quality_gate": {
     "status": "PASSED",
-    "dbt_invocation_id": "fe06e4b6-4c64-4ad8-bbe6-e60bc9fbece3",
+    "dbt_invocation_id": "9f0953ae-30ef-45da-920c-9c84016426e1",
     "tests_failed": [],
-    "warnings": []
+    "warnings": [
+      "test.erl.assert_active_portfolios_have_positions"
+    ]
   },
   "publication": {
-    "publication_status": "SKIPPED_IDENTICAL",
-    "publication_id": "20261027-20261029T145736Z-dfd132-1",
+    "publication_status": "ACTIVE",
+    "publication_id": "20261027-20261029T172230Z-304c66-1",
     "superseded": null,
     "rows": {
-      "liquidity_summary": 8,
+      "liquidity_summary": 7,
       "exposure_compliance": 8
     },
-    "content_sha256": "0a4c344a3076439df16b08373fb67e16ffc8907f2a8a8d5ca1b2c968fa9fc2bb"
+    "content_sha256": "6369cfa24741a0c943fbb0bd7e75bc4548d442cbfbdf864e72ae40dd33fe0cb0"
   },
   "rejected_records": [
     {
@@ -90,14 +92,14 @@
   ],
   "step_elapsed_seconds": {
     "validate": 0.0,
-    "extract": 0.616,
-    "collect": 0.16,
-    "ingest": 6.205,
-    "transform": 35.97,
-    "gate": 0.004,
-    "load": 0.096,
-    "publish": 0.085,
-    "report": 0.045
+    "extract": 0.86,
+    "collect": 0.984,
+    "ingest": 4.528,
+    "transform": 42.961,
+    "gate": 0.005,
+    "load": 0.224,
+    "publish": 0.421,
+    "report": 0.048
   },
-  "total_elapsed_seconds": 43.28
+  "total_elapsed_seconds": 50.23
 }

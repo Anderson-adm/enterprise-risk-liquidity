@@ -1,0 +1,256 @@
+{
+  "engine": "sqlite",
+  "generated_at": "2026-10-29T17:28:21+00:00",
+  "server_version": "SQLite 3.53.1 (embedded; development stand-in)",
+  "note": "SQLite has no exact DECIMAL: erl.sqltypes.Dec stores canonical text here.",
+  "databases": {
+    "exposure_compliance": {
+      "url": "sqlite:///<repo>/data/evidence-run-sqlite/sources/exposure_compliance.sqlite",
+      "tables": {
+        "concentration_limit": {
+          "rows": 1,
+          "columns": {
+            "rule_id": "VARCHAR(20)",
+            "rule_scope": "VARCHAR(20)",
+            "limit_pct": "VARCHAR(48)",
+            "excluded_issuer_type": "VARCHAR(20)",
+            "valid_from": "DATE",
+            "valid_to": "DATE"
+          }
+        },
+        "instrument_registry": {
+          "rows": 16,
+          "columns": {
+            "instrument_code": "VARCHAR(20)",
+            "instrument_name": "VARCHAR(120)",
+            "instrument_type": "VARCHAR(20)",
+            "issuer_code": "VARCHAR(20)",
+            "issuer_name": "VARCHAR(120)",
+            "issuer_type": "VARCHAR(20)"
+          }
+        },
+        "stock_position": {
+          "rows": 93,
+          "columns": {
+            "stock_id": "INTEGER",
+            "fund_ref": "VARCHAR(30)",
+            "instrument_code": "VARCHAR(20)",
+            "position_date": "DATE",
+            "quantity": "VARCHAR(48)",
+            "book_value": "VARCHAR(48)"
+          }
+        }
+      }
+    },
+    "fund_ops": {
+      "url": "sqlite:///<repo>/data/evidence-run-sqlite/sources/fund_ops.sqlite",
+      "tables": {
+        "fund": {
+          "rows": 4,
+          "columns": {
+            "fund_id": "VARCHAR(20)",
+            "fund_name": "VARCHAR(120)",
+            "fund_type": "VARCHAR(30)",
+            "base_currency": "CHAR(3)",
+            "inception_date": "DATE",
+            "status": "VARCHAR(10)"
+          }
+        },
+        "portfolio": {
+          "rows": 8,
+          "columns": {
+            "portfolio_id": "VARCHAR(20)",
+            "fund_id": "VARCHAR(20)",
+            "portfolio_name": "VARCHAR(120)",
+            "position_source_system": "VARCHAR(30)",
+            "status": "VARCHAR(10)",
+            "opened_on": "DATE"
+          }
+        },
+        "source_identity_map": {
+          "rows": 34,
+          "columns": {
+            "source_system": "VARCHAR(30)",
+            "external_identifier": "VARCHAR(40)",
+            "portfolio_id": "VARCHAR(20)",
+            "valid_from": "DATE",
+            "valid_to": "DATE"
+          }
+        }
+      }
+    },
+    "legacy_finance": {
+      "url": "sqlite:///<repo>/data/evidence-run-sqlite/sources/legacy_finance.sqlite",
+      "tables": {
+        "tb_cart": {
+          "rows": 8,
+          "columns": {
+            "cod_cart": "VARCHAR(10)",
+            "nm_cart": "VARCHAR(120)",
+            "dt_abert": "DATE"
+          }
+        },
+        "tb_resgate": {
+          "rows": 4,
+          "columns": {
+            "id_resgate": "INTEGER",
+            "cod_cart": "VARCHAR(10)",
+            "dt_pedido": "DATE",
+            "dt_cotizacao": "DATE",
+            "vl_resgate": "VARCHAR(48)",
+            "st_resgate": "VARCHAR(12)"
+          }
+        },
+        "tb_saldo_caixa": {
+          "rows": 24,
+          "columns": {
+            "cod_cart": "VARCHAR(10)",
+            "dt_ref": "DATE",
+            "vl_saldo": "VARCHAR(48)",
+            "cd_moeda": "CHAR(3)"
+          }
+        }
+      },
+      "views": {
+        "vw_resgate_pendente": {
+          "rows": 3
+        },
+        "vw_saldo_caixa": {
+          "rows": 24
+        }
+      }
+    },
+    "portfolio_risk": {
+      "url": "sqlite:///<repo>/data/evidence-run-sqlite/sources/portfolio_risk.sqlite",
+      "tables": {
+        "processed_position": {
+          "rows": 72,
+          "columns": {
+            "position_id": "INTEGER",
+            "portfolio_code": "VARCHAR(30)",
+            "instrument_code": "VARCHAR(20)",
+            "reference_date": "DATE",
+            "quantity": "VARCHAR(48)",
+            "market_value": "VARCHAR(48)",
+            "currency": "CHAR(3)",
+            "processing_status": "VARCHAR(20)",
+            "processing_version": "INTEGER",
+            "processed_at": "DATETIME"
+          }
+        },
+        "processing_batch": {
+          "rows": 3,
+          "columns": {
+            "batch_id": "INTEGER",
+            "reference_date": "DATE",
+            "status": "VARCHAR(20)",
+            "started_at": "DATETIME",
+            "finished_at": "DATETIME"
+          }
+        }
+      }
+    },
+    "consumer_reporting": {
+      "url": "sqlite:///<repo>/data/evidence-run-sqlite/consumer/consumer_reporting.sqlite",
+      "tables": {
+        "exposure_compliance": {
+          "rows": 24,
+          "columns": {
+            "reference_date": "DATE",
+            "portfolio_id": "VARCHAR(20)",
+            "fund_id": "VARCHAR(20)",
+            "total_exposure": "VARCHAR(48)",
+            "top_issuer_code": "VARCHAR(20)",
+            "top_issuer_exposure": "VARCHAR(48)",
+            "top_issuer_pct": "VARCHAR(48)",
+            "concentration_limit_pct": "VARCHAR(48)",
+            "concentration_check": "VARCHAR(10)",
+            "reconciliation_status": "VARCHAR(20)",
+            "mismatched_positions": "INTEGER",
+            "quality_status": "VARCHAR(10)",
+            "lineage_sources": "VARCHAR(200)",
+            "lineage_bronze_runs": "VARCHAR(1000)",
+            "publication_id": "VARCHAR(80)"
+          }
+        },
+        "liquidity_summary": {
+          "rows": 24,
+          "columns": {
+            "reference_date": "DATE",
+            "portfolio_id": "VARCHAR(20)",
+            "fund_id": "VARCHAR(20)",
+            "position_source_system": "VARCHAR(30)",
+            "positions_value": "VARCHAR(48)",
+            "cash_value": "VARCHAR(48)",
+            "total_value": "VARCHAR(48)",
+            "liquid_value": "VARCHAR(48)",
+            "liquidity_ratio": "VARCHAR(48)",
+            "pending_redemptions": "VARCHAR(48)",
+            "redemption_coverage": "VARCHAR(48)",
+            "positions_count": "INTEGER",
+            "lineage_sources": "VARCHAR(200)",
+            "lineage_bronze_runs": "VARCHAR(1000)",
+            "publication_id": "VARCHAR(80)"
+          }
+        },
+        "publication_log": {
+          "rows": 6,
+          "columns": {
+            "publication_id": "VARCHAR(80)",
+            "reference_date": "DATE",
+            "pipeline_run_id": "VARCHAR(40)",
+            "status": "VARCHAR(20)",
+            "content_sha256": "VARCHAR(64)",
+            "package_uri": "VARCHAR(400)",
+            "liquidity_rows": "INTEGER",
+            "exposure_rows": "INTEGER",
+            "published_at": "DATETIME",
+            "superseded_at": "DATETIME",
+            "superseded_by": "VARCHAR(80)",
+            "message": "VARCHAR(2000)"
+          }
+        },
+        "stg_exposure_compliance": {
+          "rows": 0,
+          "columns": {
+            "reference_date": "DATE",
+            "portfolio_id": "VARCHAR(20)",
+            "fund_id": "VARCHAR(20)",
+            "total_exposure": "VARCHAR(48)",
+            "top_issuer_code": "VARCHAR(20)",
+            "top_issuer_exposure": "VARCHAR(48)",
+            "top_issuer_pct": "VARCHAR(48)",
+            "concentration_limit_pct": "VARCHAR(48)",
+            "concentration_check": "VARCHAR(10)",
+            "reconciliation_status": "VARCHAR(20)",
+            "mismatched_positions": "INTEGER",
+            "quality_status": "VARCHAR(10)",
+            "lineage_sources": "VARCHAR(200)",
+            "lineage_bronze_runs": "VARCHAR(1000)",
+            "publication_id": "VARCHAR(80)"
+          }
+        },
+        "stg_liquidity_summary": {
+          "rows": 0,
+          "columns": {
+            "reference_date": "DATE",
+            "portfolio_id": "VARCHAR(20)",
+            "fund_id": "VARCHAR(20)",
+            "position_source_system": "VARCHAR(30)",
+            "positions_value": "VARCHAR(48)",
+            "cash_value": "VARCHAR(48)",
+            "total_value": "VARCHAR(48)",
+            "liquid_value": "VARCHAR(48)",
+            "liquidity_ratio": "VARCHAR(48)",
+            "pending_redemptions": "VARCHAR(48)",
+            "redemption_coverage": "VARCHAR(48)",
+            "positions_count": "INTEGER",
+            "lineage_sources": "VARCHAR(200)",
+            "lineage_bronze_runs": "VARCHAR(1000)",
+            "publication_id": "VARCHAR(80)"
+          }
+        }
+      }
+    }
+  }
+}

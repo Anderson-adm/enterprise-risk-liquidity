@@ -1,0 +1,75 @@
+{
+  "engine": "postgresql",
+  "generated_at": "2026-10-29T17:28:22+00:00",
+  "server_version": "PostgreSQL 17.11 on x86_64-pc-linux-musl, compiled by gcc (Alpine 15.2.0) 15.2.0, 64-bit",
+  "container_image": "postgres:17-alpine",
+  "databases": {
+    "ev_fund_ops": {
+      "url": "postgresql+psycopg://erl:***@localhost:5432/ev_fund_ops",
+      "tables": {
+        "public.fund": {
+          "rows": 4,
+          "columns": {
+            "fund_id": "VARCHAR(20)",
+            "fund_name": "VARCHAR(120)",
+            "fund_type": "VARCHAR(30)",
+            "base_currency": "CHAR(3)",
+            "inception_date": "DATE",
+            "status": "VARCHAR(10)"
+          }
+        },
+        "public.portfolio": {
+          "rows": 8,
+          "columns": {
+            "portfolio_id": "VARCHAR(20)",
+            "fund_id": "VARCHAR(20)",
+            "portfolio_name": "VARCHAR(120)",
+            "position_source_system": "VARCHAR(30)",
+            "status": "VARCHAR(10)",
+            "opened_on": "DATE"
+          }
+        },
+        "public.source_identity_map": {
+          "rows": 34,
+          "columns": {
+            "source_system": "VARCHAR(30)",
+            "external_identifier": "VARCHAR(40)",
+            "portfolio_id": "VARCHAR(20)",
+            "valid_from": "DATE",
+            "valid_to": "DATE"
+          }
+        }
+      }
+    },
+    "ev_portfolio_risk": {
+      "url": "postgresql+psycopg://erl:***@localhost:5432/ev_portfolio_risk",
+      "tables": {
+        "public.processed_position": {
+          "rows": 72,
+          "columns": {
+            "position_id": "INTEGER",
+            "portfolio_code": "VARCHAR(30)",
+            "instrument_code": "VARCHAR(20)",
+            "reference_date": "DATE",
+            "quantity": "NUMERIC(24, 6)",
+            "market_value": "NUMERIC(20, 2)",
+            "currency": "CHAR(3)",
+            "processing_status": "VARCHAR(20)",
+            "processing_version": "INTEGER",
+            "processed_at": "TIMESTAMP WITHOUT TIME ZONE"
+          }
+        },
+        "public.processing_batch": {
+          "rows": 3,
+          "columns": {
+            "batch_id": "INTEGER",
+            "reference_date": "DATE",
+            "status": "VARCHAR(20)",
+            "started_at": "TIMESTAMP WITHOUT TIME ZONE",
+            "finished_at": "TIMESTAMP WITHOUT TIME ZONE"
+          }
+        }
+      }
+    }
+  }
+}

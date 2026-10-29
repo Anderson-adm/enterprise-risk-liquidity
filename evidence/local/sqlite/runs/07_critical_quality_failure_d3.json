@@ -1,5 +1,5 @@
 {
-  "run_id": "20261029T145904Z-1e95f9",
+  "run_id": "20261029T172641Z-1c2b29",
   "reference_date": "2026-10-28",
   "mode": "local",
   "steps": {
@@ -43,7 +43,7 @@
   },
   "quality_gate": {
     "status": "FAILED",
-    "dbt_invocation_id": "ac096f99-1e3d-4fee-bc54-68647b8b5f8d",
+    "dbt_invocation_id": "8bd62025-85c2-4067-97f8-f3d0d454778b",
     "tests_failed": [
       "test.erl.rejection_ratio_within_gold_liquidity_summary_candidate__var_max_rejected_ratio_.7d520f3666"
     ],
@@ -92,12 +92,12 @@
   ],
   "step_elapsed_seconds": {
     "validate": 0.0,
-    "extract": 0.719,
-    "collect": 0.186,
-    "ingest": 7.966,
-    "transform": 39.104,
+    "extract": 0.689,
+    "collect": 0.404,
+    "ingest": 8.662,
+    "transform": 40.927,
     "gate": 0.004,
-    "report": 0.046
+    "report": 0.042
   },
-  "total_elapsed_seconds": 48.11
+  "total_elapsed_seconds": 50.96
 }
