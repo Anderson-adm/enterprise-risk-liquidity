@@ -32,6 +32,10 @@ def ingest_snapshot(
     ref = date.fromisoformat(lm["reference_date"])
     run_id = lm["run_id"]
     entity = bronze_entity(source, entity_name)
+    if completed := bronze.completed_delivery(
+        store, source, entity_name, run_id, lm["object"], lm["content_sha256"]
+    ):
+        return completed
     payload = store.get(lm["object"])
 
     base = dict(
@@ -42,6 +46,7 @@ def ingest_snapshot(
         component=component,
         input_object=lm["object"],
         input_sha256=lm["content_sha256"],
+        snapshot_key=f"{source}/{entity_name}/{ref.isoformat()}",
     )
     if bronze.sha256_hex(payload) != lm["object_sha256"]:
         raise ContractError(f"landing object {lm['object']} does not match its manifest checksum")
@@ -68,6 +73,14 @@ def ingest_snapshot(
         )
         return m
 
+    records = table.num_rows
+    if not records:
+        # A zero-row Parquet carries no delivery metadata. Keep a control row so Silver
+        # can supersede the previous nonempty snapshot before filtering the marker out.
+        table = pa.Table.from_pylist(
+            [dict.fromkeys(entity.columns) | {"meta_row_number": 0, "meta_row_hash": None}],
+            schema=table.schema,
+        )
     n = table.num_rows
     snapshot_key = f"{source}/{entity_name}/{ref.isoformat()}"
     meta = {
@@ -91,8 +104,8 @@ def ingest_snapshot(
     m = bronze.IngestionManifest(
         **base,
         status=bronze.ACCEPTED,
-        records_read=n,
-        records_written=n,
+        records_read=records,
+        records_written=records,
         bronze_object=key,
         raw_object=lm["object"],
     )
@@ -104,8 +117,8 @@ def ingest_snapshot(
         source_system=source,
         entity=entity_name,
         reference_date=ref.isoformat(),
-        records_read=n,
-        records_written=n,
+        records_read=records,
+        records_written=records,
         bronze_object=key,
     )
     return m

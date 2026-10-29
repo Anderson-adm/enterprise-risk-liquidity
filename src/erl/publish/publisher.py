@@ -21,6 +21,7 @@ import io
 import json
 import logging
 import re
+import uuid
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, date, datetime
@@ -191,6 +192,8 @@ def load_package(store: ObjectStore, manifest_key: str) -> Package:
 
 
 def validate_product(name: str, table: pa.Table, ref: date) -> None:
+    if not table.num_rows:
+        raise PublicationError(f"{name}: empty product cannot replace the last valid publication")
     spec = consumer_contract()["products"][name]
     expected = [c["name"] for c in spec["columns"]]
     if table.column_names != expected:
@@ -255,16 +258,7 @@ def publish(engine: Engine, package: Package, *, _fault: Callable[[str], None] |
     """Publish ``package``. ``_fault`` is a test hook called at named points inside the transaction."""
     ensure_schema(engine)
     ref = package.reference_date
-    with _connect(engine) as conn:
-        attempt = conn.execute(
-            select(func.count())
-            .select_from(publication_log)
-            .where(
-                publication_log.c.pipeline_run_id == package.pipeline_run_id,
-                publication_log.c.reference_date == ref,
-            )
-        ).scalar_one()
-    publication_id = f"{ref:%Y%m%d}-{package.pipeline_run_id}-{attempt + 1}"
+    publication_id = f"{ref:%Y%m%d}-{package.pipeline_run_id}-{uuid.uuid4().hex}"
     rows = {name: t.to_pylist() for name, t in package.products.items()}
     base_log = {
         "publication_id": publication_id,

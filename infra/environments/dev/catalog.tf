@@ -2,6 +2,31 @@
 # partition projection, generated from the Bronze contract). dbt owns every Silver/Gold
 # table and view it materialises inside the silver/gold databases.
 
+# Commit markers make partial/uncommitted Bronze writes invisible to dbt. Ion accepts
+# the existing pretty-printed JSON manifests as well as single-line JSON.
+resource "aws_glue_catalog_table" "ingestion_deliveries" {
+  name          = "ingestion_deliveries"
+  database_name = aws_glue_catalog_database.layer["bronze"].name
+  table_type    = "EXTERNAL_TABLE"
+  parameters    = { "classification" = "json", "EXTERNAL" = "TRUE" }
+
+  storage_descriptor {
+    location      = "s3://${module.data_bucket.id}/manifests/ingestion/"
+    input_format  = "org.apache.hadoop.mapred.TextInputFormat"
+    output_format = "org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat"
+    ser_de_info {
+      serialization_library = "com.amazon.ionhiveserde.IonHiveSerDe"
+    }
+    dynamic "columns" {
+      for_each = ["source_system", "entity", "run_id", "input_object", "status"]
+      content {
+        name = columns.value
+        type = "string"
+      }
+    }
+  }
+}
+
 resource "aws_glue_catalog_database" "layer" {
   for_each = toset(["bronze", "silver", "gold"])
 

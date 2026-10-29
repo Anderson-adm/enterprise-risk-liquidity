@@ -9,6 +9,9 @@ sources:
     config:
       external_location: "read_parquet('{{ env_var('ERL_LAKE_DIR', '../data/lake') }}/bronze/structured/{bronze_path}/*/*.parquet', hive_partitioning = true, union_by_name = true)"
     tables:
+      - name: ingestion_deliveries
+        config:
+          external_location: "read_json_auto('{{ env_var('ERL_LAKE_DIR', '../data/lake') }}/manifests/ingestion/**/*.json', union_by_name=true)"
       - name: fund_ops__fund
         config: {bronze_path: fund_ops/fund}
       - name: fund_ops__portfolio

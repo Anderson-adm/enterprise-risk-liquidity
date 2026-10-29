@@ -193,6 +193,8 @@ def ingest_file(
     (storage unavailable) do propagate."""
     entity_name, _ = FILE_SOURCES[source_system]
     digest = bronze.sha256_hex(data)
+    if completed := bronze.completed_delivery(store, source_system, entity_name, run_id, object_name, digest):
+        return completed
     raw_key = bronze.write_raw(store, source_system, run_reference_date, run_id, object_name, data)
 
     def manifest(**kw) -> bronze.IngestionManifest:
@@ -234,7 +236,9 @@ def ingest_file(
 
     ref = parsed.reference_date
     late = ref < run_reference_date
-    dup = bronze.find_accepted_duplicate(store, source_system, entity_name, ref, digest)
+    dup = bronze.find_accepted_duplicate(
+        store, source_system, entity_name, ref, digest, snapshot_key=parsed.snapshot_key
+    )
     if dup is not None:
         m = manifest(
             reference_date=ref.isoformat(),
@@ -269,6 +273,7 @@ def ingest_file(
         records_written=table.num_rows,
         bronze_object=key,
         late_arrival=late,
+        snapshot_key=parsed.snapshot_key,
     )
     bronze.write_manifest(store, m)
     log.event(logger, "file_ingested", **_fields(m))

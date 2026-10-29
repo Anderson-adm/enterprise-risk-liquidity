@@ -18,13 +18,16 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import dataclasses
 import json
 import subprocess
 import sys
 from pathlib import Path
 
-import boto3
 from botocore.exceptions import ClientError
+
+from erl import config
+from erl.aws.runtime import _session
 
 ROOT = Path(__file__).resolve().parents[1]
 DEV = ROOT / "infra" / "environments" / "dev"
@@ -47,6 +50,8 @@ def bucket_in_scope(s3, bucket: str, account_id: str, prefix: str) -> None:
     tags = {t["Key"]: t["Value"] for t in s3.get_bucket_tagging(Bucket=bucket)["TagSet"]}
     if tags.get("Project") != PROJECT_TAG or tags.get("ManagedBy") != "terraform":
         sys.exit(f"refusing: bucket {bucket!r} is not tagged Project={PROJECT_TAG}, ManagedBy=terraform")
+    if tags.get("Environment") != "dev" or tags.get("Purpose") != "case01-validation-lab":
+        sys.exit(f"refusing: bucket {bucket!r} is not a dev lab bucket (state is always excluded)")
 
 
 def count_versions(s3, bucket: str) -> int:
@@ -64,7 +69,9 @@ def empty_bucket(s3, bucket: str) -> int:
             for v in page.get("Versions", []) + page.get("DeleteMarkers", [])
         ]
         for i in range(0, len(items), 1000):
-            s3.delete_objects(Bucket=bucket, Delete={"Objects": items[i : i + 1000], "Quiet": True})
+            result = s3.delete_objects(Bucket=bucket, Delete={"Objects": items[i : i + 1000], "Quiet": True})
+            if result.get("Errors"):
+                raise RuntimeError(f"S3 deletion failed: {result['Errors']}")
             deleted += len(items[i : i + 1000])
     return deleted
 
@@ -87,7 +94,7 @@ def main() -> int:
     ap.add_argument("--execute", action="store_true", help="actually delete (default: dry-run)")
     args = ap.parse_args()
 
-    session = boto3.Session(region_name=args.region)
+    session = _session(dataclasses.replace(config.load(), aws_region=args.region))
     identity = session.client("sts").get_caller_identity()
     if identity["Account"] != args.account_id:
         sys.exit(f"refusing: credentials are for account {identity['Account']}, expected {args.account_id}")
@@ -99,6 +106,9 @@ def main() -> int:
     for b in buckets:
         bucket_in_scope(s3, b, args.account_id, args.name_prefix)
     dbs = [outputs["glue_databases"][k] for k in ("silver", "gold")]
+    expected_dbs = [f"{args.name_prefix.replace('-', '_')}_{layer}" for layer in ("silver", "gold")]
+    if dbs != expected_dbs:
+        sys.exit(f"refusing: databases {dbs} do not match lab databases {expected_dbs}")
 
     plan = {b: count_versions(s3, b) for b in buckets}
     tables = {db: dbt_tables(glue, db) for db in dbs}
@@ -113,7 +123,9 @@ def main() -> int:
         print(f"emptied {b}: {empty_bucket(s3, b)} versions deleted")
     for db, names in tables.items():
         for i in range(0, len(names), 100):
-            glue.batch_delete_table(DatabaseName=db, TablesToDelete=names[i : i + 100])
+            result = glue.batch_delete_table(DatabaseName=db, TablesToDelete=names[i : i + 100])
+            if result.get("Errors"):
+                raise RuntimeError(f"Glue deletion failed: {result['Errors']}")
         print(f"dropped {len(names)} dbt tables from {db}")
     print(
         "\nNext (human-reviewed):\n"

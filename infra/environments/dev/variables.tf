@@ -1,11 +1,21 @@
+variable "aws_profile" {
+  description = "Explicit SSO profile for Terraform; never the default profile."
+  type        = string
+  default     = "data-dev"
+  validation {
+    condition     = trimspace(var.aws_profile) != "" && var.aws_profile != "default"
+    error_message = "Select an explicit non-default SSO profile."
+  }
+}
+
 variable "aws_region" {
   description = "AWS region of the lab."
   type        = string
   default     = "sa-east-1"
 
   validation {
-    condition     = can(regex("^[a-z]{2}-[a-z]+-[0-9]$", var.aws_region))
-    error_message = "aws_region must look like sa-east-1."
+    condition     = var.aws_region == "sa-east-1"
+    error_message = "The lab is restricted to sa-east-1."
   }
 }
 

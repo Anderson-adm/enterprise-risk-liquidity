@@ -67,6 +67,19 @@ run "secure_and_cost_controlled_defaults" {
   }
 
   assert {
+    condition     = aws_glue_catalog_table.ingestion_deliveries.storage_descriptor[0].ser_de_info[0].serialization_library == "com.amazon.ionhiveserde.IonHiveSerDe"
+    error_message = "Bronze commits must be queryable from the existing JSON manifests."
+  }
+
+  assert {
+    condition = alltrue([for j in aws_glue_job.this :
+      strcontains(j.default_arguments["--additional-python-modules"], "boto3==1.43.121") &&
+      j.default_arguments["--custom-logGroup-prefix"] == "/aws-glue/erl-dev"
+    ])
+    error_message = "Glue must install the conditional-write SDK and route 5.0 logs to managed groups."
+  }
+
+  assert {
     condition     = alltrue([for t in aws_glue_catalog_table.bronze : t.parameters["projection.enabled"] == "true"])
     error_message = "Bronze tables must use partition projection (no crawlers / MSCK)."
   }
@@ -85,7 +98,7 @@ run "secure_and_cost_controlled_defaults" {
   }
 
   assert {
-    condition     = alltrue([for g in aws_cloudwatch_log_group.lambda : g.retention_in_days == 14]) && aws_cloudwatch_log_group.glue.retention_in_days == 14
+    condition     = alltrue([for g in concat(values(aws_cloudwatch_log_group.lambda), values(aws_cloudwatch_log_group.glue)) : g.retention_in_days == 14])
     error_message = "Log groups must have explicit retention."
   }
 
@@ -95,8 +108,8 @@ run "secure_and_cost_controlled_defaults" {
   }
 
   assert {
-    condition     = aws_sns_topic.alerts.kms_master_key_id == "alias/aws/sns"
-    error_message = "Alert topic must be encrypted."
+    condition     = aws_sns_topic.alerts.kms_master_key_id == null
+    error_message = "Do not use alias/aws/sns: it prevents service-originated alerts in this lab."
   }
 }
 
@@ -107,9 +120,15 @@ run "iam_policies_have_no_service_wildcards" {
     condition = alltrue([for p in concat(
       [for r in aws_iam_role_policy.lambda : r.policy],
       [aws_iam_role_policy.glue_db_ingest.policy, aws_iam_role_policy.glue_gold_load.policy, aws_iam_role_policy.runner.policy],
-      ) : !strcontains(p, "\"s3:*\"") && !strcontains(p, "\"glue:*\"") && !strcontains(p, "\"Action\":\"*\"") && !strcontains(p, "\"Resource\":\"*\"")
+      ) : alltrue([for s in jsondecode(p).Statement :
+        !contains(s.Action, "s3:*") && !contains(s.Action, "glue:*") && !contains(s.Action, "*") &&
+        (!contains(s.Resource, "*") || (
+          s.Sid == "GlueMetrics" && s.Action == ["cloudwatch:PutMetricData"] &&
+          try(s.Condition.StringEquals["cloudwatch:namespace"], "") == "Glue"
+        ))
+      ])
     ])
-    error_message = "Inline policies must not grant service-wide or resource-wide wildcards."
+    error_message = "Wildcard resources are allowed only for PutMetricData constrained to the Glue namespace."
   }
 
   assert {
@@ -142,6 +161,22 @@ run "rejects_prod_environment" {
     environment = "prod"
   }
   expect_failures = [var.environment]
+}
+
+run "rejects_default_profile" {
+  command = plan
+  variables {
+    aws_profile = "default"
+  }
+  expect_failures = [var.aws_profile]
+}
+
+run "rejects_other_regions" {
+  command = plan
+  variables {
+    aws_region = "us-east-1"
+  }
+  expect_failures = [var.aws_region]
 }
 
 run "rejects_malformed_account_id" {

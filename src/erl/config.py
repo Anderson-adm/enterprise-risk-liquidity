@@ -47,7 +47,9 @@ class Settings:
         if self.mode == "aws":
             if not self.s3_bucket:
                 raise ConfigurationError("ERL_S3_BUCKET is required in aws mode")
-            return S3Store(self.s3_bucket)
+            from erl.aws.runtime import _session
+
+            return S3Store(self.s3_bucket, client=_session(self).client("s3"))
         return LocalStore(self.lake_dir)
 
     # ------------------------------------------------------------------ databases

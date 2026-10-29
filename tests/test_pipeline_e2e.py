@@ -187,3 +187,31 @@ def test_09_unavailable_source_fails_before_transformation(world):
     assert state["steps"]["collect"]["status"] == "FAILED"
     assert "transform" not in state["steps"]
     assert state["steps"]["report"]["status"] == "SUCCEEDED"
+
+
+def test_10_removed_portfolio_disappears_from_gold_and_consumer(world):
+    from sqlalchemy import text
+
+    for source, sql in (
+        (
+            "portfolio_risk",
+            "DELETE FROM processed_position WHERE reference_date = '2026-10-27' "
+            "AND portfolio_code = 'prt0001'",
+        ),
+        (
+            "exposure_compliance",
+            "DELETE FROM stock_position WHERE position_date = '2026-10-27' AND fund_ref = 'FND001/01'",
+        ),
+    ):
+        engine = seed.engine_for(world["settings"].source_url(source))
+        try:
+            with engine.begin() as conn:
+                conn.execute(text(sql))
+        finally:
+            engine.dispose()
+    state = _run(world, D2, "removed_d2")
+    assert state["status"] == "SUCCEEDED", state
+    for product in ("liquidity_summary", "exposure_compliance"):
+        rows = _gold(world, f"SELECT portfolio_id FROM gold.gold_{product} WHERE reference_date = ?", [D2])
+        assert ("PRT-0001",) not in rows
+        assert len(rows) == state["steps"]["publish"]["rows"][product] == 7

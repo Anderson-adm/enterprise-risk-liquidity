@@ -32,7 +32,7 @@ from sqlalchemy.exc import DBAPIError, OperationalError
 
 from erl import log
 from erl.contracts import bronze_entity
-from erl.errors import SourceUnavailableError
+from erl.errors import ContractError, SourceUnavailableError
 from erl.ingestion import bronze
 from erl.sources.schemas import SOURCE_METADATA
 from erl.storage import ObjectStore
@@ -109,6 +109,13 @@ def _result_columns(source: str, from_object: str, names: list[str]) -> list[Col
 def extract_entity(
     engine: Engine, store: ObjectStore, source: str, entity: str, ref: date, run_id: str
 ) -> dict:
+    prefix = landing_prefix(source, entity, ref)
+    manifest_key = prefix + f"{run_id}.json"
+    if store.exists(manifest_key):
+        committed = json.loads(store.get(manifest_key))
+        if bronze.sha256_hex(store.get(committed["object"])) != committed["object_sha256"]:
+            raise ContractError(f"committed landing snapshot checksum mismatch: {manifest_key}")
+        return committed
     spec = EXTRACTS[(source, entity)]
     contract = bronze_entity(source, entity)
     cols = ", ".join(contract.columns)
@@ -146,7 +153,6 @@ def extract_entity(
             pq.write_table(schema.empty_table(), path)
         payload = path.read_bytes()
 
-    prefix = landing_prefix(source, entity, ref)
     data_key = store.put(prefix + f"{run_id}.parquet", payload)
     manifest = {
         "run_id": run_id,

@@ -6,7 +6,7 @@ part files; checksums are verified from S3's stored SHA-256 instead of re-readin
 
 Contract (identical to the local ``erl.ingestion.database.ingest_snapshot``):
   * verify the landing object against its extraction manifest;
-  * skip snapshots whose content hash was already ACCEPTED (DUPLICATE manifest);
+  * skip snapshots identical to the current ACCEPTED delivery (DUPLICATE manifest);
   * append metadata columns, write Bronze under a run-scoped key, never overwrite;
   * write an ingestion manifest per snapshot.
 
@@ -25,7 +25,6 @@ from datetime import UTC, datetime
 import boto3
 from awsglue.context import GlueContext
 from awsglue.utils import getResolvedOptions
-from botocore.exceptions import ClientError
 from pyspark.context import SparkContext
 from pyspark.sql import functions as F
 
@@ -52,14 +51,11 @@ def put_json_if_absent(key, payload):
     s3.put_object(Bucket=BUCKET, Key=key, Body=json.dumps(payload, indent=2).encode(), IfNoneMatch="*")
 
 
-def exists(key):
-    try:
-        s3.head_object(Bucket=BUCKET, Key=key)
-        return True
-    except ClientError as exc:
-        if exc.response["Error"]["Code"] in ("404", "NoSuchKey", "NotFound"):
-            return False
-        raise
+def put_part_if_absent(source, target):
+    # CopyObject has no destination IfNoneMatch. A prior HEAD followed by COPY races.
+    # Parts are bounded for this synthetic lab; a conditional PUT commits each atomically.
+    data = s3.get_object(Bucket=BUCKET, Key=source)["Body"].read()
+    s3.put_object(Bucket=BUCKET, Key=target, Body=data, IfNoneMatch="*")
 
 
 def safe_name(name):
@@ -84,14 +80,18 @@ def s3_sha256_hex(key):
     return base64.b64decode(checksum).hex()
 
 
-def accepted_duplicate(source, entity, ref, content_sha):
-    prefix = f"manifests/ingestion/{source}/{entity}/bronze_reference_date={ref}/"
+def accepted_duplicate(source, entity, ref, content_sha, scope="snapshot"):
+    prefix = f"manifests/ingestion/{source}/{entity}/"
+    if scope != "latest":
+        prefix += f"bronze_reference_date={ref}/"
+    accepted = []
     for page in s3.get_paginator("list_objects_v2").paginate(Bucket=BUCKET, Prefix=prefix):
         for obj in page.get("Contents", []):
             m = get_json(obj["Key"])
-            if m["status"] == "ACCEPTED" and m["input_sha256"] == content_sha:
-                return m
-    return None
+            if m["status"] == "ACCEPTED":
+                accepted.append(m)
+    latest = max(accepted, key=lambda m: (m["ingested_at"], m["run_id"]), default=None)
+    return latest if latest and latest["input_sha256"] == content_sha else None
 
 
 def ingest(landing_manifest_key, contract):
@@ -116,11 +116,21 @@ def ingest(landing_manifest_key, contract):
         "rejection_reason": None,
         "rejection_detail": None,
         "ingested_at": datetime.now(UTC).isoformat(timespec="microseconds"),
+        "snapshot_key": f"{source}/{entity}/{ref}",
     }
+    committed_key = manifest_key(base)
+    cached = s3.list_objects_v2(Bucket=BUCKET, Prefix=committed_key, MaxKeys=1).get("Contents", [])
+    if cached and cached[0]["Key"] == committed_key:
+        manifest = get_json(committed_key)
+        if manifest["input_sha256"] != base["input_sha256"] or manifest["input_object"] != lm["object"]:
+            raise RuntimeError(f"delivery changed within immutable run {run_id}; use a new run id")
+        return manifest
     if s3_sha256_hex(lm["object"]) != lm["object_sha256"]:
         raise RuntimeError(f"landing object {lm['object']} does not match its manifest checksum")
 
-    dup = accepted_duplicate(source, entity, ref, lm["content_sha256"])
+    dup = accepted_duplicate(
+        source, entity, ref, lm["content_sha256"], spec.get("snapshot_scope", "snapshot")
+    )
     if dup is not None:
         m = dict(base, status="DUPLICATE", records_read=lm["rows"], duplicate_of_run=dup["run_id"])
         put_json_if_absent(manifest_key(m), m)
@@ -137,6 +147,8 @@ def ingest(landing_manifest_key, contract):
     expected = spec["columns"] + ["meta_row_number", "meta_row_hash"]
     if df.columns != expected:
         raise RuntimeError(f"{source}__{entity}: landing columns {df.columns} != {expected}")
+    if lm["rows"] == 0:
+        df = spark.createDataFrame([tuple([None] * len(spec["columns"]) + [0, None])], df.schema)
 
     meta = {
         "meta_source_system": source,
@@ -160,7 +172,8 @@ def ingest(landing_manifest_key, contract):
 
     part_keys = sorted(
         o["Key"]
-        for o in s3.list_objects_v2(Bucket=BUCKET, Prefix=tmp_prefix).get("Contents", [])
+        for page in s3.get_paginator("list_objects_v2").paginate(Bucket=BUCKET, Prefix=tmp_prefix)
+        for o in page.get("Contents", [])
         if o["Key"].endswith(".parquet")
     )
     target_dir = f"bronze/structured/{source}/{entity}/bronze_reference_date={ref}/"
@@ -169,12 +182,11 @@ def ingest(landing_manifest_key, contract):
         target = target_dir + (
             f"{run_id}.parquet" if len(part_keys) == 1 else f"{run_id}-part-{i:05d}.parquet"
         )
-        if exists(target):  # append-only: a run never replaces Bronze objects
-            raise RuntimeError(f"refusing to overwrite s3://{BUCKET}/{target}")
-        s3.copy_object(Bucket=BUCKET, Key=target, CopySource={"Bucket": BUCKET, "Key": key})
+        put_part_if_absent(key, target)
         targets.append(target)
-    for o in s3.list_objects_v2(Bucket=BUCKET, Prefix=tmp_prefix).get("Contents", []):
-        s3.delete_object(Bucket=BUCKET, Key=o["Key"])
+    for page in s3.get_paginator("list_objects_v2").paginate(Bucket=BUCKET, Prefix=tmp_prefix):
+        for o in page.get("Contents", []):
+            s3.delete_object(Bucket=BUCKET, Key=o["Key"])
 
     m = dict(
         base, status="ACCEPTED", records_read=rows, records_written=rows, bronze_object=",".join(targets)

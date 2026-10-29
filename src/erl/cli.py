@@ -43,9 +43,10 @@ def notify_failure(settings: config.Settings, step: str, run_id: str, ref: str, 
     log.event(logging.getLogger("erl.alert"), "step_failure_alert", logging.ERROR, **message)
     topic = os.environ.get("ERL_ALERTS_TOPIC_ARN")
     if settings.mode == "aws" and topic:
-        import boto3
+        from erl.aws import runtime
 
-        boto3.client("sns", region_name=settings.aws_region).publish(
+        runtime.assert_expected_account(settings)
+        runtime._session(settings).client("sns").publish(
             TopicArn=topic,
             Subject=f"[erl] {step} failed for {ref}"[:100],
             Message=json.dumps(message, indent=2),

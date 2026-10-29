@@ -9,6 +9,13 @@ locals {
   db_arn      = { for k, db in aws_glue_catalog_database.layer : k => "arn:aws:glue:${var.aws_region}:${local.account_id}:database/${db.name}" }
   table_arn   = { for k, db in aws_glue_catalog_database.layer : k => "arn:aws:glue:${var.aws_region}:${local.account_id}:table/${db.name}/*" }
   glue_logs   = "arn:aws:logs:${var.aws_region}:${local.account_id}:log-group:/aws-glue/*"
+  glue_metrics = {
+    Sid       = "GlueMetrics"
+    Effect    = "Allow"
+    Action    = ["cloudwatch:PutMetricData"]
+    Resource  = ["*"] # PutMetricData has no resource ARN; constrain the namespace instead.
+    Condition = { StringEquals = { "cloudwatch:namespace" = "Glue" } }
+  }
 
   runner_principals = length(var.runner_trusted_principal_arns) > 0 ? var.runner_trusted_principal_arns : [
     "arn:aws:iam::${local.account_id}:role/aws-reserved/sso.amazonaws.com/AWSReservedSSO_*",
@@ -103,6 +110,13 @@ resource "aws_iam_role_policy" "glue_db_ingest" {
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
+      local.glue_metrics,
+      {
+        Sid      = "BucketLocation"
+        Effect   = "Allow"
+        Action   = ["s3:GetBucketLocation"]
+        Resource = [local.data_arn]
+      },
       {
         Sid    = "ReadLandingScriptsManifests"
         Effect = "Allow"
@@ -160,6 +174,13 @@ resource "aws_iam_role_policy" "glue_gold_load" {
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
+      local.glue_metrics,
+      {
+        Sid      = "BucketLocation"
+        Effect   = "Allow"
+        Action   = ["s3:GetBucketLocation"]
+        Resource = [local.data_arn]
+      },
       {
         Sid      = "ReadGoldCatalog"
         Effect   = "Allow"
@@ -234,6 +255,7 @@ resource "aws_iam_role_policy" "runner" {
         Effect = "Allow"
         Action = ["s3:GetObject"]
         Resource = [
+          "${local.data_arn}/landing/*",
           "${local.data_arn}/bronze/*",
           "${local.data_arn}/manifests/*",
           "${local.data_arn}/publish/*",

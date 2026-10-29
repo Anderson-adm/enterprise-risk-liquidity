@@ -53,7 +53,8 @@ resource "aws_s3_object" "contract" {
 resource "aws_cloudwatch_log_group" "glue" {
   #checkov:skip=CKV_AWS_158:Logs contain no secrets or personal data (synthetic); AWS-managed encryption avoids CMK cost
   #checkov:skip=CKV_AWS_338:Temporary lab: short explicit retention (var.log_retention_days) is intentional for cost and teardown
-  name              = "/aws-glue/${var.name_prefix}"
+  for_each          = toset(["error", "output"])
+  name              = "/aws-glue/${var.name_prefix}/${each.key}"
   retention_in_days = var.log_retention_days
 }
 
@@ -98,12 +99,12 @@ resource "aws_glue_job" "this" {
   }
 
   default_arguments = merge({
-    "--job-language"                     = "python"
-    "--enable-continuous-cloudwatch-log" = "true"
-    "--continuous-log-logGroup"          = aws_cloudwatch_log_group.glue.name
-    "--enable-metrics"                   = "true"
-    "--job-bookmark-option"              = "job-bookmark-disable"
-    "--contract_s3_key"                  = aws_s3_object.contract["bronze_contract.json"].key
-    "--TempDir"                          = "s3://${module.data_bucket.id}/tmp/glue/spark/"
+    "--additional-python-modules" = join(",", [for line in split("\n", file("${path.module}/../../../glue/requirements.txt")) : trimspace(line) if trimspace(line) != "" && !startswith(trimspace(line), "#")])
+    "--job-language"              = "python"
+    "--custom-logGroup-prefix"    = "/aws-glue/${var.name_prefix}"
+    "--enable-metrics"            = "true"
+    "--job-bookmark-option"       = "job-bookmark-disable"
+    "--contract_s3_key"           = aws_s3_object.contract["bronze_contract.json"].key
+    "--TempDir"                   = "s3://${module.data_bucket.id}/tmp/glue/spark/"
   }, each.value.args)
 }

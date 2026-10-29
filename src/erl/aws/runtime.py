@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 import time
 from datetime import date
 
@@ -38,7 +39,16 @@ GLUE_TIMEOUT_SECONDS = 20 * 60
 
 
 def _session(settings: Settings) -> boto3.Session:
-    return boto3.Session(region_name=settings.aws_region)
+    profile = os.environ.get("AWS_PROFILE")
+    if not profile or profile == "default":
+        raise ConfigurationError("AWS_PROFILE must explicitly select a non-default SSO/runner profile")
+    if settings.aws_region != "sa-east-1":
+        raise ConfigurationError("AWS execution is restricted to sa-east-1")
+    session = boto3.Session(profile_name=profile, region_name=settings.aws_region)
+    credentials = session.get_credentials()
+    if credentials is None or credentials.method not in {"sso", "assume-role"}:
+        raise ConfigurationError("AWS credentials must come from SSO or the SSO-backed runner role")
+    return session
 
 
 def assert_expected_account(settings: Settings) -> dict:

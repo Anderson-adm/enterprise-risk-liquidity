@@ -83,10 +83,10 @@ select
     ti.issuer_code                                                   as top_issuer_code,
     cast(coalesce(ti.issuer_exposure, 0) as decimal(20, 2))          as top_issuer_exposure,
     cast(case when t.total_exposure = 0 or ti.issuer_exposure is null then 0
-              else ti.issuer_exposure / t.total_exposure end as decimal(9, 6)) as top_issuer_pct,
+              else {{ ratio('ti.issuer_exposure', 't.total_exposure') }} end as decimal(9, 6)) as top_issuer_pct,
     cast((select max(limit_pct) from lim) as decimal(9, 6))          as concentration_limit_pct,
     case when ti.issuer_exposure is not null and t.total_exposure > 0
-              and ti.issuer_exposure / t.total_exposure > (select max(limit_pct) from lim)
+              and {{ ratio('ti.issuer_exposure', 't.total_exposure') }} > (select max(limit_pct) from lim)
          then 'BREACH' else 'PASS' end                               as concentration_check,
     case when coalesce(ra.positions_available, 0) = 0 then 'NOT_AVAILABLE'
          when ra.mismatched_positions > 0             then 'MISMATCH'

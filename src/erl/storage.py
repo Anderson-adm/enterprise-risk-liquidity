@@ -101,15 +101,11 @@ class S3Store:
         return self._s3.get_object(Bucket=self.bucket, Key=key)["Body"].read()
 
     def exists(self, key: str) -> bool:
-        from botocore.exceptions import ClientError
-
-        try:
-            self._s3.head_object(Bucket=self.bucket, Key=key)
-        except ClientError as exc:
-            if exc.response.get("Error", {}).get("Code") in {"404", "NoSuchKey", "NotFound"}:
-                return False
-            raise
-        return True
+        # HEAD on a missing object can return 403 when ListBucket is prefix-scoped.
+        # Listing the exact prefix uses that scoped permission and distinguishes a
+        # real object from a longer key sharing its prefix without broadening IAM.
+        objects = self._s3.list_objects_v2(Bucket=self.bucket, Prefix=key, MaxKeys=1).get("Contents", [])
+        return bool(objects and objects[0]["Key"] == key)
 
     def list(self, prefix: str) -> list[str]:
         keys: list[str] = []

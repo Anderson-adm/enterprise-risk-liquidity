@@ -21,7 +21,7 @@ valued as (
             when 'FACTOR' then cast(pos.market_value * r.liquidity_factor as decimal(20, 2))
             when 'VOLUME' then cast(pos.market_value * least(
                     cast(1 as decimal(38, 10)),
-                    cast({{ var('equity_volume_participation') }} * px.avg_daily_volume / pos.quantity
+                    cast({{ ratio(var('equity_volume_participation') ~ ' * px.avg_daily_volume', 'pos.quantity') }}
                          as decimal(38, 10))) as decimal(20, 2))
             else cast(0 as decimal(20, 2))  -- unknown instrument type: conservatively illiquid
         end as liquid_value
@@ -87,10 +87,10 @@ select
     cast(t.total_value as decimal(20, 2))                           as total_value,
     cast(t.liquid_value as decimal(20, 2))                          as liquid_value,
     cast(case when t.total_value = 0 then 0
-              else t.liquid_value / t.total_value end as decimal(9, 6)) as liquidity_ratio,
+              else {{ ratio('t.liquid_value', 't.total_value') }} end as decimal(9, 6)) as liquidity_ratio,
     cast(t.pending_redemptions as decimal(20, 2))                   as pending_redemptions,
     cast(case when t.pending_redemptions > 0
-              then t.liquid_value / t.pending_redemptions end as decimal(18, 6)) as redemption_coverage,
+              then {{ ratio('t.liquid_value', 't.pending_redemptions') }} end as decimal(18, 6)) as redemption_coverage,
     cast(t.positions_count as integer)                              as positions_count,
     l.lineage_sources,
     l.lineage_bronze_runs,

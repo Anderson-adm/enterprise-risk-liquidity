@@ -1,6 +1,8 @@
 {
   "description": "Bronze data contract: one entry per Bronze table. Single source of truth for Python ingestion (column lists), Terraform (Glue Catalog Bronze tables) and documentation. Business columns are stored as strings exactly as received; typing happens in Silver.",
-  "version": 1,
+  "version": 2,
+  "empty_snapshot": "One metadata-only row, all business columns NULL and meta_row_number=0, represents an accepted empty snapshot. Rank deliveries before excluding this marker; records_written counts business rows only.",
+  "commit_visibility": "Silver reads only Bronze rows matched to an ACCEPTED ingestion manifest by source_system, entity, run_id and input_object. The manifest is the commit marker for the whole delivery.",
   "partition_column": "bronze_reference_date",
   "metadata_columns": [
     {"name": "meta_source_system", "type": "string"},
@@ -16,14 +18,17 @@
   ],
   "entities": {
     "fund_ops__fund": {
+      "snapshot_scope": "latest",
       "source_system": "fund_ops", "entity": "fund", "delivery": "database", "ingestion_pattern": "glue_db_gb",
       "columns": ["fund_id", "fund_name", "fund_type", "base_currency", "inception_date", "status"]
     },
     "fund_ops__portfolio": {
+      "snapshot_scope": "latest",
       "source_system": "fund_ops", "entity": "portfolio", "delivery": "database", "ingestion_pattern": "glue_db_gb",
       "columns": ["portfolio_id", "fund_id", "portfolio_name", "position_source_system", "status", "opened_on"]
     },
     "fund_ops__source_identity_map": {
+      "snapshot_scope": "latest",
       "source_system": "fund_ops", "entity": "source_identity_map", "delivery": "database", "ingestion_pattern": "glue_db_gb",
       "columns": ["source_system", "external_identifier", "portfolio_id", "valid_from", "valid_to"]
     },
@@ -44,6 +49,7 @@
       "columns": ["id_resgate", "cod_cart", "dt_pedido", "dt_cotizacao", "vl_resgate", "st_resgate"]
     },
     "exposure_compliance__instrument_registry": {
+      "snapshot_scope": "latest",
       "source_system": "exposure_compliance", "entity": "instrument_registry", "delivery": "database", "ingestion_pattern": "glue_db_gb",
       "columns": ["instrument_code", "instrument_name", "instrument_type", "issuer_code", "issuer_name", "issuer_type"]
     },
@@ -52,6 +58,7 @@
       "columns": ["stock_id", "fund_ref", "instrument_code", "position_date", "quantity", "book_value"]
     },
     "exposure_compliance__concentration_limit": {
+      "snapshot_scope": "latest",
       "source_system": "exposure_compliance", "entity": "concentration_limit", "delivery": "database", "ingestion_pattern": "glue_db_gb",
       "columns": ["rule_id", "rule_scope", "limit_pct", "excluded_issuer_type", "valid_from", "valid_to"]
     },

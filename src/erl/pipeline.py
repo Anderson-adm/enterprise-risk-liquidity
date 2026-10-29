@@ -22,7 +22,7 @@ from pathlib import Path
 
 from erl import config, log
 from erl.config import DB_SOURCES, FILE_SOURCES, Settings
-from erl.errors import ConfigurationError, ErlError, QualityGateError, SourceUnavailableError
+from erl.errors import ConfigurationError, ContractError, ErlError, QualityGateError, SourceUnavailableError
 from erl.ingestion import bronze, database, files
 from erl.publish import package, publisher
 from erl.sources import extract, seed
@@ -60,9 +60,22 @@ def save_step(settings: Settings, run_id: str, ref: date, step: str, outcome: di
 def run_step(
     name: str, fn: Callable[[Settings, date, str], dict], settings: Settings, ref: date, run_id: str
 ) -> dict:
+    bronze.validate_run_id(run_id)
+    state = load_state(settings, run_id)
+    if state.get("reference_date", ref.isoformat()) != ref.isoformat():
+        raise ConfigurationError(f"run {run_id} already belongs to {state['reference_date']}")
+    previous = state["steps"].get(name, {})
+    if name != "report" and previous.get("status") == "SUCCEEDED":
+        # A successful step is a committed checkpoint. Retrying it must not append to
+        # the same immutable keys again; corrected data belongs to a NEW pipeline run.
+        return previous
     started = time.monotonic()
     log.event(logger, "step_started", run_id=run_id, step=name, reference_date=ref.isoformat())
     try:
+        if settings.mode == "aws" and name not in {"validate", "report"}:
+            from erl.aws import runtime
+
+            runtime.assert_expected_account(settings)
         result = fn(settings, ref, run_id)
     except Exception as exc:
         category = exc.category if isinstance(exc, ErlError) else "unexpected"
@@ -143,10 +156,13 @@ def step_collect(settings: Settings, ref: date, run_id: str) -> dict:
         if not names and source in REQUIRED_FILE_SOURCES:
             raise SourceUnavailableError(f"{source}: no delivery for {ref} in {folder}")
         for name in names:
-            store.put(
-                f"landing/files/{source}/delivery_date={ref.isoformat()}/{run_id}/{name}",
-                (folder / name).read_bytes(),
-            )
+            key = f"landing/files/{source}/delivery_date={ref.isoformat()}/{run_id}/{name}"
+            data = (folder / name).read_bytes()
+            if store.exists(key):
+                if store.get(key) != data:
+                    raise ContractError(f"delivery changed within immutable run {run_id}; use a new run id")
+            else:
+                store.put(key, data)
         collected[source] = names
     return {"files": collected}
 
@@ -189,6 +205,15 @@ def step_ingest(settings: Settings, ref: date, run_id: str) -> dict:
     db_failed = [m for m in manifests if m["source_system"] in DB_SOURCES and m["status"] == bronze.REJECTED]
     if db_failed:
         raise SourceUnavailableError(f"database snapshots rejected: {db_failed}")
+    for source in REQUIRED_FILE_SOURCES:
+        if not any(
+            m["source_system"] == source and m["status"] in {bronze.ACCEPTED, bronze.DUPLICATE}
+            for m in manifests
+        ):
+            raise ContractError(
+                f"{source}: no accepted delivery for this run; refusing to reuse historical data",
+                details={"files_rejected": rejected},
+            )
     return {
         "manifests": len(manifests),
         "by_status": dict(statuses),
@@ -210,6 +235,8 @@ def step_transform(settings: Settings, ref: date, run_id: str) -> dict:
     target = "athena" if settings.mode == "aws" else "local"
     settings.warehouse_path.parent.mkdir(parents=True, exist_ok=True)
     out_dir = settings.runs_dir / run_id / "dbt"
+    results_file = out_dir / "target" / "run_results.json"
+    results_file.unlink(missing_ok=True)  # a parse/crash on retry must not reuse old success
     cmd = [
         str(Path(sys.executable).with_name("dbt")),
         "build",
@@ -229,7 +256,6 @@ def step_transform(settings: Settings, ref: date, run_id: str) -> dict:
     )
     (out_dir / "dbt_stdout.log").parent.mkdir(parents=True, exist_ok=True)
     (out_dir / "dbt_stdout.log").write_text(proc.stdout + proc.stderr)
-    results_file = out_dir / "target" / "run_results.json"
     if not results_file.exists():
         raise ErlError(f"dbt did not produce run_results.json (exit {proc.returncode}); see {out_dir}")
     summary = summarize_run_results(json.loads(results_file.read_text()))
@@ -273,7 +299,9 @@ def step_gate(settings: Settings, ref: date, run_id: str) -> dict:
 
 
 def evaluate_gate(transform: dict) -> dict:
-    failed = bool(transform["failures"]) or bool(transform["skipped"])
+    failed = (
+        bool(transform["failures"]) or bool(transform["skipped"]) or bool(transform.get("dbt_exit_code", 0))
+    )
     return {
         "status": "FAILED" if failed else "PASSED",
         "dbt_invocation_id": transform["dbt_invocation_id"],
@@ -287,6 +315,10 @@ def step_load(settings: Settings, ref: date, run_id: str) -> dict:
     gate = state["steps"].get("gate", {}).get("quality_gate", {"status": "MISSING"})
     if gate.get("status") != "PASSED":
         raise QualityGateError(f"quality gate is {gate.get('status')}; Gold will not be loaded")
+    committed_key = package.package_prefix(ref, run_id) + "manifest.json"
+    if settings.store().exists(committed_key):
+        publisher.load_package(settings.store(), committed_key)
+        return {"package_manifest": committed_key}
     if settings.mode == "aws":
         from erl.aws import runtime
 
@@ -328,7 +360,14 @@ def step_report(settings: Settings, ref: date, run_id: str) -> dict:
         },
     }
     if settings.mode == "local" and settings.warehouse_path.exists():
-        report["rejected_records"] = rejected_summary(settings, ref)
+        import duckdb
+
+        try:
+            report["rejected_records"] = rejected_summary(settings, ref)
+        except duckdb.Error as exc:
+            # A failed/partial transform may never have created Silver. Supplementary
+            # diagnostics must not hide the original failure or prevent its report.
+            report["rejected_records_error"] = str(exc)[:500]
     path = settings.runs_dir / run_id / "run_report.json"
     path.write_text(json.dumps(report, indent=2, default=str))
     return {"report": str(path)}

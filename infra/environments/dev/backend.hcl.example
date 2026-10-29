@@ -2,3 +2,5 @@
 bucket = "erl-tfstate-<data-dev-account-id>"
 key    = "case01/dev/terraform.tfstate"
 region = "sa-east-1"
+profile = "data-dev"
+allowed_account_ids = ["<data-dev-account-id>"]

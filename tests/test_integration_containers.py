@@ -343,6 +343,27 @@ def test_publication_lock_also_serialises_a_postgresql_consumer(it, monkeypatch)
         engine.dispose()
 
 
+def test_concurrent_retries_of_the_same_package_have_unique_attempt_ids(it, consumer):
+    from sqlalchemy import event
+
+    publisher.ensure_schema(consumer)
+    pkg = _package(LocalStore(it.data_dir / "lake-same-package"), D1, "100.00")
+    barrier = threading.Barrier(4)
+
+    def synchronise_old_attempt_count(conn, cursor, statement, parameters, context, executemany):
+        if "count(*)" in statement.lower() and "pipeline_run_id" in statement.lower():
+            barrier.wait(timeout=30)
+
+    event.listen(consumer, "after_cursor_execute", synchronise_old_attempt_count)
+    try:
+        outcomes = _race(consumer, [pkg] * 4)
+    finally:
+        event.remove(consumer, "after_cursor_execute", synchronise_old_attempt_count)
+    assert sorted(outcomes) == [publisher.ACTIVE] + [publisher.SKIPPED] * 3
+    log = _assert_single_consistent_version(consumer, D1)
+    assert len(log) == 4 and len({r["publication_id"] for r in log}) == 4
+
+
 # --------------------------------------------------------------------------- end to end
 
 

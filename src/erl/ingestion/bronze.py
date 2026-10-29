@@ -8,8 +8,8 @@ Key layout (identical for the local directory store and S3):
     quarantine/<source>/bronze_reference_date=<D>/<run_id>/<file>  (+ <file>.rejection.json)
 
 Every key contains the run id, so a re-run writes new objects instead of replacing old ones.
-Duplicate deliveries (same SHA-256 already ACCEPTED for the same source/entity/date) are
-recorded as DUPLICATE and not written again.
+Deliveries identical to the current accepted snapshot are recorded as DUPLICATE and not
+written again; reverting to an older historical version is a new accepted delivery.
 """
 
 from __future__ import annotations
@@ -26,7 +26,8 @@ from datetime import UTC, date, datetime
 import pyarrow as pa
 import pyarrow.parquet as pq
 
-from erl.contracts import PARTITION_COLUMN, BronzeEntity, metadata_columns
+from erl.contracts import PARTITION_COLUMN, BronzeEntity, bronze_contract, metadata_columns
+from erl.errors import ContractError
 from erl.storage import ObjectStore
 
 ACCEPTED = "ACCEPTED"
@@ -89,6 +90,7 @@ class IngestionManifest:
     rejection_reason: str | None = None
     rejection_detail: str | None = None
     ingested_at: str = field(default_factory=utc_now_iso)
+    snapshot_key: str | None = None
 
     def key(self) -> str:
         obj = safe_name(self.input_object.rsplit("/", 1)[-1])
@@ -107,13 +109,41 @@ def list_manifests(store: ObjectStore, source_system: str, entity: str, ref: dat
     return [json.loads(store.get(k)) for k in store.list(prefix) if k.endswith(".json")]
 
 
-def find_accepted_duplicate(
-    store: ObjectStore, source_system: str, entity: str, ref: date, input_sha256: str
-) -> dict | None:
-    for m in list_manifests(store, source_system, entity, ref):
-        if m["status"] == ACCEPTED and m["input_sha256"] == input_sha256:
-            return m
+def completed_delivery(
+    store: ObjectStore, source: str, entity: str, run_id: str, input_object: str, input_sha256: str
+) -> IngestionManifest | None:
+    suffix = f"/{run_id}__{safe_name(input_object.rsplit('/', 1)[-1])}.json"
+    for key in store.list(f"manifests/ingestion/{source}/{entity}/"):
+        if key.endswith(suffix):
+            manifest = json.loads(store.get(key))
+            if manifest["input_sha256"] != input_sha256 or manifest["input_object"] != input_object:
+                raise ContractError(f"delivery changed within immutable run {run_id}; use a new run id")
+            return IngestionManifest(**manifest)
     return None
+
+
+def find_accepted_duplicate(
+    store: ObjectStore,
+    source_system: str,
+    entity: str,
+    ref: date,
+    input_sha256: str,
+    *,
+    snapshot_key: str | None = None,
+) -> dict | None:
+    spec = bronze_contract()["entities"][f"{source_system}__{entity}"]
+    if spec.get("snapshot_scope") == "latest":
+        prefix = f"manifests/ingestion/{source_system}/{entity}/"
+        manifests = [json.loads(store.get(k)) for k in store.list(prefix) if k.endswith(".json")]
+    else:
+        manifests = list_manifests(store, source_system, entity, ref)
+    accepted = [
+        m
+        for m in manifests
+        if m["status"] == ACCEPTED and (snapshot_key is None or m.get("snapshot_key") == snapshot_key)
+    ]
+    latest = max(accepted, key=lambda m: (m["ingested_at"], m["run_id"]), default=None)
+    return latest if latest and latest["input_sha256"] == input_sha256 else None
 
 
 def write_raw(store: ObjectStore, source_system: str, ref: date, run_id: str, name: str, data: bytes) -> str:
