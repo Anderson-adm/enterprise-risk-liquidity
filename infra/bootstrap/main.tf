@@ -19,7 +19,7 @@ provider "aws" {
 resource "aws_s3_bucket" "state" {
   #checkov:skip=CKV_AWS_145:SSE-S3 default encryption; a KMS CMK adds fixed monthly cost to a temporary lab (docs/TERRAFORM.md)
   #checkov:skip=CKV_AWS_144:Single-region temporary lab; replication would double storage for state files
-  #checkov:skip=CKV_AWS_18:Server access logging not enabled for the lab (no extra log bucket); CloudTrail management events cover API activity
+  #checkov:skip=CKV_AWS_18:No access logging in the lab (no extra log bucket); object-level access is not audited, accepted for synthetic data only
   #checkov:skip=CKV2_AWS_62:No event-driven consumers: ingestion Lambdas are invoked synchronously by the pipeline
   bucket = "${var.name_prefix}-tfstate-${var.allowed_account_id}"
 

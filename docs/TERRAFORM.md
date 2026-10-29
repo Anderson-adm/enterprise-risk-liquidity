@@ -61,19 +61,25 @@ run block uses `command = plan`.
 
 ## Checkov exceptions (inline `#checkov:skip` with reason, per resource)
 
-| Check | Resources | Justification |
-|---|---|---|
-| CKV_AWS_145 (S3 KMS) | 3 buckets | SSE-S3 is enabled; a customer-managed KMS key adds a fixed monthly cost to a temporary lab. Revisit for production. |
-| CKV_AWS_144 (cross-region replication) | 3 buckets | single-region temporary lab with synthetic data |
-| CKV_AWS_18 (access logging) | 3 buckets | no extra log bucket in the lab; CloudTrail management events cover API activity |
-| CKV2_AWS_62 (event notifications) | 3 buckets | Lambdas are invoked synchronously by the pipeline, not by S3 events |
-| CKV_AWS_117 (Lambda in VPC) | 3 Lambdas | they only call S3; a VPC would require NAT/endpoints (cost) |
-| CKV_AWS_116 (DLQ) | 3 Lambdas | synchronous invocation; the Airflow task receives the error and retries |
-| CKV_AWS_173 (env var KMS) | 3 Lambdas | variables are a bucket name and log level, no secrets |
-| CKV_AWS_272 (code signing) | 3 Lambdas | out of scope; package is built reproducibly by `scripts/build_lambda.sh` |
-| CKV_AWS_158 (log group KMS) | 4 log groups | synthetic data only; AWS-managed encryption |
-| CKV_AWS_338 (1-year log retention) | 4 log groups | short explicit retention is intentional for cost and teardown |
-| CKV_AWS_99 (Glue security config all-KMS) | 1 | S3 encryption on; CloudWatch/bookmark encryption need a CMK; bookmarks unused |
+17 inline annotations produce 33 skipped checks because the bucket module is instantiated twice
+(plus the state bucket) and the Lambda/log-group resources use `for_each` over three sources.
+Reviewed one by one on 2026-10-29 (`uvx checkov@3.4.0 -d infra --framework terraform -o json`).
+Every exception is a cost/scope trade-off of a **temporary lab with synthetic data**; none is
+acceptable as-is for production, and the last column says what production would need.
+
+| Check | # | Resources | Why it is skipped in the lab | Residual risk accepted | Production would need |
+|---|---|---|---|---|---|
+| CKV_AWS_145 S3 encryption with KMS CMK | 3 | state, data, athena-results buckets | SSE-S3 (AES-256) is on; a customer-managed key adds a fixed monthly cost | key policy cannot restrict decrypt separately from S3 access | SSE-KMS with a CMK and key policy |
+| CKV_AWS_144 cross-region replication | 3 | same 3 buckets | single-region lab; replication doubles storage | regional outage loses lab data (state is versioned in-region) | CRR or backup for state and curated data |
+| CKV_AWS_18 server access logging | 3 | same 3 buckets | no extra log bucket in the lab | **object-level reads/writes are not audited** (CloudTrail management events do not include S3 data events) | access logs or CloudTrail S3 data events |
+| CKV2_AWS_62 event notifications | 3 | same 3 buckets | the ingestion Lambdas are invoked synchronously by the orchestrator, not by S3 events | none (no consumer would receive the events) | only if event-driven ingestion is adopted |
+| CKV_AWS_117 Lambda inside a VPC | 3 | `ingest["market_data"/"internal_xml"/"external_xml"]` | the functions only call S3/CloudWatch; a VPC needs NAT or endpoints (cost) | traffic to S3 uses public AWS endpoints (TLS, IAM-scoped) | VPC + S3/Logs gateway/interface endpoints |
+| CKV_AWS_116 dead-letter queue | 3 | same 3 Lambdas | synchronous `RequestResponse` invocation: the error returns to the Airflow task, which retries and alerts | none for sync calls | DLQ/on-failure destination if invoked asynchronously |
+| CKV_AWS_173 env variables encrypted with CMK | 3 | same 3 Lambdas | variables hold a bucket name and log level only; encrypted with the AWS-managed key | none while no secret is placed there | CMK, and secrets only in Secrets Manager |
+| CKV_AWS_272 code signing | 3 | same 3 Lambdas | AWS Signer is out of the lab's scope; the zip is built deterministically by `scripts/build_lambda.sh` | an altered package would not be rejected by signature | Signer profile + code-signing config |
+| CKV_AWS_158 log group KMS | 4 | Glue log group, 3 Lambda log groups | logs carry no secrets or personal data (synthetic); AWS-managed encryption | as CKV_AWS_145 | CMK-encrypted log groups |
+| CKV_AWS_338 log retention ≥ 1 year | 4 | same 4 log groups | short explicit retention (`var.log_retention_days`) for cost and clean teardown | logs disappear after the retention window | retention per audit policy |
+| CKV_AWS_99 Glue security configuration all-KMS | 1 | `aws_glue_security_configuration.this` | S3 encryption is on; CloudWatch/bookmark encryption require a CMK; bookmarks are unused | Glue job logs use AWS-managed encryption | CMK for CloudWatch and bookmarks |
 
 ## Cost model (estimate — verify before apply)
 

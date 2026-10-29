@@ -32,15 +32,26 @@ override.tf
 override.tf.json
 *_override.tf
 *_override.tf.json
-*.auto.tfvars
+*.tfvars
+*.tfvars.json
 backend.hcl
+plan.out
+*.plan
+*.plan.json
+tfplan.json
+plan.json
 
 # Local tooling binaries (tflint etc.)
 .tools/
 
 # Secrets / local env
 .env
+.env.*
+!.env.example
 *.pem
+*.key
+*.p12
+*.pfx
 .aws/
 
 # Terraform plan exports
