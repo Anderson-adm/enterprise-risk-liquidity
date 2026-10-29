@@ -1,19 +1,23 @@
 """Consumer publication: contract checks, idempotency, atomic replacement, preservation of the
-last valid version. Runs on SQLite (dev stand-in); the same code targets SQL Server."""
+last valid version. Runs on the SQLite stand-in and, with ``-m integration`` and
+ERL_IT_CONTAINERS=1, on the real SQL Server consumer database (isolated ``it_`` database)."""
 
 from __future__ import annotations
 
 import pytest
-from sqlalchemy import create_engine, select
+from sqlalchemy import select
 
 from erl.errors import PublicationError
 from erl.publish import publisher
-from tests.conftest import D1, D2, product_rows, run_id, write_package
+from erl.sources import seed
+from tests.conftest import D1, D2, product_rows, reset_consumer, run_id, write_package
 
 
 @pytest.fixture
-def engine(tmp_path):
-    eng = create_engine(f"sqlite:///{tmp_path / 'consumer.sqlite'}")
+def engine(db_settings):
+    seed.ensure_databases(db_settings)
+    eng = seed.engine_for(db_settings.consumer_url())
+    reset_consumer(eng)
     yield eng
     eng.dispose()
 

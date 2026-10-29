@@ -4,7 +4,8 @@ from __future__ import annotations
 
 from decimal import Decimal
 
-from sqlalchemy import Numeric, String, TypeDecorator
+from sqlalchemy import DateTime, Numeric, String, TypeDecorator
+from sqlalchemy.dialects import mssql
 
 
 class Dec(TypeDecorator):
@@ -27,3 +28,7 @@ class Dec(TypeDecorator):
         if dialect.name == "sqlite" and value is not None:
             return Decimal(value)
         return value
+
+
+# SQL Server's legacy DATETIME rounds to 1/300 s; DATETIME2 keeps microseconds like PostgreSQL.
+Timestamp = DateTime().with_variant(mssql.DATETIME2(), "mssql")

@@ -27,13 +27,14 @@ from pathlib import Path
 
 import pyarrow as pa
 import pyarrow.parquet as pq
-from sqlalchemy import Date, Engine, bindparam, text
+from sqlalchemy import ColumnClause, Date, Engine, bindparam, column, text
 from sqlalchemy.exc import DBAPIError, OperationalError
 
 from erl import log
 from erl.contracts import bronze_entity
 from erl.errors import SourceUnavailableError
 from erl.ingestion import bronze
+from erl.sources.schemas import SOURCE_METADATA
 from erl.storage import ObjectStore
 
 logger = logging.getLogger(__name__)
@@ -97,6 +98,14 @@ def check_readiness(engine: Engine, source: str, ref: date) -> None:
         )
 
 
+def _result_columns(source: str, from_object: str, names: list[str]) -> list[ColumnClause]:
+    """Type the result columns with the source table's declared types, so every engine yields
+    the same Python values (SQLite would otherwise return its stored text for timestamps,
+    giving a different Bronze representation than PostgreSQL/SQL Server)."""
+    table = SOURCE_METADATA[source][0].tables.get(from_object)
+    return [column(n, table.c[n].type) if table is not None and n in table.c else column(n) for n in names]
+
+
 def extract_entity(
     engine: Engine, store: ObjectStore, source: str, entity: str, ref: date, run_id: str
 ) -> dict:
@@ -119,6 +128,7 @@ def extract_entity(
         path = Path(tmp) / "extract.parquet"
         with pq.ParquetWriter(path, schema, compression="zstd") as writer, engine.connect() as conn:
             stmt = text(sql).bindparams(bindparam("d", type_=Date)) if ":d" in sql else text(sql)
+            stmt = stmt.columns(*_result_columns(source, spec.from_object, contract.columns))
             result = conn.execution_options(stream_results=True).execute(
                 stmt, {"d": ref} if ":d" in sql else {}
             )

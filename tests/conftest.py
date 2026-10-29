@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 import io
+import os
 from datetime import date
 from decimal import Decimal
 
 import pyarrow as pa
 import pyarrow.parquet as pq
 import pytest
+from sqlalchemy import make_url
 
 from erl import config
 from erl.contracts import consumer_contract
@@ -15,15 +17,54 @@ from erl.storage import LocalStore
 
 D1, D2, D3 = date(2026, 10, 26), date(2026, 10, 27), date(2026, 10, 28)
 
+CONTAINERS_UP = os.environ.get("ERL_IT_CONTAINERS") == "1"
+REQUIRES_CONTAINERS = [
+    pytest.mark.integration,
+    pytest.mark.skipif(not CONTAINERS_UP, reason="set ERL_IT_CONTAINERS=1 with containers up"),
+]
+# Tests taking ``db_settings`` run once per backend: the SQLite stand-in always, the real
+# PostgreSQL/SQL Server containers only with ``-m integration`` and ERL_IT_CONTAINERS=1.
+BACKENDS = ["sqlite", pytest.param("containers", marks=REQUIRES_CONTAINERS)]
+_URL_VARS = [f"ERL_{s.upper()}_URL" for s in config.DB_SOURCES] + ["ERL_CONSUMER_URL"]
+
+
+def isolated_url(url: str) -> str:
+    """Same server, separate ``it_`` database, so tests never touch the development data."""
+    u = make_url(url)
+    return u.set(database=f"it_{u.database}").render_as_string(hide_password=False)
+
+
+def use_backend(monkeypatch, data_dir, backend: str) -> config.Settings:
+    monkeypatch.setenv("ERL_DATA_DIR", str(data_dir))
+    monkeypatch.setenv("ERL_MODE", "local")
+    monkeypatch.setenv("ERL_SOURCE_BACKEND", backend)
+    for var in _URL_VARS:
+        monkeypatch.delenv(var, raising=False)
+    if backend == "containers":
+        base = config.load()
+        for source in config.DB_SOURCES:
+            monkeypatch.setenv(f"ERL_{source.upper()}_URL", isolated_url(base.source_url(source)))
+        monkeypatch.setenv("ERL_CONSUMER_URL", isolated_url(base.consumer_url()))
+    return config.load()
+
 
 @pytest.fixture
 def settings(tmp_path, monkeypatch):
-    monkeypatch.setenv("ERL_DATA_DIR", str(tmp_path / "data"))
-    monkeypatch.setenv("ERL_MODE", "local")
-    monkeypatch.setenv("ERL_SOURCE_BACKEND", "sqlite")
-    for var in ("ERL_CONSUMER_URL", "ERL_FUND_OPS_URL", "ERL_PORTFOLIO_RISK_URL"):
-        monkeypatch.delenv(var, raising=False)
-    return config.load()
+    return use_backend(monkeypatch, tmp_path / "data", "sqlite")
+
+
+@pytest.fixture(params=BACKENDS)
+def db_settings(request, tmp_path, monkeypatch):
+    return use_backend(monkeypatch, tmp_path / "data", request.param)
+
+
+def reset_consumer(engine) -> None:
+    """Drop the publisher's tables (test databases only); ``publish`` recreates them."""
+    from erl.publish import publisher
+
+    with publisher._connect(engine) as conn:
+        publisher.metadata.drop_all(conn)
+        conn.commit()
 
 
 @pytest.fixture

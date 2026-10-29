@@ -11,7 +11,7 @@ from erl import config, pipeline
 from erl.contracts import bronze_contract, consumer_contract
 from erl.errors import ConfigurationError
 from erl.ingestion import files
-from erl.sources import synthetic
+from erl.sources import seed, synthetic
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -88,6 +88,15 @@ def test_container_backend_requires_password(monkeypatch):
     monkeypatch.delenv("ERL_FUND_OPS_URL", raising=False)
     with pytest.raises(ConfigurationError, match="ERL_PG_PASSWORD"):
         config.load().source_url("fund_ops")
+
+
+def test_database_names_taken_from_urls_are_validated_before_ddl(monkeypatch, tmp_path):
+    monkeypatch.setenv("ERL_SOURCE_BACKEND", "containers")
+    for source in config.DB_SOURCES:
+        monkeypatch.setenv(f"ERL_{source.upper()}_URL", f"sqlite:///{tmp_path / source}.sqlite")
+    monkeypatch.setenv("ERL_CONSUMER_URL", "mssql+pymssql://sa:x@127.0.0.1:1/report;DROP")
+    with pytest.raises(ValueError, match="refusing to create database"):
+        seed.ensure_databases(config.load())  # raises before any connection is attempted
 
 
 def test_synthetic_data_is_deterministic():

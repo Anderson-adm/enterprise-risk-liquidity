@@ -4,6 +4,7 @@ post-publication scenarios (corrections, missing or degraded deliveries)."""
 from __future__ import annotations
 
 import logging
+import re
 from datetime import date, datetime, timedelta
 from decimal import Decimal
 from pathlib import Path
@@ -51,24 +52,22 @@ def write_inbox(settings: Settings, ds: synthetic.SyntheticDataset) -> int:
     return len(ds.files)
 
 
-LOGICAL_DATABASES = {
-    "fund_ops",
-    "portfolio_risk",
-    "legacy_finance",
-    "exposure_compliance",
-    "consumer_reporting",
-}
+_DATABASE_NAME = re.compile(r"[a-z][a-z0-9_]{0,62}")
 
 
 def ensure_databases(settings: Settings) -> list[str]:
-    """Create the logical databases inside the shared container instances (idempotent)."""
+    """Create the logical databases named in the configured URLs inside the shared container
+    instances (idempotent). The names come from the URLs, so URL overrides are honoured."""
     if settings.source_backend != "containers":
         return []
     created = []
-    urls = {s: settings.source_url(s) for s in DB_SOURCES} | {"consumer_reporting": settings.consumer_url()}
-    for name, url in urls.items():
-        if name not in LOGICAL_DATABASES:  # names are interpolated into DDL below
-            raise ValueError(name)
+    urls = [settings.source_url(s) for s in DB_SOURCES] + [settings.consumer_url()]
+    for url in urls:
+        if url.startswith("sqlite"):
+            continue
+        name = make_url(url).database or ""
+        if not _DATABASE_NAME.fullmatch(name):  # the name is interpolated into DDL below
+            raise ValueError(f"refusing to create database with name {name!r}")
         engine = create_engine(
             make_url(url).set(database="postgres" if url.startswith("postgresql") else "master"),
             isolation_level="AUTOCOMMIT",

@@ -31,7 +31,6 @@ import pyarrow.parquet as pq
 from sqlalchemy import (
     Column,
     Date,
-    DateTime,
     Engine,
     Index,
     Integer,
@@ -50,7 +49,7 @@ from erl import log
 from erl.contracts import consumer_contract
 from erl.errors import PublicationError
 from erl.ingestion import bronze
-from erl.sqltypes import Dec
+from erl.sqltypes import Dec, Timestamp
 from erl.storage import ObjectStore
 
 logger = logging.getLogger(__name__)
@@ -116,14 +115,14 @@ publication_log = Table(
     Column("package_uri", String(400), nullable=False),
     Column("liquidity_rows", Integer, nullable=True),
     Column("exposure_rows", Integer, nullable=True),
-    Column("published_at", DateTime, nullable=False),
-    Column("superseded_at", DateTime, nullable=True),
+    Column("published_at", Timestamp, nullable=False),
+    Column("superseded_at", Timestamp, nullable=True),
     Column("superseded_by", String(80), nullable=True),
     Column("message", String(2000), nullable=True),
     schema="rpt",
 )
 # At most one ACTIVE publication per reference date, enforced by the database itself
-# (filtered unique index) in addition to the row lock taken inside the transaction.
+# (filtered unique index) in addition to the publication lock taken inside the transaction.
 Index(
     "ux_publication_log_active_date",
     publication_log.c.reference_date,
@@ -146,6 +145,9 @@ def ensure_schema(engine: Engine) -> None:
         if engine.dialect.name == "mssql":
             for schema in ("rpt", "stg"):
                 conn.execute(text(f"IF SCHEMA_ID('{schema}') IS NULL EXEC('CREATE SCHEMA {schema}')"))
+        elif engine.dialect.name == "postgresql":
+            for schema in ("rpt", "stg"):
+                conn.execute(text(f"CREATE SCHEMA IF NOT EXISTS {schema}"))
         metadata.create_all(conn)
         conn.commit()
 
@@ -275,6 +277,7 @@ def publish(engine: Engine, package: Package, *, _fault: Callable[[str], None] |
     }
     try:
         with _connect(engine) as conn, conn.begin():
+            _acquire_publication_lock(conn)
             current = (
                 conn.execute(
                     select(publication_log)
@@ -346,6 +349,35 @@ def publish(engine: Engine, package: Package, *, _fault: Callable[[str], None] |
     }
     log.event(logger, "publication_finished", run_id=package.pipeline_run_id, **result)
     return result
+
+
+PUBLICATION_LOCK_TIMEOUT_S = 120
+_PG_LOCK_KEY = 0x45524C5055  # arbitrary constant identifying "ERL publication"
+
+
+def _acquire_publication_lock(conn) -> None:
+    """Serialise publications with a lock released at commit/rollback.
+
+    A row lock on the ACTIVE log row is not enough: the first publication of a date has no
+    row to lock, and SQL Server ignores ``SELECT ... FOR UPDATE`` (concurrent publishers
+    deadlocked in the SQL Server integration test). Publications are daily and short, so one
+    lock for the whole consumer database keeps staging and target writes free of deadlocks.
+    SQLite (dev stand-in) already serialises writers at database level.
+    """
+    dialect = conn.dialect.name
+    if dialect == "mssql":
+        rc = conn.execute(
+            text(
+                "DECLARE @rc int; EXEC @rc = sp_getapplock @Resource = 'erl_consumer_publication', "
+                "@LockMode = 'Exclusive', @LockOwner = 'Transaction', @LockTimeout = :ms; SELECT @rc"
+            ),
+            {"ms": PUBLICATION_LOCK_TIMEOUT_S * 1000},
+        ).scalar_one()
+        if rc < 0:
+            raise TimeoutError(f"publication lock not acquired (sp_getapplock returned {rc})")
+    elif dialect == "postgresql":
+        conn.execute(text(f"SET LOCAL lock_timeout = '{PUBLICATION_LOCK_TIMEOUT_S}s'"))
+        conn.execute(text("SELECT pg_advisory_xact_lock(:k)"), {"k": _PG_LOCK_KEY})
 
 
 def _validate_staging(conn, name: str, staging: Table, publication_id: str, expected: int) -> None:

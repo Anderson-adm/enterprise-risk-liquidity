@@ -1,4 +1,5 @@
-"""Database extraction (SQLite stand-in for PostgreSQL/SQL Server) and Bronze snapshot ingestion."""
+"""Database extraction and Bronze snapshot ingestion. Runs on the SQLite stand-in and, with
+``-m integration`` and ERL_IT_CONTAINERS=1, on the real PostgreSQL/SQL Server containers."""
 
 from __future__ import annotations
 
@@ -7,7 +8,7 @@ import json
 
 import pyarrow.parquet as pq
 import pytest
-from sqlalchemy import text
+from sqlalchemy import Date, bindparam, text
 
 from erl.errors import ContractError, SourceUnavailableError
 from erl.ingestion import bronze, database
@@ -16,9 +17,9 @@ from tests.conftest import D1, D2, run_id
 
 
 @pytest.fixture
-def seeded(settings):
-    seed.generate_all(settings)
-    return settings
+def seeded(db_settings):
+    seed.generate_all(db_settings)
+    return db_settings
 
 
 def _extract(settings, store, source, ref, run=None):
@@ -71,8 +72,10 @@ def test_risk_extraction_waits_for_completed_batch(seeded, store):
     engine = seed.engine_for(seeded.source_url("portfolio_risk"))
     with engine.begin() as conn:
         conn.execute(
-            text("UPDATE processing_batch SET status = 'RUNNING' WHERE reference_date = :d"),
-            {"d": D1.isoformat()},
+            text("UPDATE processing_batch SET status = 'RUNNING' WHERE reference_date = :d").bindparams(
+                bindparam("d", type_=Date)
+            ),
+            {"d": D1},
         )
     engine.dispose()
     with pytest.raises(SourceUnavailableError, match="RUNNING"):

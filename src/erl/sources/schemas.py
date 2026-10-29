@@ -14,7 +14,6 @@ from sqlalchemy import (
     CHAR,
     Column,
     Date,
-    DateTime,
     ForeignKey,
     Integer,
     MetaData,
@@ -23,7 +22,7 @@ from sqlalchemy import (
     Table,
 )
 
-from erl.sqltypes import Dec
+from erl.sqltypes import Dec, Timestamp
 
 # --- Source 1: operational fund database (PostgreSQL) ---------------------------------
 fund_ops = MetaData()
@@ -67,8 +66,8 @@ Table(
     Column("batch_id", Integer, primary_key=True, autoincrement=False),
     Column("reference_date", Date, nullable=False),
     Column("status", String(20), nullable=False),
-    Column("started_at", DateTime, nullable=False),
-    Column("finished_at", DateTime, nullable=True),
+    Column("started_at", Timestamp, nullable=False),
+    Column("finished_at", Timestamp, nullable=True),
 )
 Table(
     "processed_position",
@@ -82,7 +81,7 @@ Table(
     Column("currency", CHAR(3), nullable=False),
     Column("processing_status", String(20), nullable=False),
     Column("processing_version", Integer, nullable=False),
-    Column("processed_at", DateTime, nullable=False),
+    Column("processed_at", Timestamp, nullable=False),
 )
 
 # --- Source 3: legacy financial system (SQL Server, exposed through views) ------------
