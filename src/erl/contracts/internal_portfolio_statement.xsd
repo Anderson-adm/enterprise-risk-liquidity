@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Synthetic contract for internally generated portfolio statements (source 6). -->
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
+  <xs:simpleType name="Money">
+    <xs:restriction base="xs:decimal"><xs:fractionDigits value="2"/></xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="Quantity">
+    <xs:restriction base="xs:decimal"><xs:fractionDigits value="6"/></xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="Currency">
+    <xs:restriction base="xs:string"><xs:pattern value="[A-Z]{3}"/></xs:restriction>
+  </xs:simpleType>
+  <xs:element name="PortfolioStatement">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="Header">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="PortfolioCode" type="xs:string"/>
+              <xs:element name="ReferenceDate" type="xs:date"/>
+              <xs:element name="GeneratedAt" type="xs:dateTime"/>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+        <xs:element name="Positions">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="Position" minOccurs="1" maxOccurs="unbounded">
+                <xs:complexType>
+                  <xs:sequence>
+                    <xs:element name="InstrumentCode" type="xs:string"/>
+                    <xs:element name="Quantity" type="Quantity"/>
+                    <xs:element name="MarketValue" type="Money"/>
+                    <xs:element name="Currency" type="Currency"/>
+                  </xs:sequence>
+                </xs:complexType>
+              </xs:element>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+      </xs:sequence>
+      <xs:attribute name="version" type="xs:string" use="required"/>
+    </xs:complexType>
+  </xs:element>
+</xs:schema>

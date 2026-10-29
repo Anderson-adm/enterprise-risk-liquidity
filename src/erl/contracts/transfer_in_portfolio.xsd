@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Synthetic contract for portfolios received from external administrators (source 7, transfer-in).
+     Deliberately different from the internal format: namespace, attributes, dd/MM/yyyy dates,
+     quantity + unit price instead of market value, and an administrator-scoped fund identifier. -->
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           xmlns:ext="urn:erl:synthetic:transfer-in:v1"
+           targetNamespace="urn:erl:synthetic:transfer-in:v1"
+           elementFormDefault="qualified">
+  <xs:simpleType name="BrDate">
+    <xs:restriction base="xs:string"><xs:pattern value="\d{2}/\d{2}/\d{4}"/></xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="PositiveDecimal">
+    <xs:restriction base="xs:decimal"><xs:minExclusive value="0"/></xs:restriction>
+  </xs:simpleType>
+  <xs:element name="TransferInPortfolio">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="Fund">
+          <xs:complexType>
+            <xs:attribute name="externalId" type="xs:string" use="required"/>
+          </xs:complexType>
+        </xs:element>
+        <xs:element name="AsOf" type="ext:BrDate"/>
+        <xs:element name="Holdings">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="Holding" minOccurs="1" maxOccurs="unbounded">
+                <xs:complexType>
+                  <xs:attribute name="asset" type="xs:string" use="required"/>
+                  <xs:attribute name="qty" type="ext:PositiveDecimal" use="required"/>
+                  <xs:attribute name="price" type="ext:PositiveDecimal" use="required"/>
+                  <xs:attribute name="ccy" use="required">
+                    <xs:simpleType>
+                      <xs:restriction base="xs:string"><xs:pattern value="[A-Z]{3}"/></xs:restriction>
+                    </xs:simpleType>
+                  </xs:attribute>
+                </xs:complexType>
+              </xs:element>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+      </xs:sequence>
+      <xs:attribute name="administrator" type="xs:string" use="required"/>
+    </xs:complexType>
+  </xs:element>
+</xs:schema>

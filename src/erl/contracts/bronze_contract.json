@@ -1,0 +1,71 @@
+{
+  "description": "Bronze data contract: one entry per Bronze table. Single source of truth for Python ingestion (column lists), Terraform (Glue Catalog Bronze tables) and documentation. Business columns are stored as strings exactly as received; typing happens in Silver.",
+  "version": 1,
+  "partition_column": "bronze_reference_date",
+  "metadata_columns": [
+    {"name": "meta_source_system", "type": "string"},
+    {"name": "meta_entity", "type": "string"},
+    {"name": "meta_run_id", "type": "string"},
+    {"name": "meta_ingested_at", "type": "string"},
+    {"name": "meta_component", "type": "string"},
+    {"name": "meta_source_object", "type": "string"},
+    {"name": "meta_source_sha256", "type": "string"},
+    {"name": "meta_snapshot_key", "type": "string"},
+    {"name": "meta_row_number", "type": "bigint"},
+    {"name": "meta_row_hash", "type": "string"}
+  ],
+  "entities": {
+    "fund_ops__fund": {
+      "source_system": "fund_ops", "entity": "fund", "delivery": "database", "ingestion_pattern": "glue_db_gb",
+      "columns": ["fund_id", "fund_name", "fund_type", "base_currency", "inception_date", "status"]
+    },
+    "fund_ops__portfolio": {
+      "source_system": "fund_ops", "entity": "portfolio", "delivery": "database", "ingestion_pattern": "glue_db_gb",
+      "columns": ["portfolio_id", "fund_id", "portfolio_name", "position_source_system", "status", "opened_on"]
+    },
+    "fund_ops__source_identity_map": {
+      "source_system": "fund_ops", "entity": "source_identity_map", "delivery": "database", "ingestion_pattern": "glue_db_gb",
+      "columns": ["source_system", "external_identifier", "portfolio_id", "valid_from", "valid_to"]
+    },
+    "portfolio_risk__processed_position": {
+      "source_system": "portfolio_risk", "entity": "processed_position", "delivery": "database", "ingestion_pattern": "glue_db_gb",
+      "columns": ["position_id", "portfolio_code", "instrument_code", "reference_date", "quantity", "market_value", "currency", "processing_status", "processing_version", "processed_at"]
+    },
+    "portfolio_risk__processing_batch": {
+      "source_system": "portfolio_risk", "entity": "processing_batch", "delivery": "database", "ingestion_pattern": "glue_db_gb",
+      "columns": ["batch_id", "reference_date", "status", "started_at", "finished_at"]
+    },
+    "legacy_finance__cash_balance": {
+      "source_system": "legacy_finance", "entity": "cash_balance", "delivery": "database", "ingestion_pattern": "glue_db_tb",
+      "columns": ["cod_cart", "dt_ref", "vl_saldo", "cd_moeda"]
+    },
+    "legacy_finance__pending_redemption": {
+      "source_system": "legacy_finance", "entity": "pending_redemption", "delivery": "database", "ingestion_pattern": "glue_db_tb",
+      "columns": ["id_resgate", "cod_cart", "dt_pedido", "dt_cotizacao", "vl_resgate", "st_resgate"]
+    },
+    "exposure_compliance__instrument_registry": {
+      "source_system": "exposure_compliance", "entity": "instrument_registry", "delivery": "database", "ingestion_pattern": "glue_db_gb",
+      "columns": ["instrument_code", "instrument_name", "instrument_type", "issuer_code", "issuer_name", "issuer_type"]
+    },
+    "exposure_compliance__stock_position": {
+      "source_system": "exposure_compliance", "entity": "stock_position", "delivery": "database", "ingestion_pattern": "glue_db_tb",
+      "columns": ["stock_id", "fund_ref", "instrument_code", "position_date", "quantity", "book_value"]
+    },
+    "exposure_compliance__concentration_limit": {
+      "source_system": "exposure_compliance", "entity": "concentration_limit", "delivery": "database", "ingestion_pattern": "glue_db_gb",
+      "columns": ["rule_id", "rule_scope", "limit_pct", "excluded_issuer_type", "valid_from", "valid_to"]
+    },
+    "market_data__daily_price": {
+      "source_system": "market_data", "entity": "daily_price", "delivery": "csv", "ingestion_pattern": "lambda_market_data",
+      "columns": ["reference_date", "instrument_code", "instrument_type", "close_price", "avg_daily_volume", "currency"]
+    },
+    "internal_xml__portfolio_position": {
+      "source_system": "internal_xml", "entity": "portfolio_position", "delivery": "xml", "ingestion_pattern": "lambda_internal_xml",
+      "columns": ["portfolio_code", "reference_date", "generated_at", "instrument_code", "quantity", "market_value", "currency"]
+    },
+    "external_xml__transfer_in_position": {
+      "source_system": "external_xml", "entity": "transfer_in_position", "delivery": "xml", "ingestion_pattern": "lambda_external_xml",
+      "columns": ["administrator_code", "external_fund_id", "as_of", "asset_code", "qty", "price", "ccy"]
+    }
+  }
+}

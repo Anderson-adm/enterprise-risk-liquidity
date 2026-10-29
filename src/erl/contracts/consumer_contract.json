@@ -1,0 +1,46 @@
+{
+  "description": "Consumption contract for the SQL Server 'controle e relatorios' database. Columns must match the Gold dbt models (checked by tests/test_contracts.py). Types are logical: date, string(n), decimal(p,s), integer.",
+  "version": 1,
+  "products": {
+    "liquidity_summary": {
+      "gold_model": "gold_liquidity_summary",
+      "key": ["reference_date", "portfolio_id"],
+      "columns": [
+        {"name": "reference_date", "type": "date", "nullable": false},
+        {"name": "portfolio_id", "type": "string(20)", "nullable": false},
+        {"name": "fund_id", "type": "string(20)", "nullable": false},
+        {"name": "position_source_system", "type": "string(30)", "nullable": false},
+        {"name": "positions_value", "type": "decimal(20,2)", "nullable": false},
+        {"name": "cash_value", "type": "decimal(20,2)", "nullable": false},
+        {"name": "total_value", "type": "decimal(20,2)", "nullable": false},
+        {"name": "liquid_value", "type": "decimal(20,2)", "nullable": false},
+        {"name": "liquidity_ratio", "type": "decimal(9,6)", "nullable": false},
+        {"name": "pending_redemptions", "type": "decimal(20,2)", "nullable": false},
+        {"name": "redemption_coverage", "type": "decimal(18,6)", "nullable": true},
+        {"name": "positions_count", "type": "integer", "nullable": false},
+        {"name": "lineage_sources", "type": "string(200)", "nullable": false},
+        {"name": "lineage_bronze_runs", "type": "string(1000)", "nullable": false}
+      ]
+    },
+    "exposure_compliance": {
+      "gold_model": "gold_exposure_compliance",
+      "key": ["reference_date", "portfolio_id"],
+      "columns": [
+        {"name": "reference_date", "type": "date", "nullable": false},
+        {"name": "portfolio_id", "type": "string(20)", "nullable": false},
+        {"name": "fund_id", "type": "string(20)", "nullable": false},
+        {"name": "total_exposure", "type": "decimal(20,2)", "nullable": false},
+        {"name": "top_issuer_code", "type": "string(20)", "nullable": true},
+        {"name": "top_issuer_exposure", "type": "decimal(20,2)", "nullable": false},
+        {"name": "top_issuer_pct", "type": "decimal(9,6)", "nullable": false},
+        {"name": "concentration_limit_pct", "type": "decimal(9,6)", "nullable": false},
+        {"name": "concentration_check", "type": "string(10)", "nullable": false},
+        {"name": "reconciliation_status", "type": "string(20)", "nullable": false},
+        {"name": "mismatched_positions", "type": "integer", "nullable": false},
+        {"name": "quality_status", "type": "string(10)", "nullable": false},
+        {"name": "lineage_sources", "type": "string(200)", "nullable": false},
+        {"name": "lineage_bronze_runs", "type": "string(1000)", "nullable": false}
+      ]
+    }
+  }
+}
