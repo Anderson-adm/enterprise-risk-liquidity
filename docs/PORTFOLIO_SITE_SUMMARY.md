@@ -16,8 +16,11 @@ budget; GitHub Actions CI.
 
 * End-to-end pipeline for 3 reference dates and 8 scenarios (identifier divergence, duplicates,
   unmapped portfolio, invalid XML, late delivery + reprocessing, idempotent re-run, correction of
-  a published position, critical quality failure, unavailable source) — on SQLite stand-ins for
-  the databases and DuckDB for dbt.
+  a published position, critical quality failure, unavailable source) — on PostgreSQL 17 and
+  SQL Server 2022 containers (Docker Desktop/WSL2) and, separately, on SQLite stand-ins; DuckDB
+  for dbt. Same outcomes and identical published values on both backends.
+* SQL Server publication under concurrency (4 simultaneous publishers): exactly one ACTIVE
+  version, no deadlock; exact DECIMAL limits and catalog types checked on both engines.
 * Airflow 3.3.2 DAG: one successful run and one failed run (quality gate) via `airflow dags test`.
 * Lambda handlers against an S3 API mock (moto).
 * Terraform: fmt, validate, TFLint, Checkov, `terraform test` with mocked provider.
@@ -28,26 +31,27 @@ None yet.
 
 ## Planned / pending
 
-Execution with real PostgreSQL/SQL Server containers; AWS lab apply, hybrid run (Lambda, Glue,
+AWS lab apply, hybrid run (Lambda, Glue,
 Athena + Iceberg), CloudWatch/SNS alert evidence, teardown; CI run on GitHub.
 
 ## Measured technical results (this reconstruction)
 
-* ≈ 40 s per successful local run of all steps for one reference date on a Ryzen 5 5600G under
+* ≈ 40–50 s per successful local run of all steps for one reference date on a Ryzen 5 5600G under
   WSL2 with the repo on `/mnt/c` (dominated by `dbt build`, 67 nodes). Synthetic volumes
   (hundreds of rows), so this is not a performance benchmark.
-* 8/8 failure/reprocessing scenarios behave as specified (evidence/local/summary.json).
+* 8/8 failure/reprocessing scenarios behave as specified on both backends
+  (evidence/local/containers/summary.json, evidence/local/sqlite/summary.json).
 
 ## Limitations
 
-Synthetic data and rules; tiny volumes; no AWS execution; database engines replaced by SQLite
-in the recorded runs.
+Synthetic data and rules; tiny volumes; no AWS execution; databases are local containers, not
+managed or enterprise instances.
 
 ## Page claims vs. evidence in this repository (factual, no proposals)
 
 | Claim / component on the page | Evidence status here |
 |---|---|
-| 7 sources integrated into one validated base | validated locally (SQLite stand-ins for the 4 databases) |
+| 7 sources integrated into one validated base | validated locally (PostgreSQL + SQL Server containers; also SQLite stand-ins) |
 | Glue jobs (GB, TB, Load) | implemented, not executed |
 | Lambdas (B3 daily, internal XML, external XML) | implemented; handler logic tested with an S3 mock; not executed on AWS |
 | Bronze / Silver / Gold on S3 + Iceberg | Bronze/Silver/Gold validated locally (filesystem + DuckDB); S3 + Iceberg not executed |
@@ -55,5 +59,5 @@ in the recorded runs.
 | Airflow, idempotent reprocessing by reference date, failed-step alert | validated locally (Airflow 3.3.2 `dags test`; alert = structured log locally) |
 | CloudWatch + SNS | implemented, not executed |
 | Terraform | static checks and mocked tests pass; never applied |
-| SQL Server "controle e relatórios" | publisher validated locally on SQLite; SQL Server not executed |
+| SQL Server "controle e relatórios" | validated locally on a SQL Server 2022 container (transactional, idempotent, concurrent publishers) |
 | "-80% time to deliver validated data", "one week to one day" | historical results of the original experience; not measured by this reconstruction |

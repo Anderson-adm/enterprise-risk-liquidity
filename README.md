@@ -59,14 +59,14 @@ flowchart LR
 
 | Component | How it is implemented | Status |
 |---|---|---|
-| 7 sources | SQLAlchemy schemas for 4 DBs + CSV + 2 XML/XSD formats, deterministic generator | Validated locally on SQLite stand-ins; PostgreSQL/SQL Server containers **implemented, not validated** (no container runtime was running) |
-| Extraction | parameterised SQL, streamed in chunks, landing snapshot + manifest | Validated locally |
+| 7 sources | SQLAlchemy schemas for 4 DBs + CSV + 2 XML/XSD formats, deterministic generator | Validated locally on PostgreSQL 17 + SQL Server 2022 containers and on SQLite stand-ins |
+| Extraction | parameterised SQL, streamed in chunks, landing snapshot + manifest | Validated locally on PostgreSQL, SQL Server (incl. legacy views) and SQLite; identical content hashes across engines |
 | Bronze | run-scoped keys, conditional writes, checksums, duplicate detection, quarantine | Validated locally (filesystem) and with moto (S3 API mock) |
 | Lambdas (CSV / XML ingestion) | `erl.aws.lambda_handlers` → same code as local ingestion | Handler logic validated with moto; **AWS execution not validated** |
 | Glue jobs db-gb / db-tb / gold-load | PySpark (Glue 5.0) scripts in `glue/jobs` | **Implemented, not validated** (no Spark/AWS run) |
 | Silver / Gold | dbt, portable SQL, DuckDB locally; Athena + Iceberg target configured | Validated locally on DuckDB; **Athena/Iceberg not validated** |
 | Quality gate | dbt tests on write-audit-publish candidates + gate step | Validated locally |
-| Publication | staging, in-DB checks, single transaction, content-hash idempotency, publication log | Validated locally on SQLite; SQL Server **implemented, not validated** |
+| Publication | staging, in-DB checks, single transaction, content-hash idempotency, publication lock, publication log | Validated locally on a SQL Server 2022 container (incl. concurrent publishers) and on SQLite |
 | Airflow | local Airflow 3.3.2, one task per step, retries, alerts, failure watcher | Validated locally (`airflow dags test`, success and failure runs) |
 | CloudWatch / SNS | log groups, Lambda error alarms, Glue failure EventBridge rule, DAG failure → SNS | **Implemented, not validated** (locally the alert is a structured log line) |
 | Terraform | bootstrap + dev root module + 1 module | fmt/validate/TFLint/Checkov/`terraform test` (mocked) pass; **never applied** |
@@ -118,7 +118,8 @@ Exit codes: 0 ok, 2 configuration, 3 infrastructure/source unavailable, 4 contra
 uv run ruff check src tests airflow glue scripts
 uv run pytest -m "not dbt and not integration"   # unit/contract/moto tests (~1 min)
 uv run pytest -m "dbt and not integration"       # 9 end-to-end scenarios with dbt (~4 min)
-ERL_IT_CONTAINERS=1 uv run pytest -m integration # needs docker/compose.yaml running
+# real PostgreSQL + SQL Server (docker/compose.yaml running, .env with local passwords):
+set -a; . ./.env; set +a; ERL_IT_CONTAINERS=1 uv run pytest -m integration   # ~1.5 min
 cd infra && terraform -chdir=environments/dev test   # mocked provider, plan only
 ```
 
@@ -140,8 +141,8 @@ SELECT reference_date, publication_id, status, superseded_by, message
 FROM rpt.publication_log ORDER BY reference_date, published_at;
 ```
 
-Real output of these queries (local evidence run, SQLite stand-in) is in
-[evidence/local/consumer_queries.txt](evidence/local/consumer_queries.txt), e.g.:
+Real output of these queries (local evidence run on the SQL Server container) is in
+[evidence/local/containers/consumer_queries.txt](evidence/local/containers/consumer_queries.txt), e.g.:
 
 ```
 reference_date | portfolio_id | total_value | liquid_value | liquidity_ratio | pending_redemptions | redemption_coverage
@@ -152,7 +153,9 @@ reference_date | portfolio_id | total_value | liquid_value | liquidity_ratio | p
 ## 11. Failures and reprocessing
 
 `uv run python scripts/collect_evidence.py` replays all scenarios from scratch; results are in
-[evidence/local/](evidence/local/).
+[evidence/local/containers/](evidence/local/containers/) (PostgreSQL + SQL Server) and
+[evidence/local/sqlite/](evidence/local/sqlite/) (stand-ins). Both backends give the same outcome
+for every scenario and identical published values.
 
 | Scenario | Command | Observed outcome |
 |---|---|---|
@@ -163,7 +166,8 @@ reference_date | portfolio_id | total_value | liquid_value | liquidity_ratio | p
 | Correction of a published position | `erl scenario correct-position --date 2026-10-28` + run | new version published; reconciliation flags PRT-0001 `MISMATCH` (risk corrected, compliance not) |
 | Critical quality failure | `erl scenario degrade-market-data --date 2026-10-28` + run | gate fails (rejection ratio); both Gold tables untouched; consumer keeps the last valid version; exit code 5 |
 | Source unavailable | `erl scenario remove-market-data --date 2026-10-26` + run | `source_unavailable` at collect, exit code 3, report still produced |
-| Failure mid-publication | `tests/test_publisher.py` (fault injection) | transaction rolled back, previous version intact, `FAILED` log row |
+| Failure mid-publication | `tests/test_publisher.py` (fault injection, SQLite and SQL Server) | transaction rolled back, previous version intact, `FAILED` log row |
+| Concurrent publishers | `tests/test_integration_containers.py` (4 threads, SQL Server and PostgreSQL) | serialised by a transaction-scoped lock; exactly one `ACTIVE` version, the others `SUPERSEDED`, no deadlock |
 
 ## 12. Optional AWS run and 13. teardown
 
@@ -173,9 +177,8 @@ Terraform design, ownership, security controls, Checkov exceptions and cost mode
 
 ## 14. Limitations
 
-* No container runtime was running, so PostgreSQL/SQL Server were replaced by SQLite stand-ins
-  (same SQLAlchemy code and SQL). Dialect-specific behaviour (SQL Server locking/types, Postgres
-  streaming) is covered only by the opt-in integration test, which has not been executed.
+* PostgreSQL and SQL Server run as local containers (Docker Desktop/WSL2), not as managed or
+  enterprise instances; SQLite stand-ins remain available when no container runtime exists.
 * Athena/Iceberg, Glue, Lambda on AWS, CloudWatch and SNS have not been executed. dbt SQL is
   written in the DuckDB/Trino common subset with engine differences isolated in
   `dbt/macros/platform.sql`, but Athena compilation/execution is unverified.
@@ -190,13 +193,17 @@ Terraform design, ownership, security controls, Checkov exceptions and cost mode
 
 ## 15. Evidence
 
-* [evidence/local/summary.json](evidence/local/summary.json) — the 8 scenarios, statuses and
-  measured wall-clock times (≈40 s per successful local run on WSL2/`/mnt/c`, dominated by dbt).
-* [evidence/local/runs/](evidence/local/runs/) — full run reports (records read, ingestion
-  statuses, quarantined files, gate result, publication, rejected records, step timings).
-* [evidence/local/consumer_queries.txt](evidence/local/consumer_queries.txt) — consumer tables
-  and publication log.
-* [evidence/local/pytest.txt](evidence/local/pytest.txt), [evidence/terraform/checks.txt](evidence/terraform/checks.txt).
+Kept separate per engine:
+
+| Evidence | SQLite stand-ins | PostgreSQL + SQL Server containers |
+|---|---|---|
+| 8 scenarios: status, measured wall-clock (≈40–50 s per successful run on WSL2/`/mnt/c`, dominated by dbt) | [sqlite/summary.json](evidence/local/sqlite/summary.json) | [containers/summary.json](evidence/local/containers/summary.json) |
+| Full run reports (records read, ingestion statuses, quarantine, gate, publication, rejections, timings) | [sqlite/runs/](evidence/local/sqlite/runs/) | [containers/runs/](evidence/local/containers/runs/) |
+| Consumer tables and publication log | [sqlite/consumer_queries.txt](evidence/local/sqlite/consumer_queries.txt) | [containers/consumer_queries.txt](evidence/local/containers/consumer_queries.txt) |
+| Server version, catalog column types, views, row counts | [databases/sqlite.json](evidence/databases/sqlite.json) | [databases/postgresql.json](evidence/databases/postgresql.json), [databases/sqlserver.json](evidence/databases/sqlserver.json) |
+| Test runs | [tests/pytest_default.txt](evidence/tests/pytest_default.txt) | [tests/pytest_integration_containers.txt](evidence/tests/pytest_integration_containers.txt) |
+
+Terraform checks: [evidence/terraform/checks.txt](evidence/terraform/checks.txt).
 
 Project working agreements for humans and coding agents: [AGENTS.md](AGENTS.md).
 Handoff state: [docs/HANDOFF.md](docs/HANDOFF.md).
