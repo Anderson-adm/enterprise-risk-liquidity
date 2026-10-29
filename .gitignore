@@ -42,3 +42,6 @@ backend.hcl
 .env
 *.pem
 .aws/
+
+# Terraform plan exports
+*.plan.txt
