@@ -41,6 +41,37 @@ jobs:
       - name: Lambda package builds
         run: scripts/build_lambda.sh
 
+  integration:
+    name: integration (real PostgreSQL + SQL Server containers)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          enable-cache: true
+      - name: Install (locked)
+        run: uv sync --frozen
+      - name: Start databases (docker/compose.yaml; throwaway passwords generated per run)
+        run: |
+          umask 077
+          pg="$(openssl rand -hex 16)"
+          ms="Erl-$(openssl rand -hex 12)-9a!"
+          echo "::add-mask::$pg"
+          echo "::add-mask::$ms"
+          printf 'ERL_PG_PASSWORD=%s\nERL_MSSQL_SA_PASSWORD=%s\n' "$pg" "$ms" > .env
+          docker compose -f docker/compose.yaml --env-file .env up -d --wait
+          docker stats --no-stream
+      - name: Integration tests (isolated it_* databases)
+        run: |
+          set -a; . ./.env; set +a
+          ERL_SOURCE_BACKEND=containers ERL_IT_CONTAINERS=1 uv run pytest -m integration
+      - name: Container logs
+        if: failure()
+        run: docker compose -f docker/compose.yaml logs --tail=200
+
   terraform:
     name: terraform (fmt, validate, tflint, checkov, test)
     runs-on: ubuntu-24.04
