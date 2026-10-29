@@ -62,6 +62,8 @@ uvx --python 3.12 checkov@3.4.0 -d infra --framework terraform --compact --quiet
 * Contracts: change `bronze_contract.json` / `consumer_contract.json` first, then code; tests
   check consistency with dbt and Terraform.
 * Small, coherent commits; end commit messages with the agent attribution line.
+* The working copy lives on a Windows drive (`core.filemode=false`): mark new scripts executable
+  with `git update-index --chmod=+x <file>`, or CI fails with exit code 126.
 
 ## Safety rules (non-negotiable)
 

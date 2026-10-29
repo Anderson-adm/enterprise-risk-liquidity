@@ -1,7 +1,7 @@
 # HANDOFF
 
 _Last update: 2026-10-29 by Claude Code (Opus 5.5). Branch `main`, pushed to
-`Anderson-adm/enterprise-risk-liquidity` (public). CI: see "CI on GitHub" below._
+`Anderson-adm/enterprise-risk-liquidity` (public). CI green (run 40925344256); see "CI on GitHub" below._
 
 ## State
 
@@ -19,7 +19,7 @@ resource, no AWS call was made or is authorised.
 | Lambda handlers + package | tested with moto; not run on AWS |
 | Glue jobs (db_ingest GB/TB, gold_load) | written; **not executed** |
 | Terraform bootstrap + dev + module | fmt/validate/TFLint/Checkov/`terraform test` pass; **never applied** |
-| CI (GitHub Actions) | python, integration (containers) and terraform jobs; see below |
+| CI (GitHub Actions) | python, integration (real containers) and terraform jobs — green on GitHub |
 
 ## Commands executed on 2026-10-29 (this session) and results
 
@@ -96,7 +96,15 @@ publications for one date.
 
 ## CI on GitHub
 
-_To be filled with the real result of the first run._
+* Run 40925068498 (commit `bee415d`, first push): `integration` and `terraform` passed; `python`
+  **failed** at "Lambda package builds" with exit code 126 — the scripts had no executable bit in
+  git (repo on `/mnt/c`, `core.filemode=false`). Fixed in `22c6c5f` (`git update-index --chmod=+x`).
+* Run 40925344256 (commit `22c6c5f`): **all green** — `python` 72 s, `integration` (real
+  PostgreSQL + SQL Server containers on the runner) 75 s, `terraform` 61 s.
+  https://github.com/Anderson-adm/enterprise-risk-liquidity/actions/runs/40925344256
+* Note for agents on this machine: the repo is on a Windows drive; new scripts need
+  `git update-index --chmod=+x <file>`. Pushes run through Windows `git.exe` (Git Credential
+  Manager); WSL git has no GitHub credentials.
 
 ## Known issues / limitations
 

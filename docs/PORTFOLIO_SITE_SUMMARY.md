@@ -10,7 +10,7 @@ manifests and quarantine; dbt Silver/Gold (liquidity + exposure/compliance) with
 gates; transactional, idempotent SQL Server publication with a publication log; Airflow DAG;
 Lambda handlers for the three file feeds; Glue 5.0 jobs (DB ingestion GB/TB patterns, Gold load);
 Terraform for S3, Glue Catalog, Athena workgroup, IAM, Lambda, Glue, CloudWatch/SNS/EventBridge,
-budget; GitHub Actions CI.
+budget; GitHub Actions CI (green on GitHub, including the PostgreSQL + SQL Server integration job).
 
 ## Tested locally (real executions, 2026-10-29)
 
@@ -32,7 +32,7 @@ None yet.
 ## Planned / pending
 
 AWS lab apply, hybrid run (Lambda, Glue,
-Athena + Iceberg), CloudWatch/SNS alert evidence, teardown; CI run on GitHub.
+Athena + Iceberg), CloudWatch/SNS alert evidence, teardown.
 
 ## Measured technical results (this reconstruction)
 

@@ -70,7 +70,7 @@ flowchart LR
 | Airflow | local Airflow 3.3.2, one task per step, retries, alerts, failure watcher | Validated locally (`airflow dags test`, success and failure runs) |
 | CloudWatch / SNS | log groups, Lambda error alarms, Glue failure EventBridge rule, DAG failure → SNS | **Implemented, not validated** (locally the alert is a structured log line) |
 | Terraform | bootstrap + dev root module + 1 module | fmt/validate/TFLint/Checkov/`terraform test` (mocked) pass; **never applied** |
-| CI | GitHub Actions (Python, dbt on DuckDB, Terraform checks), actions pinned by SHA | Written; not yet run on GitHub |
+| CI | GitHub Actions (Python, dbt on DuckDB, PostgreSQL + SQL Server integration, Terraform checks), actions pinned by SHA | Green on GitHub |
 
 Why a publication package between Gold and SQL Server: AWS must not connect to a local
 database (no VPN/NAT, nothing exposed). The Glue `gold-load` job exports the audited Gold rows
