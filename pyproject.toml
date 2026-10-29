@@ -1,0 +1,64 @@
+[project]
+name = "erl-platform"
+version = "0.1.0"
+description = "Enterprise Risk & Liquidity Data Platform — synthetic, reproducible financial data integration case."
+readme = "README.md"
+requires-python = ">=3.11,<3.13"
+license = { text = "MIT" }
+dependencies = [
+    "sqlalchemy>=2.0,<2.2",
+    "pyarrow>=17",
+    "lxml>=5.3",
+    "boto3>=1.35",
+    "duckdb>=2.0",
+    "psycopg[binary]>=3.2",
+    "pymssql>=2.3",
+    "dbt-core>=1.10,<1.13",
+    "dbt-duckdb>=1.9,<1.12",
+    "dbt-athena>=1.9,<1.12",
+]
+
+[project.scripts]
+erl = "erl.cli:main"
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3",
+    "ruff>=0.8",
+    "moto[s3]>=5.0",
+]
+
+[build-system]
+requires = ["hatchling>=1.25"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/erl"]
+
+[tool.ruff]
+line-length = 110
+target-version = "py311"  # Glue 5.0 runs Python 3.11; keep shared code compatible.
+src = ["src", "tests"]
+extend-exclude = ["dbt/target", "dbt/dbt_packages", ".tools"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "S", "SIM", "RUF", "DTZ"]
+ignore = [
+    "S101",  # assert is fine in tests
+    "S608",  # SQL built from internal identifiers only (see erl/sources/extract.py)
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S", "DTZ"]
+"glue/**" = ["DTZ"]
+# synthetic source data: deterministic PRNG (not crypto) and naive timestamps as stored by the sources
+"src/erl/sources/synthetic.py" = ["S311", "DTZ001"]
+"src/erl/sources/seed.py" = ["DTZ"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra --strict-markers"
+markers = [
+    "integration: requires running PostgreSQL/SQL Server containers (see docs/LOCAL_RUNTIME.md)",
+    "dbt: runs dbt against a local DuckDB file (slower)",
+]
