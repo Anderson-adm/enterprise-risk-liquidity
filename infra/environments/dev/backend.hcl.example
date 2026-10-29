@@ -1,0 +1,4 @@
+# Copy to backend.hcl (git-ignored) after `infra/bootstrap` has been applied.
+bucket = "erl-tfstate-<data-dev-account-id>"
+key    = "case01/dev/terraform.tfstate"
+region = "sa-east-1"
