@@ -6,6 +6,7 @@ import json
 import os
 import shutil
 import subprocess
+import sys
 from decimal import Decimal
 from pathlib import Path
 from types import SimpleNamespace
@@ -332,3 +333,35 @@ def test_terraform_checks_never_see_credentials_or_a_local_backend(tmp_path):
     )
     assert result.returncode == 0, result.stdout + result.stderr
     assert set(seen.read_text().split()) == {"|/dev/null|/dev/null|0"}
+
+
+def test_sql_publisher_imports_without_duckdb():
+    """Only the local package builder needs DuckDB; the SQL publisher must not pull it in."""
+    code = (
+        "import sys\n"
+        "sys.modules['duckdb'] = None  # any 'import duckdb' now raises ImportError\n"
+        "import load.publisher, load.package\n"
+        "assert load.publisher.Package is load.package.Package\n"
+    )
+    result = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True)
+    assert result.returncode == 0, result.stderr
+
+
+def test_dbt_subprocess_gets_the_settings_paths_over_inherited_ones(settings, monkeypatch):
+    stale = settings.data_dir.parent / "stale"
+    monkeypatch.setenv("ERL_LAKE_DIR", str(stale / "lake"))
+    monkeypatch.setenv("ERL_DUCKDB_PATH", str(stale / "erl.duckdb"))
+    monkeypatch.setenv("ERL_UNRELATED_OPTION", "kept")
+    seen = {}
+
+    def fake_run(cmd, *, env, **kwargs):
+        seen.update(env)
+        return subprocess.CompletedProcess(cmd, 2, "", "")
+
+    monkeypatch.setattr(steps.subprocess, "run", fake_run)
+    with pytest.raises(ErlError, match="run_results"):
+        steps.step_transform(settings, D1, run_id())
+    assert seen["ERL_LAKE_DIR"] == str(settings.lake_dir)
+    assert seen["ERL_DUCKDB_PATH"] == str(settings.warehouse_path)
+    assert seen["ERL_UNRELATED_OPTION"] == "kept"
+    assert os.environ["ERL_LAKE_DIR"] == str(stale / "lake"), "the parent environment is not modified"

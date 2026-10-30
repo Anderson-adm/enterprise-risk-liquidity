@@ -154,6 +154,7 @@ class S3Store:
         CopyObject cannot be conditional, and HEAD-then-COPY races. A multipart upload whose
         parts are ``UploadPartCopy`` ranges is completed with ``If-None-Match: *``, so the
         object bytes never pass through this process (Spark driver) and the commit is atomic.
+        Any failure after the upload is created aborts it (best effort, original error kept).
         """
         from botocore.exceptions import ClientError
 
@@ -180,9 +181,18 @@ class S3Store:
                 MultipartUpload={"Parts": parts},
                 IfNoneMatch="*",
             )
-        except ClientError as exc:
-            self._s3.abort_multipart_upload(Bucket=self.bucket, Key=target, UploadId=upload_id)
-            self._raise(exc, target, "copy")
+        except BaseException as exc:  # any failure once the upload exists, incl. transport errors
+            try:
+                self._s3.abort_multipart_upload(Bucket=self.bucket, Key=target, UploadId=upload_id)
+            except Exception as abort_exc:  # never mask the original failure
+                exc.add_note(
+                    f"abort of multipart upload {upload_id} for {self.uri(target)} also failed "
+                    f"({type(abort_exc).__name__}); its parts may remain until the bucket lifecycle "
+                    "aborts incomplete uploads"
+                )
+            if isinstance(exc, ClientError):
+                self._raise(exc, target, "copy")
+            raise
         return self.uri(target)
 
     def delete_prefix(self, prefix: str) -> int:

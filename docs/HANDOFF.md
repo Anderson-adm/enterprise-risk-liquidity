@@ -37,7 +37,18 @@ refactor, then the documentation/evidence commit. `dist/` was rebuilt from `c814
 | Terraform (isolated copy, credentials hidden) | fmt, validate (3 dirs), 14 mocked tests, TFLint 0, Checkov 162/0/40 | [terraform_checks.txt](../evidence/refactor/terraform_checks.txt) |
 | Airflow 3.3.2 (`airflow dags test`) | DagRun **success** (62.7 s), 9 steps, ACTIVE publication 8 + 8 rows, after `erl generate --dates 2026-10-26`; SQLite backend (containers were stopped for memory, see incident 4) | [airflow_single_date.json](../evidence/refactor/airflow_single_date.json) |
 
-### Not tested
+### Codex review P2 fixes (after 51bb417)
+
+* `S3Store.copy_if_absent` aborts the multipart upload on **any** failure once it exists
+  (transport errors included, not only `ClientError`); a failed abort adds a note to the original
+  exception instead of masking it, and nothing claims cleanup. The bucket lifecycle still aborts
+  incomplete uploads after 1 day as a backstop.
+* `load.package` imports DuckDB only inside `build_from_duckdb`: the SQL publisher imports without it.
+* dbt receives `ERL_LAKE_DIR`/`ERL_DUCKDB_PATH` from `Settings` explicitly (inherited values no
+  longer win); other variables are passed through; `os.environ` is not modified.
+* Four regressions fail on the unfixed code and pass now; fast 118, dbt 11, build + smoke green.
+  [review_fixes.txt](../evidence/refactor/review_fixes.txt)
+
 
 * Spark: no JVM here, so `src/spark` and the Glue jobs only had import/graph checks with stubs;
   Glue's Python 3.11 runtime and module list were not available (syntax targets py311 via ruff).

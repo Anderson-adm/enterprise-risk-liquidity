@@ -18,7 +18,6 @@ from datetime import date
 from decimal import Decimal
 from pathlib import Path
 
-import duckdb
 import pyarrow as pa
 
 from load import package_manifest
@@ -39,6 +38,8 @@ def build_from_duckdb(
     store: ObjectStore, warehouse: Path, ref: date, run_id: str, quality_gate: dict, *, compression: str
 ) -> str:
     """Export this run's Gold rows of every consumer product; returns the manifest key."""
+    import duckdb  # only the local builder needs DuckDB; the SQL publisher must import without it
+
     package_manifest.require_passed_gate(quality_gate)
     products = {}
     template = read_sql(EXPORT_QUERY)

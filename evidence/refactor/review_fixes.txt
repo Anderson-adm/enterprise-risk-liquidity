@@ -1,0 +1,8 @@
+# Codex review P2 fixes (2026-10-30), offline, no containers, DBT_SEND_ANONYMOUS_USAGE_STATS=false
+## new regression tests against the unfixed code (src/ reverted temporarily)
+4 failed: test_transport_failure_during_multipart_copy_aborts_the_upload, test_failed_abort_keeps_the_original_error_and_does_not_claim_cleanup, test_sql_publisher_imports_without_duckdb, test_dbt_subprocess_gets_the_settings_paths_over_inherited_ones
+## with the fixes
+fast: 118 passed, 35 deselected in 119.22s (0:01:59)
+dbt: 11 passed, 142 deselected in 320.04s (0:05:20)
+build + smoke of dist/: exit 0 (Lambda ZIP and Glue library rebuilt; storage/objects.py and load/ changed)
+integration (containers): not rerun - the publisher change is import-only and the S3 change is not used by the database path

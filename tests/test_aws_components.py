@@ -209,3 +209,57 @@ def test_lambda_without_the_parquet_codec_leaves_only_the_landing_object(s3, mon
             {"bucket": BUCKET, "key": key, "run_id": run, "reference_date": D1.isoformat()}, None
         )
     assert [o["Key"] for o in s3.list_objects_v2(Bucket=BUCKET)["Contents"]] == [key]
+
+
+class _FailingCopyClient:
+    """moto S3 client whose second UploadPartCopy hits a transport error (not a ClientError)."""
+
+    def __init__(self, client, *, abort_fails: bool = False):
+        self._client, self._abort_fails, self.copies = client, abort_fails, 0
+
+    def __getattr__(self, name):
+        return getattr(self._client, name)
+
+    def upload_part_copy(self, **kwargs):
+        from botocore.exceptions import EndpointConnectionError
+
+        self.copies += 1
+        if self.copies == 2:
+            raise EndpointConnectionError(endpoint_url="https://s3.sa-east-1.amazonaws.com")
+        return self._client.upload_part_copy(**kwargs)
+
+    def abort_multipart_upload(self, **kwargs):
+        if self._abort_fails:
+            raise RuntimeError("abort unavailable")
+        return self._client.abort_multipart_upload(**kwargs)
+
+
+@pytest.fixture
+def two_part_source(s3, monkeypatch):
+    from storage import objects
+
+    monkeypatch.setattr(objects, "COPY_PART_BYTES", 5 * 1024 * 1024)
+    s3.put_object(Bucket=BUCKET, Key="tmp/big", Body=b"x" * (6 * 1024 * 1024))  # two copy parts
+    return s3
+
+
+def test_transport_failure_during_multipart_copy_aborts_the_upload(two_part_source):
+    from botocore.exceptions import EndpointConnectionError
+
+    client = _FailingCopyClient(two_part_source)
+    with pytest.raises(EndpointConnectionError):  # the original error, not a wrapped one
+        S3Store(BUCKET, client=client).copy_if_absent("tmp/big", "bronze/big")
+    assert client.copies == 2
+    assert two_part_source.list_multipart_uploads(Bucket=BUCKET).get("Uploads", []) == []
+    assert "Contents" not in two_part_source.list_objects_v2(Bucket=BUCKET, Prefix="bronze/")
+
+
+def test_failed_abort_keeps_the_original_error_and_does_not_claim_cleanup(two_part_source):
+    from botocore.exceptions import EndpointConnectionError
+
+    client = _FailingCopyClient(two_part_source, abort_fails=True)
+    with pytest.raises(EndpointConnectionError) as exc:
+        S3Store(BUCKET, client=client).copy_if_absent("tmp/big", "bronze/big")
+    assert any("abort of multipart upload" in n and "also failed" in n for n in exc.value.__notes__)
+    assert len(two_part_source.list_multipart_uploads(Bucket=BUCKET)["Uploads"]) == 1  # really pending
+    assert "Contents" not in two_part_source.list_objects_v2(Bucket=BUCKET, Prefix="bronze/")

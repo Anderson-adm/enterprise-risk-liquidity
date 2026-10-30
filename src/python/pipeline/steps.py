@@ -214,10 +214,13 @@ def step_ingest(settings: Settings, ref: date, run_id: str) -> dict:
 
 
 def _dbt_env(settings: Settings) -> dict[str, str]:
+    """Environment of the dbt subprocess: the inherited one (credentials, PATH, DBT_* options)
+    with the paths resolved in ``settings`` set explicitly. Settings is the source of truth for
+    the run; stale ERL_LAKE_DIR / ERL_DUCKDB_PATH values cannot redirect dbt elsewhere."""
     env = dict(os.environ)
     env["DBT_PROFILES_DIR"] = str(settings.dbt_project_dir)
-    env.setdefault("ERL_LAKE_DIR", str(settings.lake_dir))
-    env.setdefault("ERL_DUCKDB_PATH", str(settings.warehouse_path))
+    env["ERL_LAKE_DIR"] = str(settings.lake_dir)
+    env["ERL_DUCKDB_PATH"] = str(settings.warehouse_path)
     return env
 
 
