@@ -10,10 +10,14 @@ import pyarrow.parquet as pq
 import pytest
 from sqlalchemy import Date, bindparam, text
 
-from erl.errors import ContractError, SourceUnavailableError
-from erl.ingestion import bronze, database
-from erl.sources import extract, seed, synthetic
-from tests.conftest import D1, D2, run_id
+from connect.databases import engine_for
+from ingestion import manifests, snapshots
+from pipeline import extraction_catalog
+from sources import seed, synthetic
+from tests.conftest import CODEC, D1, D2, EXTRACT, run_id
+from transform.bronze_records import stringify
+from utils.checksums import sha256_hex
+from utils.errors import ContractError, SourceUnavailableError
 
 
 @pytest.fixture
@@ -22,23 +26,25 @@ def seeded(db_settings):
     return db_settings
 
 
-def _extract(settings, store, source, ref, run=None):
-    engine = seed.engine_for(settings.source_url(source))
+def _extract(settings, store, source, ref, run=None, **overrides):
+    engine = engine_for(settings.source_url(source))
     try:
-        return extract.extract_source(engine, store, source, ref, run or run_id())
+        return extraction_catalog.extract_source(
+            engine, store, source, ref, run or run_id(), **(EXTRACT | overrides)
+        )
     finally:
         engine.dispose()
 
 
 def test_every_database_entity_in_the_contract_has_an_extract(seeded):
-    from erl.contracts import bronze_contract
+    from utils.contracts import bronze_contract
 
     db_entities = {
         (s["source_system"], s["entity"])
         for s in bronze_contract()["entities"].values()
         if s["delivery"] == "database"
     }
-    assert db_entities == set(extract.EXTRACTS)
+    assert db_entities == set(extraction_catalog.EXTRACT_QUERIES)
 
 
 def test_extraction_keeps_exact_decimals_and_counts(seeded, store):
@@ -52,24 +58,23 @@ def test_extraction_keeps_exact_decimals_and_counts(seeded, store):
     assert pos["rows"] == len(expected)
     table = pq.read_table(io.BytesIO(store.get(pos["object"])))
     assert table.column("market_value").to_pylist() == [format(r["market_value"], "f") for r in expected]
-    assert pos["object_sha256"] == bronze.sha256_hex(store.get(pos["object"]))
+    assert pos["object_sha256"] == sha256_hex(store.get(pos["object"]))
 
 
-def test_chunked_extraction_produces_the_same_content(seeded, store, monkeypatch):
+def test_chunked_extraction_produces_the_same_content(seeded, store):
     full = {m["entity"]: m for m in _extract(seeded, store, "exposure_compliance", D1)}
-    monkeypatch.setattr(extract, "CHUNK_ROWS", 3)
-    chunked = {m["entity"]: m for m in _extract(seeded, store, "exposure_compliance", D1)}
+    chunked = {m["entity"]: m for m in _extract(seeded, store, "exposure_compliance", D1, batch_rows=3)}
     for entity in full:
         assert full[entity]["content_sha256"] == chunked[entity]["content_sha256"]
 
 
 def test_float_values_are_refused():
     with pytest.raises(TypeError):
-        bronze.stringify(0.1)
+        stringify(0.1)
 
 
 def test_risk_extraction_waits_for_completed_batch(seeded, store):
-    engine = seed.engine_for(seeded.source_url("portfolio_risk"))
+    engine = engine_for(seeded.source_url("portfolio_risk"))
     with engine.begin() as conn:
         conn.execute(
             text("UPDATE processing_batch SET status = 'RUNNING' WHERE reference_date = :d").bindparams(
@@ -91,14 +96,17 @@ def test_unreachable_database_is_source_unavailable(seeded, store, monkeypatch):
 def test_snapshot_ingestion_and_duplicate_detection(seeded, store):
     first = _extract(seeded, store, "legacy_finance", D1)
     keys = [m["object"].replace(".parquet", ".json") for m in first]
-    accepted = [database.ingest_snapshot(store, k) for k in keys]
-    assert {m.status for m in accepted} == {bronze.ACCEPTED}
+    accepted = [snapshots.ingest_snapshot(store, k, compression=CODEC) for k in keys]
+    assert {m.status for m in accepted} == {manifests.ACCEPTED}
     table = pq.read_table(io.BytesIO(store.get(accepted[0].bronze_object)))
     assert table.column("meta_snapshot_key")[0].as_py() == f"legacy_finance/{accepted[0].entity}/{D1}"
 
     second = _extract(seeded, store, "legacy_finance", D1)  # same data, new run
-    dups = [database.ingest_snapshot(store, m["object"].replace(".parquet", ".json")) for m in second]
-    assert {m.status for m in dups} == {bronze.DUPLICATE}
+    dups = [
+        snapshots.ingest_snapshot(store, m["object"].replace(".parquet", ".json"), compression=CODEC)
+        for m in second
+    ]
+    assert {m.status for m in dups} == {manifests.DUPLICATE}
 
 
 def test_tampered_landing_object_is_refused(seeded, store):
@@ -109,4 +117,4 @@ def test_tampered_landing_object_is_refused(seeded, store):
     tampered = key.replace(".json", ".tampered.json")
     store.put(tampered, json.dumps(manifest).encode())
     with pytest.raises(ContractError, match="checksum"):
-        database.ingest_snapshot(store, tampered)
+        snapshots.ingest_snapshot(store, tampered, compression=CODEC)

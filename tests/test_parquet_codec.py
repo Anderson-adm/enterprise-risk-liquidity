@@ -4,7 +4,7 @@ had been written, leaving a Bronze object without a commit manifest.
 
 The exact managed layer is not available offline (fetching it would be an AWS call), so the
 failure mode is reproduced by a PyArrow whose writer lacks the codec. The fix is verified on
-the built package by scripts/smoke_lambda_package.py."""
+the built package by scripts/build/smoke_artifacts.py."""
 
 from __future__ import annotations
 
@@ -17,11 +17,14 @@ import pyarrow as pa
 import pyarrow.parquet as pq
 import pytest
 
-from erl.contracts import parquet_compression
-from erl.errors import ConfigurationError
-from erl.ingestion import bronze, database, files
-from erl.sources import extract, seed, synthetic
-from tests.conftest import D1, run_id
+from connect.databases import engine_for
+from ingestion import files, snapshots
+from pipeline import extraction_catalog
+from sources import seed, synthetic
+from storage.parquet import require_codec, table_to_parquet_bytes
+from tests.conftest import CODEC, D1, EXTRACT, run_id
+from utils.contracts import parquet_compression
+from utils.errors import ConfigurationError
 
 
 def test_contract_codec_round_trips_the_contract_value_types(tmp_path):
@@ -47,7 +50,7 @@ def test_contract_codec_round_trips_the_contract_value_types(tmp_path):
     ]
     table = pa.Table.from_pylist(rows, schema=schema)
     path = tmp_path / "roundtrip.parquet"
-    path.write_bytes(bronze.parquet_bytes(table))
+    path.write_bytes(table_to_parquet_bytes(table, parquet_compression()))
     assert pq.read_table(path).equals(table)
     assert pq.ParquetFile(path).metadata.row_group(0).column(0).compression == codec.upper()
     with duckdb.connect() as con:  # the local Silver/Gold reader decodes the same file exactly
@@ -73,7 +76,7 @@ def pyarrow_without_codec(monkeypatch):
 
 def test_codec_check_is_a_real_round_trip(pyarrow_without_codec):
     with pytest.raises(ConfigurationError, match="cannot use Parquet codec"):
-        bronze.require_parquet_codec()
+        require_codec(parquet_compression())
 
 
 def test_file_delivery_fails_before_any_write_without_the_codec(store, pyarrow_without_codec):
@@ -87,15 +90,18 @@ def test_file_delivery_fails_before_any_write_without_the_codec(store, pyarrow_w
             run_id=run_id(),
             run_reference_date=D1,
             component="test",
+            compression=CODEC,
         )
     assert store.list("") == [], "no raw copy, Bronze object or manifest may be left behind"
 
 
 def test_snapshot_ingestion_fails_before_any_write_without_the_codec(settings, store, monkeypatch):
     seed.generate_all(settings, (D1,))
-    engine = seed.engine_for(settings.source_url("fund_ops"))
+    engine = engine_for(settings.source_url("fund_ops"))
     try:
-        landing = extract.extract_entity(engine, store, "fund_ops", "fund", D1, run_id())
+        landing = extraction_catalog.extract_entity(
+            engine, store, "fund_ops", "fund", D1, run_id(), **EXTRACT
+        )
     finally:
         engine.dispose()
     before = store.list("")
@@ -109,7 +115,7 @@ def test_snapshot_ingestion_fails_before_any_write_without_the_codec(settings, s
     monkeypatch.setattr(pq, "write_table", write_table)
     manifest_key = landing["object"].removesuffix(".parquet") + ".json"
     with pytest.raises(ConfigurationError):
-        database.ingest_snapshot(store, manifest_key)
+        snapshots.ingest_snapshot(store, manifest_key, compression=CODEC)
     assert store.list("") == before
 
 
@@ -123,6 +129,7 @@ def test_bronze_objects_are_written_with_the_contract_codec(store):
         run_id=run_id(),
         run_reference_date=D1,
         component="test",
+        compression=CODEC,
     )
     meta = pq.ParquetFile(io.BytesIO(store.get(m.bronze_object))).metadata
     assert {meta.row_group(0).column(i).compression for i in range(meta.num_columns)} == {

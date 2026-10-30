@@ -1,5 +1,6 @@
 # Data lake bucket: landing/, bronze/, manifests/, quarantine/, lakehouse/ (Iceberg, owned
-# by dbt), publish/, scripts/ and tmp/. Bronze has no expiry: teardown empties it explicitly.
+# by dbt), publish/ and tmp/. Code lives in the artifacts bucket below. Bronze has no expiry:
+# teardown empties it explicitly.
 module "data_bucket" {
   source = "../../modules/secure_bucket"
 

@@ -1,5 +1,5 @@
 # Copy to dev.auto.tfvars (git-ignored). No secrets belong here.
-allowed_account_id      = "<data-dev-account-id>"
-aws_region              = "sa-east-1"
-lambda_pandas_layer_arn = "arn:aws:lambda:sa-east-1:336392948345:layer:AWSSDKPandas-Python312:<version>"
-# alert_email           = "you@example.com"
+allowed_account_id = "<data-dev-account-id>"
+aws_region         = "sa-east-1"
+# artifacts_dir    = "../../../dist"   # built by scripts/build/build_artifacts.py before plan
+# alert_email      = "you@example.com"

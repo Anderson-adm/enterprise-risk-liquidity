@@ -30,18 +30,19 @@ jobs:
         run: uv sync --frozen
       - name: Ruff
         run: |
-          uv run ruff check src tests airflow glue scripts
-          uv run ruff format --check src tests airflow glue scripts
+          uv run ruff check src tests airflow glue lambda scripts
+          uv run ruff format --check src tests airflow glue lambda scripts
       - name: dbt parse (configuration check, no warehouse needed)
         run: uv run dbt parse --project-dir dbt --profiles-dir dbt --target local
       - name: Unit and contract tests
         run: uv run pytest -m "not dbt and not integration"
       - name: End-to-end scenarios (dbt build on DuckDB, SQLite stand-ins for the databases)
         run: uv run pytest -m "dbt and not integration"
-      - name: Lambda package builds and runs from the built ZIP (pinned pyarrow, moto S3)
+      - name: Build artifacts (dist/) and smoke-test the built files (Lambda ZIP, Glue library)
         run: |
-          scripts/build_lambda.sh
-          uv run python scripts/smoke_lambda_package.py
+          uv run python scripts/build/build_artifacts.py
+          uv run python scripts/build/smoke_artifacts.py
+          cat dist/manifest.json
 
   integration:
     name: integration (real PostgreSQL + SQL Server containers)
@@ -110,7 +111,8 @@ jobs:
         run: |
           tflint --init --config="$PWD/.tflint.hcl"
           for dir in modules/secure_bucket bootstrap environments/dev; do
-            tflint --chdir="$dir" --config="$PWD/.tflint.hcl"
+            vars=(); [ -d "$dir/tests/fixtures/dist" ] && vars=(--var="artifacts_dir=tests/fixtures/dist")
+            tflint --chdir="$dir" --config="$PWD/.tflint.hcl" "${vars[@]}"
           done
       - name: checkov
         run: uvx --python 3.12 checkov@3.4.0 -d . --framework terraform --compact --quiet

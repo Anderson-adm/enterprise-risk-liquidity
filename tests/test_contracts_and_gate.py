@@ -7,11 +7,11 @@ from pathlib import Path
 
 import pytest
 
-from erl import config, pipeline
-from erl.contracts import bronze_contract, consumer_contract
-from erl.errors import ConfigurationError
-from erl.ingestion import files
-from erl.sources import seed, synthetic
+from ingestion import parsers
+from pipeline import config, steps
+from sources import seed, synthetic
+from utils.contracts import bronze_contract, consumer_contract
+from utils.errors import ConfigurationError
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -34,7 +34,7 @@ def test_bronze_contract_is_consistent():
         assert table == f"{spec['source_system']}__{spec['entity']}"
         assert len(spec["columns"]) == len(set(spec["columns"]))
     assert {s["source_system"] for s in contract["entities"].values()} == set(config.ALL_SOURCES)
-    for source, (entity, _) in files.FILE_SOURCES.items():
+    for source, (entity, _) in parsers.FILE_SOURCES.items():
         assert f"{source}__{entity}" in contract["entities"]
 
 
@@ -52,13 +52,13 @@ def _transform(**kw):
 
 
 def test_gate_passes_with_warnings_only():
-    gate = pipeline.evaluate_gate(_transform(warnings=["test.erl.completeness"]))
+    gate = steps.evaluate_gate(_transform(warnings=["test.erl.completeness"]))
     assert gate["status"] == "PASSED" and gate["warnings"] == ["test.erl.completeness"]
 
 
 @pytest.mark.parametrize("kw", [{"failures": [{"node": "test.erl.x"}]}, {"skipped": ["model.erl.gold"]}])
 def test_gate_fails_on_test_failure_or_skipped_nodes(kw):
-    assert pipeline.evaluate_gate(_transform(**kw))["status"] == "FAILED"
+    assert steps.evaluate_gate(_transform(**kw))["status"] == "FAILED"
 
 
 def test_run_results_summary():
@@ -71,7 +71,7 @@ def test_run_results_summary():
             {"unique_id": "model.erl.d", "status": "skipped"},
         ],
     }
-    s = pipeline.summarize_run_results(results)
+    s = steps.summarize_run_results(results)
     assert s["by_status"] == {"success": 1, "fail": 1, "warn": 1, "skipped": 1}
     assert [f["node"] for f in s["failures"]] == ["test.erl.b"]
 
@@ -79,7 +79,7 @@ def test_run_results_summary():
 @pytest.mark.parametrize("text", ["2026-13-01", "26/10/2026", "2999-01-01"])
 def test_invalid_reference_dates_are_rejected(text):
     with pytest.raises(ConfigurationError):
-        pipeline.parse_reference_date(text)
+        steps.parse_reference_date(text)
 
 
 def test_container_backend_requires_password(monkeypatch):

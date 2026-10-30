@@ -2,7 +2,8 @@
 """Prepare the Case 01 AWS lab for `terraform destroy` (dry-run by default).
 
 What it removes (only with --execute and a typed confirmation):
-  * every object version in the two lab buckets (data lake + Athena results), because
+  * every object version in the three lab buckets (data lake, Athena results, deployment
+    artifacts), because
     Terraform deliberately does not force-destroy non-empty buckets;
   * the Silver/Gold tables that dbt created in the lab's Glue databases (dbt owns them).
 
@@ -26,8 +27,7 @@ from pathlib import Path
 
 from botocore.exceptions import ClientError
 
-from erl import config
-from erl.aws.runtime import _session
+from pipeline import config
 
 ROOT = Path(__file__).resolve().parents[1]
 DEV = ROOT / "infra" / "environments" / "dev"
@@ -94,7 +94,7 @@ def main() -> int:
     ap.add_argument("--execute", action="store_true", help="actually delete (default: dry-run)")
     args = ap.parse_args()
 
-    session = _session(dataclasses.replace(config.load(), aws_region=args.region))
+    session = dataclasses.replace(config.load(), aws_region=args.region).aws_session()
     identity = session.client("sts").get_caller_identity()
     if identity["Account"] != args.account_id:
         sys.exit(f"refusing: credentials are for account {identity['Account']}, expected {args.account_id}")
@@ -102,7 +102,11 @@ def main() -> int:
 
     outputs = terraform_outputs()
     s3, glue = session.client("s3"), session.client("glue")
-    buckets = [outputs["data_bucket"], outputs["athena_results_s3"].removeprefix("s3://").split("/")[0]]
+    buckets = [
+        outputs["data_bucket"],
+        outputs["athena_results_s3"].removeprefix("s3://").split("/")[0],
+        outputs["artifacts_bucket"],
+    ]
     for b in buckets:
         bucket_in_scope(s3, b, args.account_id, args.name_prefix)
     dbs = [outputs["glue_databases"][k] for k in ("silver", "gold")]

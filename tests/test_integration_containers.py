@@ -19,18 +19,17 @@ import pyarrow.parquet as pq
 import pytest
 from sqlalchemy import CHAR, Date, DateTime, String, delete, insert, make_url, select, text
 
-from erl import config, pipeline
-from erl.contracts import consumer_contract
-from erl.errors import PublicationError
-from erl.publish import publisher
-from erl.sources import extract, seed
-from erl.sources.schemas import SOURCE_METADATA
-from erl.sqltypes import Dec
-from erl.storage import LocalStore
+from connect.databases import engine_for
+from load import package, publisher
+from pipeline import config, extraction_catalog, steps
+from sources import seed
+from sources.schemas import SOURCE_METADATA
+from storage.objects import LocalStore
 from tests.conftest import (
     D1,
     D2,
     D3,
+    EXTRACT,
     REQUIRES_CONTAINERS,
     product_rows,
     reset_consumer,
@@ -38,6 +37,9 @@ from tests.conftest import (
     use_backend,
     write_package,
 )
+from utils.contracts import consumer_contract
+from utils.errors import PublicationError
+from utils.sqltypes import Dec
 
 pytestmark = [pytest.mark.dbt, *REQUIRES_CONTAINERS]
 
@@ -59,14 +61,14 @@ def it(tmp_path_factory):
 
 @pytest.fixture
 def consumer(it):
-    eng = seed.engine_for(it.consumer_url())
+    eng = engine_for(it.consumer_url())
     reset_consumer(eng)
     yield eng
     eng.dispose()
 
 
 def _engine(it, source):
-    return seed.engine_for(it.source_url(source))
+    return engine_for(it.source_url(source))
 
 
 def _max_decimal(p: int, s: int) -> Decimal:
@@ -160,8 +162,8 @@ def test_legacy_sql_server_exposes_views_and_extraction_reads_them(it):
             via_view = conn.execute(
                 text("SELECT count(*) FROM vw_saldo_caixa WHERE dt_ref = :d"), {"d": D1}
             ).scalar_one()
-        manifests = extract.extract_source(
-            engine, LocalStore(it.data_dir / "lake-views"), "legacy_finance", D1, run_id()
+        manifests = extraction_catalog.extract_source(
+            engine, LocalStore(it.data_dir / "lake-views"), "legacy_finance", D1, run_id(), **EXTRACT
         )
     finally:
         engine.dispose()
@@ -182,7 +184,9 @@ def test_extraction_is_identical_to_the_sqlite_stand_in(it, tmp_path, monkeypatc
         engine = _engine(it, source)
         try:
             for ref in (D1, D2, D3):
-                for m in extract.extract_source(engine, LocalStore(tmp_path / "real"), source, ref, run_id()):
+                for m in extraction_catalog.extract_source(
+                    engine, LocalStore(tmp_path / "real"), source, ref, run_id(), **EXTRACT
+                ):
                     real[(source, m["entity"], ref)] = (m["rows"], m["content_sha256"])
         finally:
             engine.dispose()
@@ -191,10 +195,12 @@ def test_extraction_is_identical_to_the_sqlite_stand_in(it, tmp_path, monkeypatc
     seed.generate_all(lite_settings)
     lite = {}
     for source in config.DB_SOURCES:
-        engine = seed.engine_for(lite_settings.source_url(source))
+        engine = engine_for(lite_settings.source_url(source))
         try:
             for ref in (D1, D2, D3):
-                for m in extract.extract_source(engine, LocalStore(tmp_path / "lite"), source, ref, run_id()):
+                for m in extraction_catalog.extract_source(
+                    engine, LocalStore(tmp_path / "lite"), source, ref, run_id(), **EXTRACT
+                ):
                     lite[(source, m["entity"], ref)] = (m["rows"], m["content_sha256"])
         finally:
             engine.dispose()
@@ -227,8 +233,14 @@ def test_source_decimals_keep_full_precision_through_extraction(it, tmp_path):
                 ],
             )
         try:
-            m = extract.extract_entity(
-                engine, LocalStore(tmp_path), "portfolio_risk", "processed_position", probe, run_id()
+            m = extraction_catalog.extract_entity(
+                engine,
+                LocalStore(tmp_path),
+                "portfolio_risk",
+                "processed_position",
+                probe,
+                run_id(),
+                **EXTRACT,
             )
             table = pq.read_table(io.BytesIO(LocalStore(tmp_path).get(m["object"])))
         finally:
@@ -253,7 +265,7 @@ def test_consumer_decimals_keep_full_precision(it, consumer):
                     idx, t.schema.field(idx), pa.array([_max_decimal(p, s)], t.schema.field(idx).type)
                 )
         tables[product] = t
-    pkg = publisher.load_package(store, write_package(store, D1, run_id(), tables))
+    pkg = package.load_package(store, write_package(store, D1, run_id(), tables))
     publisher.publish(consumer, pkg)
     for product, (target, _) in publisher.PRODUCT_TABLES.items():
         with consumer.connect() as conn:
@@ -270,7 +282,7 @@ def _package(store, ref, value):
         p: product_rows(p, ref, ["PRT-0001", "PRT-0002"], value)
         for p in ("liquidity_summary", "exposure_compliance")
     }
-    return publisher.load_package(store, write_package(store, ref, run_id(), tables))
+    return package.load_package(store, write_package(store, ref, run_id(), tables))
 
 
 def _race(engine, packages) -> list:
@@ -330,7 +342,7 @@ def test_publication_lock_also_serialises_a_postgresql_consumer(it, monkeypatch)
     pg_url = make_url(it.source_url("fund_ops")).set(database="it_consumer_pg")
     monkeypatch.setenv("ERL_CONSUMER_URL", pg_url.render_as_string(hide_password=False))
     seed.ensure_databases(config.load())
-    engine = seed.engine_for(pg_url.render_as_string(hide_password=False))
+    engine = engine_for(pg_url.render_as_string(hide_password=False))
     try:
         reset_consumer(engine)
         publisher.ensure_schema(engine)
@@ -368,9 +380,9 @@ def test_concurrent_retries_of_the_same_package_have_unique_attempt_ids(it, cons
 
 
 def test_pipeline_publishes_to_sql_server_and_is_idempotent(it, consumer):
-    first = pipeline.run_all(D1, settings=it)
+    first = steps.run_all(D1, settings=it)
     assert first["status"] == "SUCCEEDED", first
-    second = pipeline.run_all(D1, settings=it)
+    second = steps.run_all(D1, settings=it)
     assert second["steps"]["publish"]["publication_status"] == "SKIPPED_IDENTICAL"
     with consumer.connect() as conn:
         n = conn.execute(

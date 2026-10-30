@@ -3,12 +3,13 @@
 # /aws-glue/* log groups, whose names Glue chooses. See docs/TERRAFORM.md.
 
 locals {
-  data_arn    = module.data_bucket.arn
-  results_arn = module.athena_results_bucket.arn
-  catalog_arn = "arn:aws:glue:${var.aws_region}:${local.account_id}:catalog"
-  db_arn      = { for k, db in aws_glue_catalog_database.layer : k => "arn:aws:glue:${var.aws_region}:${local.account_id}:database/${db.name}" }
-  table_arn   = { for k, db in aws_glue_catalog_database.layer : k => "arn:aws:glue:${var.aws_region}:${local.account_id}:table/${db.name}/*" }
-  glue_logs   = "arn:aws:logs:${var.aws_region}:${local.account_id}:log-group:/aws-glue/*"
+  data_arn      = module.data_bucket.arn
+  results_arn   = module.athena_results_bucket.arn
+  glue_code_arn = "${module.artifacts_bucket.arn}/case01/glue/*" # scripts + library (read-only)
+  catalog_arn   = "arn:aws:glue:${var.aws_region}:${local.account_id}:catalog"
+  db_arn        = { for k, db in aws_glue_catalog_database.layer : k => "arn:aws:glue:${var.aws_region}:${local.account_id}:database/${db.name}" }
+  table_arn     = { for k, db in aws_glue_catalog_database.layer : k => "arn:aws:glue:${var.aws_region}:${local.account_id}:table/${db.name}/*" }
+  glue_logs     = "arn:aws:logs:${var.aws_region}:${local.account_id}:log-group:/aws-glue/*"
   glue_metrics = {
     Sid       = "GlueMetrics"
     Effect    = "Allow"
@@ -118,12 +119,17 @@ resource "aws_iam_role_policy" "glue_db_ingest" {
         Resource = [local.data_arn]
       },
       {
-        Sid    = "ReadLandingScriptsManifests"
+        Sid      = "ReadOwnCode"
+        Effect   = "Allow"
+        Action   = ["s3:GetObject"]
+        Resource = [local.glue_code_arn]
+      },
+      {
+        Sid    = "ReadLandingManifests"
         Effect = "Allow"
         Action = ["s3:GetObject"]
         Resource = [
           "${local.data_arn}/landing/db/*",
-          "${local.data_arn}/scripts/*",
           "${local.data_arn}/manifests/ingestion/*",
           "${local.data_arn}/tmp/glue/*",
         ]
@@ -139,10 +145,16 @@ resource "aws_iam_role_policy" "glue_db_ingest" {
         )
       },
       {
-        Sid      = "CleanOwnTemporaryOutput"
+        Sid      = "CleanOwnTemporaryOutputAndAbortedCommits"
         Effect   = "Allow"
         Action   = ["s3:DeleteObject", "s3:AbortMultipartUpload"]
         Resource = ["${local.data_arn}/tmp/glue/*"]
+      },
+      {
+        Sid      = "AbortConditionalBronzeCopy"
+        Effect   = "Allow"
+        Action   = ["s3:AbortMultipartUpload"]
+        Resource = [for s in local.db_sources : "${local.data_arn}/bronze/structured/${s}/*"]
       },
       {
         Sid       = "ListScopedPrefixes"
@@ -188,10 +200,16 @@ resource "aws_iam_role_policy" "glue_gold_load" {
         Resource = [local.catalog_arn, local.db_arn["gold"], local.table_arn["gold"]]
       },
       {
-        Sid      = "ReadIcebergFilesAndScripts"
+        Sid      = "ReadOwnCode"
         Effect   = "Allow"
         Action   = ["s3:GetObject"]
-        Resource = ["${local.data_arn}/lakehouse/*", "${local.data_arn}/scripts/*"]
+        Resource = [local.glue_code_arn]
+      },
+      {
+        Sid      = "ReadIcebergFiles"
+        Effect   = "Allow"
+        Action   = ["s3:GetObject"]
+        Resource = ["${local.data_arn}/lakehouse/*"]
       },
       {
         Sid       = "ListLakehouse"
@@ -203,8 +221,8 @@ resource "aws_iam_role_policy" "glue_gold_load" {
       {
         Sid      = "WritePublicationPackage"
         Effect   = "Allow"
-        Action   = ["s3:PutObject"]
-        Resource = ["${local.data_arn}/publish/*"]
+        Action   = ["s3:PutObject", "s3:GetObject", "s3:AbortMultipartUpload"]
+        Resource = ["${local.data_arn}/publish/*"] # conditional copy + checksum of its own products
       },
       {
         Sid      = "SparkTemporaryOutput"

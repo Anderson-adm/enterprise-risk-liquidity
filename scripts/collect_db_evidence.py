@@ -20,7 +20,6 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "evidence" / "databases"
-sys.path.insert(0, str(ROOT / "src"))
 
 from sqlalchemy import create_engine, func, inspect, select, table, text  # noqa: E402
 
@@ -73,7 +72,7 @@ def main() -> int:
             "sqlite",
             {
                 "server_version": f"SQLite {sqlite3.sqlite_version} (embedded; development stand-in)",
-                "note": "SQLite has no exact DECIMAL: erl.sqltypes.Dec stores canonical text here.",
+                "note": "SQLite has no exact DECIMAL: utils.sqltypes.Dec stores canonical text here.",
                 "databases": {p.stem: _describe(f"sqlite:///{p}", [None]) for p in dbs},
             },
         )

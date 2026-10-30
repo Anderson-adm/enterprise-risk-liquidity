@@ -113,6 +113,17 @@ variable "glue_workers" {
   }
 }
 
+variable "glue_max_product_rows" {
+  description = "Gold Load refuses to write a consumer product larger than this (one Parquet object per product; products hold one row per portfolio and date)."
+  type        = number
+  default     = 100000
+
+  validation {
+    condition     = var.glue_max_product_rows >= 1 && var.glue_max_product_rows <= 10000000
+    error_message = "glue_max_product_rows must be between 1 and 10 000 000."
+  }
+}
+
 variable "runner_trusted_principal_arns" {
   description = "IAM principal ARN patterns allowed to assume the pipeline runner role (default: the account's SSO roles)."
   type        = list(string)

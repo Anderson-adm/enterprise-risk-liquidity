@@ -1,9 +1,9 @@
 """Case 01 - Enterprise Risk & Liquidity pipeline (manual trigger, one reference date per run).
 
-Each task runs one step of the project CLI (`erl step <name>`); all business logic lives in
-the `erl` package, not here. The run id is created once and shared through XCom, so a retry
-of any task re-enters the same run (Bronze keys, run state and publication are run-scoped and
-idempotent).
+Each task runs one step of the project CLI (`erl step <name>`); the steps live in the project
+packages (`pipeline.steps` composes them), not here. The run id is created once and shared
+through XCom, so a retry of any task re-enters the same run (Bronze keys, run state and
+publication are run-scoped and idempotent).
 
 Retries are proportional to the failure type:
   * extraction / collection / ingestion: transient infrastructure errors -> 2 retries

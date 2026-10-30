@@ -1,21 +1,38 @@
 from __future__ import annotations
 
+import importlib.util
 import io
 import os
 from datetime import date
 from decimal import Decimal
+from pathlib import Path
 
 import pyarrow as pa
 import pyarrow.parquet as pq
 import pytest
 from sqlalchemy import make_url
 
-from erl import config
-from erl.contracts import consumer_contract
-from erl.ingestion import bronze
-from erl.storage import LocalStore
+from pipeline import config
+from storage.objects import LocalStore
+from utils.checksums import sha256_hex
+from utils.contracts import consumer_contract, parquet_compression
+from utils.run_ids import new_run_id
 
+ROOT = Path(__file__).resolve().parents[1]
 D1, D2, D3 = date(2026, 10, 26), date(2026, 10, 27), date(2026, 10, 28)
+CODEC = parquet_compression()  # the contract codec, passed explicitly like the pipeline does
+EXTRACT = {"compression": CODEC, "batch_rows": 5_000}  # extraction_catalog keyword arguments
+
+
+def load_entrypoint(relative_path: str):
+    """Import a runtime entry point (``lambda/...``, ``glue/...``) from its file. Entry points are
+    not packages; the built artifacts are tested separately by scripts/build/smoke_artifacts.py."""
+    path = ROOT / relative_path
+    spec = importlib.util.spec_from_file_location(f"entrypoint_{path.stem}", path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
 
 CONTAINERS_UP = os.environ.get("ERL_IT_CONTAINERS") == "1"
 REQUIRES_CONTAINERS = [
@@ -60,7 +77,7 @@ def db_settings(request, tmp_path, monkeypatch):
 
 def reset_consumer(engine) -> None:
     """Drop the publisher's tables (test databases only); ``publish`` recreates them."""
-    from erl.publish import publisher
+    from load import publisher
 
     with publisher._connect(engine) as conn:
         publisher.metadata.drop_all(conn)
@@ -73,7 +90,7 @@ def store(tmp_path) -> LocalStore:
 
 
 def run_id() -> str:
-    return bronze.new_run_id()
+    return new_run_id()
 
 
 def _arrow_type(logical: str) -> pa.DataType:
@@ -125,7 +142,7 @@ def write_package(store, ref: date, run: str, tables: dict[str, pa.Table], gate:
         store.put(prefix + f"{name}.parquet", data)
         products[name] = {
             "object": prefix + f"{name}.parquet",
-            "sha256": bronze.sha256_hex(data),
+            "sha256": sha256_hex(data),
             "rows": table.num_rows,
         }
     manifest = {

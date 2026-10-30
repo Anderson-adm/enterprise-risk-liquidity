@@ -7,16 +7,17 @@ from __future__ import annotations
 import pytest
 from sqlalchemy import select
 
-from erl.errors import PublicationError
-from erl.publish import publisher
-from erl.sources import seed
+from connect.databases import engine_for
+from load import package, publisher
+from sources import seed
 from tests.conftest import D1, D2, product_rows, reset_consumer, run_id, write_package
+from utils.errors import PublicationError
 
 
 @pytest.fixture
 def engine(db_settings):
     seed.ensure_databases(db_settings)
-    eng = seed.engine_for(db_settings.consumer_url())
+    eng = engine_for(db_settings.consumer_url())
     reset_consumer(eng)
     yield eng
     eng.dispose()
@@ -28,7 +29,7 @@ def _package(store, ref, portfolios, value="100.00", gate="PASSED"):
         "liquidity_summary": product_rows("liquidity_summary", ref, portfolios, value),
         "exposure_compliance": product_rows("exposure_compliance", ref, portfolios, value),
     }
-    return publisher.load_package(store, write_package(store, ref, run, tables, gate))
+    return package.load_package(store, write_package(store, ref, run, tables, gate))
 
 
 def _rows(engine, product="liquidity_summary"):
@@ -116,7 +117,7 @@ def test_tampered_package_is_refused(store):
     obj = key.replace("manifest.json", "liquidity_summary.parquet")
     (store.root / obj).write_bytes(b"corrupted")
     with pytest.raises(PublicationError, match="checksum"):
-        publisher.load_package(store, key)
+        package.load_package(store, key)
 
 
 def test_contract_violations_are_refused(store):
@@ -124,27 +125,27 @@ def test_contract_violations_are_refused(store):
 
     dup = product_rows("liquidity_summary", D1, ["PRT-0001", "PRT-0001"])
     with pytest.raises(PublicationError, match="duplicate keys"):
-        publisher.validate_product("liquidity_summary", dup, D1)
+        package.validate_product("liquidity_summary", dup, D1)
     wrong_date = product_rows("liquidity_summary", D2, ["PRT-0001"])
     with pytest.raises(PublicationError, match="outside reference date"):
-        publisher.validate_product("liquidity_summary", wrong_date, D1)
+        package.validate_product("liquidity_summary", wrong_date, D1)
     t = product_rows("liquidity_summary", D1, ["PRT-0001"])
     as_float = t.set_column(
         t.schema.get_field_index("total_value"), "total_value", pa.array([100.0], pa.float64())
     )
     with pytest.raises(PublicationError, match="violates decimal"):
-        publisher.validate_product("liquidity_summary", as_float, D1)
+        package.validate_product("liquidity_summary", as_float, D1)
 
 
 def test_missing_manifest_means_no_package(store):
     with pytest.raises(PublicationError, match="cannot read package manifest"):
-        publisher.load_package(store, "publish/reference_date=2026-10-26/none/manifest.json")
+        package.load_package(store, "publish/reference_date=2026-10-26/none/manifest.json")
 
 
 def test_content_hash_ignores_row_order(store):
     a = product_rows("liquidity_summary", D1, ["PRT-0001", "PRT-0002"])
     b = a.take([1, 0])
-    assert publisher.content_hash({"x": a}) == publisher.content_hash({"x": b})
+    assert package.content_hash({"x": a}) == package.content_hash({"x": b})
 
 
 def test_database_refuses_two_active_publications_for_one_date(store, engine):

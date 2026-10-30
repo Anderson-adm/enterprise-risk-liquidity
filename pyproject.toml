@@ -19,7 +19,7 @@ dependencies = [
 ]
 
 [project.scripts]
-erl = "erl.cli:main"
+erl = "pipeline.cli:main"
 
 [dependency-groups]
 dev = [
@@ -32,28 +32,58 @@ dev = [
 requires = ["hatchling>=1.25"]
 build-backend = "hatchling.build"
 
+# Import roots (no project-level wrapper package): src/python and src/spark hold code, src/contracts
+# and src/sql are resource packages. Each listed directory becomes a top-level package; a test
+# checks that none collides with the standard library or an installed distribution.
+[tool.hatch.build]
+# Editable (development) install: the three roots go on sys.path. src/ also exposes the empty
+# namespaces "python"/"spark" in development only; wheels and runtime ZIPs contain exactly the
+# packages below (checked by tests/test_packaging.py).
+dev-mode-dirs = ["src/python", "src/spark", "src"]
+
 [tool.hatch.build.targets.wheel]
-packages = ["src/erl"]
+only-include = [
+    "src/python/connect",
+    "src/python/extract",
+    "src/python/transform",
+    "src/python/load",
+    "src/python/ingestion",
+    "src/python/storage",
+    "src/python/utils",
+    "src/python/sources",
+    "src/python/pipeline",
+    "src/spark/readers",
+    "src/spark/transforms",
+    "src/spark/writers",
+    "src/contracts",
+    "src/sql",
+]
+
+[tool.hatch.build.targets.wheel.sources]  # strip the root directories: src/python/connect -> connect
+"src/python" = ""
+"src/spark" = ""
+"src/contracts" = "contracts"
+"src/sql" = "sql"
 
 [tool.ruff]
 line-length = 110
 target-version = "py311"  # Glue 5.0 runs Python 3.11; keep shared code compatible.
-src = ["src", "tests"]
+src = ["src/python", "src/spark", "lambda/bronze", "glue", "tests"]
 extend-exclude = ["dbt/target", "dbt/dbt_packages", ".tools"]
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "B", "UP", "S", "SIM", "RUF", "DTZ"]
 ignore = [
     "S101",  # assert is fine in tests
-    "S608",  # SQL built from internal identifiers only (see erl/sources/extract.py)
+    "S608",  # identifiers rendered only from contract allowlists (utils/sql_files.py)
 ]
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**" = ["S", "DTZ"]
 "glue/**" = ["DTZ"]
 # synthetic source data: deterministic PRNG (not crypto) and naive timestamps as stored by the sources
-"src/erl/sources/synthetic.py" = ["S311", "DTZ001"]
-"src/erl/sources/seed.py" = ["DTZ"]
+"src/python/sources/synthetic.py" = ["S311", "DTZ001"]
+"src/python/sources/seed.py" = ["DTZ"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

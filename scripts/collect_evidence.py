@@ -21,18 +21,19 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 BACKEND = os.environ.setdefault("ERL_SOURCE_BACKEND", "sqlite")
-OUT = ROOT / "evidence" / "local" / BACKEND
+# ERL_EVIDENCE_OUT keeps earlier evidence intact when a new comparison run is recorded.
+OUT = Path(os.environ.get("ERL_EVIDENCE_OUT", ROOT / "evidence" / "local" / BACKEND)).resolve()
 DATA = ROOT / "data" / f"evidence-run-{BACKEND}"
 
 os.environ["ERL_DATA_DIR"] = str(DATA)
 os.environ.setdefault("ERL_MODE", "local")
-sys.path.insert(0, str(ROOT / "src"))
 
 from sqlalchemy import make_url, text  # noqa: E402
 
-from erl import config, log, pipeline  # noqa: E402
-from erl.publish import publisher  # noqa: E402
-from erl.sources import seed  # noqa: E402
+from load import publisher  # noqa: E402
+from pipeline import config, steps  # noqa: E402
+from sources import seed  # noqa: E402
+from utils import structured_log  # noqa: E402
 
 D1, D2, D3 = date(2026, 10, 26), date(2026, 10, 27), date(2026, 10, 28)
 
@@ -86,9 +87,9 @@ def main() -> int:
     if BACKEND == "containers":
         _isolate_databases()
     settings = config.load()
-    log.configure("WARNING", settings.data_dir / "logs" / "erl.jsonl")
+    structured_log.configure("WARNING", settings.data_dir / "logs" / "erl.jsonl")
     seed.generate_all(settings)
-    consumer = seed.engine_for(settings.consumer_url())
+    consumer = settings.consumer_engine()
     with publisher._connect(consumer) as conn:  # clean consumer (sqlite: new file; containers: ev_ db)
         publisher.metadata.drop_all(conn)
         conn.commit()
@@ -102,7 +103,7 @@ def main() -> int:
         elif scenario == "remove":
             seed.remove_market_data(settings, ref)
         started = time.monotonic()
-        state = pipeline.run_all(ref, settings=settings)
+        state = steps.run_all(ref, settings=settings)
         elapsed = round(time.monotonic() - started, 2)
         report = json.loads((settings.runs_dir / state["run_id"] / "run_report.json").read_text())
         report["step_elapsed_seconds"] = {k: v.get("elapsed_time") for k, v in state["steps"].items()}

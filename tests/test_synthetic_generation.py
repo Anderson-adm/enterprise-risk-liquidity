@@ -12,9 +12,9 @@ from datetime import date
 import duckdb
 import pytest
 
-from erl import cli, pipeline
-from erl.ingestion import files
-from erl.sources import seed, synthetic
+from ingestion import parsers
+from pipeline import cli, steps
+from sources import seed, synthetic
 from tests.conftest import D1, D2, D3
 
 
@@ -42,7 +42,7 @@ def test_single_date_receives_no_event_of_another_date():
     names = [n for _, n, _ in day["files"]]
     assert not any("resend" in n or "retransmission" in n for n in names)
     for source, name, body in day["files"]:
-        parsed = files.PARSERS[source](body)  # every delivery is valid (no broken XML)
+        parsed = parsers.PARSERS[source](body)  # every delivery is valid (no broken XML)
         assert parsed.reference_date == D1, name
         if source == "market_data":
             assert len(parsed.rows) == len(set(parsed.rows)) == len(synthetic.INSTRUMENTS)
@@ -86,7 +86,7 @@ def test_single_date_world_publishes_the_same_d1_as_the_full_world(tmp_path, mon
     def publish_d1(name: str, dates: tuple[date, ...]) -> tuple[dict, list]:
         settings = use_backend(monkeypatch, tmp_path / name, "sqlite")
         seed.generate_all(settings, dates)
-        state = pipeline.run_all(D1, settings=settings)
+        state = steps.run_all(D1, settings=settings)
         assert state["status"] == "SUCCEEDED", state
         with duckdb.connect(str(settings.warehouse_path), read_only=True) as con:
             gold = con.execute(

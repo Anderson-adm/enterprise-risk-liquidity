@@ -208,6 +208,26 @@ run "artifacts_come_from_the_dedicated_bucket" {
     condition     = aws_s3_object.lambda_package.key == "case01/lambda/bronze/file_ingestion.zip" && aws_s3_object.lambda_package.source_hash != null
     error_message = "The Lambda package must be uploaded from dist/ with its content hash."
   }
+
+  assert {
+    condition = (
+      aws_glue_job.this["db-gb"].command[0].script_location == "s3://erl-dev-mock/case01/glue/bronze/db_ingest.py" &&
+      aws_glue_job.this["gold-load"].command[0].script_location == "s3://erl-dev-mock/case01/glue/load/gold_load.py" &&
+      alltrue([for j in aws_glue_job.this :
+        j.default_arguments["--extra-py-files"] == "s3://erl-dev-mock/case01/glue/lib/erl_glue_lib.zip" &&
+        length(j.tags["ScriptSha256"]) == 64 && length(j.tags["LibrarySha256"]) == 64 &&
+        !contains(keys(j.default_arguments), "--contract_s3_key")
+      ])
+    )
+    error_message = "Glue jobs must run the built script + library from the artifacts bucket, tagged with their hashes."
+  }
+
+  assert {
+    condition = alltrue([for p in [aws_iam_role_policy.glue_db_ingest.policy, aws_iam_role_policy.glue_gold_load.policy] :
+      !strcontains(p, "/scripts/") && strcontains(p, "/case01/glue/*")
+    ])
+    error_message = "Glue roles read their code only from the artifacts bucket (never from the data lake)."
+  }
 }
 
 run "rejects_short_artifact_recovery_window" {

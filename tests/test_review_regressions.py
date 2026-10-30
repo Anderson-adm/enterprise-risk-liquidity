@@ -15,12 +15,13 @@ import pytest
 from jinja2 import Environment
 from sqlalchemy import text
 
-from erl import pipeline
-from erl.errors import ErlError, PublicationError
-from erl.ingestion import bronze, database, files
-from erl.publish import publisher
-from erl.sources import extract, seed, synthetic
-from tests.conftest import D1, D2, product_rows, run_id, write_package
+from connect.databases import engine_for
+from ingestion import files, manifests, snapshots
+from load import package
+from pipeline import extraction_catalog, steps
+from sources import seed, synthetic
+from tests.conftest import CODEC, D1, D2, EXTRACT, product_rows, run_id, write_package
+from utils.errors import ErlError, PublicationError
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -42,11 +43,13 @@ def latest_rows(store, source, entity, scope="snapshot"):
 @pytest.mark.parametrize("empty", [False, True])
 def test_database_correction_and_empty_snapshot_replace_previous_delivery(settings, store, empty):
     seed.generate_all(settings)
-    engine = seed.engine_for(settings.source_url("legacy_finance"))
+    engine = engine_for(settings.source_url("legacy_finance"))
 
     def ingest():
-        m = extract.extract_entity(engine, store, "legacy_finance", "cash_balance", D1, run_id())
-        return database.ingest_snapshot(store, m["object"].replace(".parquet", ".json"))
+        m = extraction_catalog.extract_entity(
+            engine, store, "legacy_finance", "cash_balance", D1, run_id(), **EXTRACT
+        )
+        return snapshots.ingest_snapshot(store, m["object"].replace(".parquet", ".json"), compression=CODEC)
 
     try:
         ingest()
@@ -61,18 +64,18 @@ def test_database_correction_and_empty_snapshot_replace_previous_delivery(settin
         else:
             with engine.begin() as conn:
                 conn.execute(text("UPDATE tb_saldo_caixa SET vl_saldo = vl_saldo - 1"))
-            assert ingest().status == bronze.ACCEPTED  # A -> B -> A is a correction
+            assert ingest().status == manifests.ACCEPTED  # A -> B -> A is a correction
     finally:
         engine.dispose()
 
 
 def test_reference_register_dedup_compares_current_delivery_across_dates(settings, store):
     seed.generate_all(settings)
-    engine = seed.engine_for(settings.source_url("fund_ops"))
+    engine = engine_for(settings.source_url("fund_ops"))
 
     def ingest(ref):
-        m = extract.extract_entity(engine, store, "fund_ops", "fund", ref, run_id())
-        return database.ingest_snapshot(store, m["object"].replace(".parquet", ".json"))
+        m = extraction_catalog.extract_entity(engine, store, "fund_ops", "fund", ref, run_id(), **EXTRACT)
+        return snapshots.ingest_snapshot(store, m["object"].replace(".parquet", ".json"), compression=CODEC)
 
     try:
         with engine.connect() as conn:
@@ -86,7 +89,7 @@ def test_reference_register_dedup_compares_current_delivery_across_dates(setting
                 conn.execute(
                     text("UPDATE fund SET fund_name = :n WHERE fund_id = :f"), {"n": name, "f": fund}
                 )
-        assert ingest(D1).status == bronze.ACCEPTED
+        assert ingest(D1).status == manifests.ACCEPTED
         assert set(latest_rows(store, "fund_ops", "fund", "latest")["fund_name"].to_pylist()) == set(
             originals.values()
         )
@@ -106,16 +109,17 @@ def test_file_reversion_is_not_an_historical_duplicate(store):
             run_id=run_id(),
             run_reference_date=D1,
             component="review",
+            compression=CODEC,
         )
 
     ingest(body)
     ingest(body.replace(b";BRL", b";USD"))
-    assert ingest(body).status == bronze.ACCEPTED
+    assert ingest(body).status == manifests.ACCEPTED
 
 
 def test_nonzero_dbt_exit_cannot_pass_the_gate():
     transform = {"dbt_invocation_id": "x", "dbt_exit_code": 2, "failures": [], "skipped": [], "warnings": []}
-    assert pipeline.evaluate_gate(transform)["status"] == "FAILED"
+    assert steps.evaluate_gate(transform)["status"] == "FAILED"
 
 
 def test_transform_retry_cannot_reuse_previous_run_results(settings, monkeypatch):
@@ -126,27 +130,27 @@ def test_transform_retry_cannot_reuse_previous_run_results(settings, monkeypatch
         json.dumps({"metadata": {"invocation_id": "previous"}, "results": []})
     )
     monkeypatch.setattr(
-        pipeline.subprocess,
+        steps.subprocess,
         "run",
         lambda *a, **kw: SimpleNamespace(stdout="parse failed", stderr="", returncode=2),
     )
     with pytest.raises(ErlError, match="run_results"):
-        pipeline.step_transform(settings, D1, run)
+        steps.step_transform(settings, D1, run)
 
 
 def test_empty_publication_package_is_refused(store):
     tables = {p: product_rows(p, D1, []) for p in ("liquidity_summary", "exposure_compliance")}
     with pytest.raises(PublicationError, match="empty"):
-        publisher.load_package(store, write_package(store, D1, run_id(), tables))
+        package.load_package(store, write_package(store, D1, run_id(), tables))
 
 
 def test_bronze_without_commit_manifest_is_invisible_to_silver(settings, store, monkeypatch):
     seed.generate_all(settings)
-    engine = seed.engine_for(settings.source_url("fund_ops"))
+    engine = engine_for(settings.source_url("fund_ops"))
 
     def ingest():
-        m = extract.extract_entity(engine, store, "fund_ops", "fund", D1, run_id())
-        return database.ingest_snapshot(store, m["object"].replace(".parquet", ".json"))
+        m = extraction_catalog.extract_entity(engine, store, "fund_ops", "fund", D1, run_id(), **EXTRACT)
+        return snapshots.ingest_snapshot(store, m["object"].replace(".parquet", ".json"), compression=CODEC)
 
     try:
         ingest()
@@ -157,7 +161,7 @@ def test_bronze_without_commit_manifest_is_invisible_to_silver(settings, store, 
         def fail_manifest(*args):
             raise OSError("manifest write failed after Bronze")
 
-        monkeypatch.setattr(bronze, "write_manifest", fail_manifest)
+        monkeypatch.setattr(manifests, "write_manifest", fail_manifest)
         with pytest.raises(OSError, match="manifest write failed"):
             ingest()
         assert latest_rows(store, "fund_ops", "fund", "latest")["fund_name"].to_pylist() == before
@@ -224,33 +228,33 @@ def test_terraform_checks_propagates_failures(tmp_path, failed_check):
 
 
 def test_rejected_required_market_delivery_cannot_fall_back_to_old_prices(settings):
-    from erl.errors import ContractError
+    from utils.errors import ContractError
 
     seed.generate_all(settings)
     first = run_id()
-    pipeline.step_extract(settings, D1, first)
-    pipeline.step_collect(settings, D1, first)
-    pipeline.step_ingest(settings, D1, first)
+    steps.step_extract(settings, D1, first)
+    steps.step_collect(settings, D1, first)
+    steps.step_ingest(settings, D1, first)
     market = next((settings.inbox_dir / "market_data" / D1.isoformat()).iterdir())
     market.write_bytes(b"invalid;header\n")
     retry = run_id()
-    pipeline.step_extract(settings, D1, retry)
-    pipeline.step_collect(settings, D1, retry)
+    steps.step_extract(settings, D1, retry)
+    steps.step_collect(settings, D1, retry)
     with pytest.raises(ContractError, match="market_data"):
-        pipeline.step_ingest(settings, D1, retry)
+        steps.step_ingest(settings, D1, retry)
 
 
 def test_successful_step_retry_reuses_the_committed_outcome(settings):
     seed.generate_all(settings)
     run = run_id()
-    first = pipeline.run_step("collect", pipeline.step_collect, settings, D1, run)
-    assert pipeline.run_step("collect", pipeline.step_collect, settings, D1, run) == first
+    first = steps.run_step("collect", steps.step_collect, settings, D1, run)
+    assert steps.run_step("collect", steps.step_collect, settings, D1, run) == first
 
 
 def test_incomplete_warehouse_does_not_mask_the_original_pipeline_failure(settings):
     settings.warehouse_path.parent.mkdir(parents=True)
     duckdb.connect(str(settings.warehouse_path)).close()
-    state = pipeline.run_all(D1, settings=settings)
+    state = steps.run_all(D1, settings=settings)
     assert state["status"] == "FAILED" and state["error_type"] == "source_unavailable"
     assert state["steps"]["report"]["status"] == "SUCCEEDED"
     report = json.loads(Path(state["steps"]["report"]["report"]).read_text())
@@ -266,6 +270,7 @@ def test_partial_ingest_retry_reuses_each_completed_file_delivery(store):
         run_id=run_id(),
         run_reference_date=D1,
         component="review",
+        compression=CODEC,
     )
     first = files.ingest_file(store, **args)
     assert files.ingest_file(store, **args) == first
@@ -273,11 +278,13 @@ def test_partial_ingest_retry_reuses_each_completed_file_delivery(store):
 
 def test_partial_extraction_retry_reuses_each_completed_snapshot(settings, store):
     seed.generate_all(settings)
-    engine = seed.engine_for(settings.source_url("fund_ops"))
+    engine = engine_for(settings.source_url("fund_ops"))
     try:
         run = run_id()
-        first = extract.extract_entity(engine, store, "fund_ops", "fund", D1, run)
-        assert extract.extract_entity(engine, store, "fund_ops", "fund", D1, run) == first
+        first = extraction_catalog.extract_entity(engine, store, "fund_ops", "fund", D1, run, **EXTRACT)
+        assert (
+            extraction_catalog.extract_entity(engine, store, "fund_ops", "fund", D1, run, **EXTRACT) == first
+        )
     finally:
         engine.dispose()
 

@@ -8,7 +8,7 @@
 # can never be picked up, and no command can open an AWS session.
 set -euo pipefail
 root="$(cd "$(dirname "$0")/.." && pwd)"
-out="$root/evidence/terraform/checks.txt"
+out="${ERL_TF_CHECKS_OUT:-$root/evidence/terraform/checks.txt}"
 tflint="$(command -v tflint || echo "$root/.tools/bin/tflint")"
 # plugins pinned in infra/.tflint.hcl; installed with `tflint --init` (CI) or kept in .tools/
 if [ -z "${TFLINT_PLUGIN_DIR:-}" ] && [ -d "$root/.tools/tflint-plugins" ]; then
@@ -42,7 +42,9 @@ cd "$work/infra"
     echo "## $dir: test"
     if [ -d "$dir/tests" ]; then terraform -chdir="$dir" test -no-color | grep -E 'run "|Success|Failure|passed|failed'; fi
     echo "## $dir: tflint"
-    "$tflint" --chdir="$dir" --config="$PWD/.tflint.hcl"
+    # dist/ is built by scripts/build and not versioned; lint dev against the test fixtures
+    vars=(); [ -d "$dir/tests/fixtures/dist" ] && vars=(--var="artifacts_dir=tests/fixtures/dist")
+    "$tflint" --chdir="$dir" --config="$PWD/.tflint.hcl" "${vars[@]}"
     echo "0 issues"
   done
   echo "## checkov 3.4.0"

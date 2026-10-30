@@ -11,9 +11,10 @@ from decimal import Decimal
 import duckdb
 import pytest
 
-from erl import pipeline
-from erl.publish import publisher
-from erl.sources import seed, synthetic
+from connect.databases import engine_for
+from load import publisher
+from pipeline import steps
+from sources import seed, synthetic
 from tests.conftest import D1, D2, D3
 
 pytestmark = pytest.mark.dbt
@@ -24,7 +25,7 @@ def world(tmp_path_factory):
     """One environment shared by the ordered scenario tests below."""
     import os
 
-    from erl import config
+    from pipeline import config
 
     data = tmp_path_factory.mktemp("e2e") / "data"
     env = {"ERL_DATA_DIR": str(data), "ERL_MODE": "local", "ERL_SOURCE_BACKEND": "sqlite"}
@@ -41,7 +42,7 @@ def world(tmp_path_factory):
 
 
 def _run(world, ref, label):
-    state = pipeline.run_all(ref, settings=world["settings"])
+    state = steps.run_all(ref, settings=world["settings"])
     world["runs"][label] = state
     return state
 
@@ -52,7 +53,7 @@ def _gold(world, sql, params=None):
 
 
 def _log(world):
-    engine = seed.engine_for(world["settings"].consumer_url())
+    engine = engine_for(world["settings"].consumer_url())
     try:
         return publisher.active_publications(engine)
     finally:
@@ -203,7 +204,7 @@ def test_10_removed_portfolio_disappears_from_gold_and_consumer(world):
             "DELETE FROM stock_position WHERE position_date = '2026-10-27' AND fund_ref = 'FND001/01'",
         ),
     ):
-        engine = seed.engine_for(world["settings"].source_url(source))
+        engine = engine_for(world["settings"].source_url(source))
         try:
             with engine.begin() as conn:
                 conn.execute(text(sql))

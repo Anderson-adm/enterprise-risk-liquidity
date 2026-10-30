@@ -1,7 +1,7 @@
 # Local source and consumer databases (development stand-ins for the enterprise systems).
 #   PostgreSQL : fund_ops, portfolio_risk                       (sources 1 and 2)
 #   SQL Server : legacy_finance, exposure_compliance (sources 3 and 4) + consumer_reporting
-# Logical databases are created by `erl generate` (erl.sources.seed.ensure_databases).
+# Logical databases are created by `erl generate` (sources.seed.ensure_databases).
 #
 # Usage (requires a running Docker engine):
 #   docker compose -f docker/compose.yaml --env-file .env up -d --wait
