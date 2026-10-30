@@ -44,6 +44,7 @@ class IngestionManifest:
     rejection_detail: str | None = None
     ingested_at: str = field(default_factory=utc_now_iso)
     snapshot_key: str | None = None
+    input_hash_version: int | None = None  # DB-snapshot row-identity version; None: file bytes/legacy
 
     def key(self) -> str:
         return layout.manifest_key(
@@ -86,8 +87,10 @@ def find_accepted_duplicate(
     input_sha256: str,
     *,
     snapshot_key: str | None = None,
+    hash_version: int | None = None,
 ) -> dict | None:
-    """The latest ACCEPTED delivery of the same snapshot, if its content equals ``input_sha256``.
+    """The latest ACCEPTED delivery of the same snapshot, if its content equals ``input_sha256``
+    computed with the same identity version (``hash_version``; legacy manifests have none).
 
     Reference registers (``snapshot_scope: latest`` in the contract) compare across dates."""
     spec = bronze_contract()["entities"][f"{source_system}__{entity}"]
@@ -102,4 +105,6 @@ def find_accepted_duplicate(
         if m["status"] == ACCEPTED and (snapshot_key is None or m.get("snapshot_key") == snapshot_key)
     ]
     latest = max(accepted, key=lambda m: (m["ingested_at"], m["run_id"]), default=None)
-    return latest if latest and latest["input_sha256"] == input_sha256 else None
+    if not latest or latest["input_sha256"] != input_sha256:
+        return None
+    return latest if latest.get("input_hash_version") == hash_version else None

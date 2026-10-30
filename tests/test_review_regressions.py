@@ -22,7 +22,7 @@ from load import package
 from pipeline import extraction_catalog, steps
 from sources import seed, synthetic
 from tests.conftest import CODEC, D1, D2, EXTRACT, product_rows, run_id, write_package
-from utils.errors import ErlError, PublicationError
+from utils.errors import ConfigurationError, ErlError, PublicationError
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -365,3 +365,191 @@ def test_dbt_subprocess_gets_the_settings_paths_over_inherited_ones(settings, mo
     assert seen["ERL_DUCKDB_PATH"] == str(settings.warehouse_path)
     assert seen["ERL_UNRELATED_OPTION"] == "kept"
     assert os.environ["ERL_LAKE_DIR"] == str(stale / "lake"), "the parent environment is not modified"
+
+
+# ------------------------------------------------- adversarial review H1-H3 (2026-10-30)
+
+
+@pytest.mark.parametrize(
+    ("a", "b"),
+    [
+        (["a\x1fb", "c"], ["a", "b\x1fc"]),  # the separator inside a value moved a field boundary
+        ([None], ["\x00"]),  # NULL vs the old NULL marker as text
+        ([None], [""]),  # NULL vs empty string
+        ([], [""]),  # no field vs one empty field
+        (["a"], ["a", None]),  # arity
+        (["1", "2"], ["2", "1"]),  # order is part of the identity
+    ],
+)
+def test_row_identity_distinguishes_different_field_sequences(a, b):
+    from transform.bronze_records import row_hash
+
+    assert row_hash(a) != row_hash(b)
+
+
+def test_row_identity_is_stable_and_accepts_only_canonical_text():
+    from transform.bronze_records import row_hash
+
+    assert row_hash(["PRT-0001", None, "1250.25", "é"]) == row_hash(("PRT-0001", None, "1250.25", "é"))
+    with pytest.raises(TypeError):
+        row_hash([Decimal("1.5")])  # values are hashed only after canonical stringification
+
+
+def test_snapshots_differing_only_in_field_boundaries_are_both_accepted(store):
+    from sqlalchemy import create_engine
+
+    from extract.landing_snapshot import extract_to_landing
+    from ingestion.layout import landing_db_prefix
+
+    def landed(a: str, b: str) -> dict:
+        engine = create_engine("sqlite://")
+        with engine.begin() as conn:
+            conn.execute(text("CREATE TABLE t (a TEXT, b TEXT)"))
+            conn.execute(text("INSERT INTO t VALUES (:a, :b)"), {"a": a, "b": b})
+        return extract_to_landing(
+            engine,
+            store,
+            prefix=landing_db_prefix("fund_ops", "fund", D1),
+            source="fund_ops",
+            entity="fund",
+            reference_date=D1,
+            run_id=run_id(),
+            sql="SELECT a, b FROM t",
+            params={},
+            columns=("a", "b"),
+            compression=CODEC,
+            batch_size=10,
+        )
+
+    first, second = landed("a\x1fb", "c"), landed("a", "b\x1fc")
+    assert first["content_sha256"] != second["content_sha256"]
+    assert first["content_hash_version"] == second["content_hash_version"]
+
+
+def test_content_identities_of_different_versions_are_never_duplicates(store):
+    from transform.bronze_records import ROW_HASH_VERSION
+
+    prefix = "manifests/ingestion/fund_ops/fund/bronze_reference_date=2026-10-26/"
+    accepted = {"status": "ACCEPTED", "input_sha256": "X", "ingested_at": "1", "run_id": "legacy"}
+    store.put(prefix + "legacy__x.json", json.dumps(accepted).encode())  # written without a version
+    args = (store, "fund_ops", "fund", D1, "X")
+    assert manifests.find_accepted_duplicate(*args, hash_version=ROW_HASH_VERSION) is None
+    store.put(
+        prefix + "new__x.json",
+        json.dumps(
+            accepted | {"run_id": "new", "ingested_at": "2", "input_hash_version": ROW_HASH_VERSION}
+        ).encode(),
+    )
+    assert manifests.find_accepted_duplicate(*args, hash_version=ROW_HASH_VERSION)["run_id"] == "new"
+
+
+def _with_value(product: str, column: str, value):
+    import pyarrow as pa
+
+    table = product_rows(product, D1, ["PRT-0001"])
+    index = table.column_names.index(column)
+    return table.set_column(index, table.field(column), pa.array([value], table.field(column).type))
+
+
+@pytest.mark.parametrize(
+    ("value", "ok"),
+    [
+        ("P" * 20, True),  # exactly string(20)
+        ("P" * 21, False),  # one character too long
+        ("é" * 20, False),  # 20 characters, but not representable in the SQL Server VARCHAR consumer
+        ("PRT-0001\U0001f600", False),  # non-BMP character
+    ],
+)
+def test_string_columns_respect_the_declared_length_and_charset(value, ok):
+    table = _with_value("exposure_compliance", "portfolio_id", value)
+    if ok:
+        package.validate_product("exposure_compliance", table, D1)
+    else:
+        with pytest.raises(PublicationError, match=r"portfolio_id.*string\(20\)"):
+            package.validate_product("exposure_compliance", table, D1)
+
+
+def test_null_in_a_nullable_string_column_is_still_accepted():
+    package.validate_product(
+        "exposure_compliance", _with_value("exposure_compliance", "top_issuer_code", None), D1
+    )
+
+
+def test_a_permissive_consumer_cannot_mask_a_string_contract_violation(store, tmp_path):
+    from load import publisher
+
+    engine = engine_for(f"sqlite:///{tmp_path / 'consumer.sqlite'}")
+    publisher.ensure_schema(engine)
+    target, _ = publisher.PRODUCT_TABLES["exposure_compliance"]
+    row = _with_value("exposure_compliance", "portfolio_id", "P" * 21).to_pylist()[0]
+    with publisher._connect(engine) as conn, conn.begin():  # SQLite stores 21 characters in "VARCHAR(20)"
+        conn.execute(target.insert().values(**row, publication_id="probe"))
+    tables = {
+        "liquidity_summary": product_rows("liquidity_summary", D1, ["PRT-0001"]),
+        "exposure_compliance": _with_value("exposure_compliance", "portfolio_id", "P" * 21),
+    }
+    with pytest.raises(PublicationError, match=r"string\(20\)"):
+        package.load_package(store, write_package(store, D1, run_id(), tables))
+    engine.dispose()
+
+
+def test_checkpoints_are_not_reused_in_an_incompatible_context(settings):
+    import dataclasses
+
+    from pipeline.state import state_path
+
+    seed.generate_all(settings, (D1,))
+    run = run_id()
+    steps.run_step("validate", steps.step_validate, settings, D1, run)
+    steps.run_step("collect", steps.step_collect, settings, D1, run)
+    before = state_path(settings, run).read_bytes()
+    aws = dataclasses.replace(settings, mode="aws", s3_bucket="erl-dev-data-111111111111")
+
+    def must_not_run(*_):
+        raise AssertionError("an incompatible checkpoint must not lead to execution either")
+
+    with pytest.raises(ConfigurationError, match="mode"):
+        steps.run_step("collect", must_not_run, aws, D1, run)
+    with pytest.raises(ConfigurationError, match="mode"):
+        steps.run_step("ingest", must_not_run, aws, D1, run)  # not yet run: still the same run
+    assert state_path(settings, run).read_bytes() == before, "earlier records stay untouched"
+
+
+def test_compatible_resume_reuses_checkpoints_despite_operational_changes(settings):
+    import dataclasses
+
+    seed.generate_all(settings, (D1,))
+    run = run_id()
+    first = steps.run_step("collect", steps.step_collect, settings, D1, run)
+    tuned = dataclasses.replace(settings, extract_batch_rows=7)  # does not change any result
+    assert steps.run_step("collect", lambda *_: {"rerun": True}, tuned, D1, run) == first
+
+
+def test_legacy_checkpoints_without_context_are_refused_explicitly(settings):
+    from pipeline.state import state_path
+
+    run = run_id()
+    path = state_path(settings, run)
+    path.parent.mkdir(parents=True)
+    legacy = {
+        "run_id": run,
+        "reference_date": D1.isoformat(),
+        "mode": "local",
+        "steps": {"collect": {"status": "SUCCEEDED"}},
+    }
+    path.write_text(json.dumps(legacy))
+    with pytest.raises(ConfigurationError, match="no recorded context"):
+        steps.run_step("collect", lambda *_: {}, settings, D1, run)
+    assert json.loads(path.read_text()) == legacy
+
+
+def test_checkpoint_context_holds_no_secret(monkeypatch, tmp_path):
+    from pipeline import config
+    from pipeline.state import run_context
+
+    monkeypatch.setenv("ERL_DATA_DIR", str(tmp_path))
+    monkeypatch.setenv("ERL_SOURCE_BACKEND", "containers")
+    monkeypatch.setenv("ERL_PG_PASSWORD", "pg-s3cr3t-value")
+    monkeypatch.setenv("ERL_MSSQL_SA_PASSWORD", "ms-s3cr3t-value")
+    text_ctx = json.dumps(run_context(config.load()))
+    assert "s3cr3t" not in text_ctx and "fund_ops" in text_ctx

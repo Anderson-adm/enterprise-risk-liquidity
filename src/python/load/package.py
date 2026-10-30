@@ -116,12 +116,25 @@ def validate_product(name: str, table: pa.Table, ref: date) -> None:
             raise PublicationError(f"{name}.{col['name']}: type {arrow_type} violates {col['type']}")
         if not col["nullable"] and table.column(col["name"]).null_count:
             raise PublicationError(f"{name}.{col['name']}: NULL in non-nullable column")
+        if m := re.fullmatch(r"string\((\d+)\)", col["type"]):
+            _check_text(f"{name}.{col['name']}", table.column(col["name"]).to_pylist(), int(m.group(1)))
     rows = table.to_pylist()
     if any(r["reference_date"] != ref for r in rows):
         raise PublicationError(f"{name}: rows outside reference date {ref}")
     keys = [tuple(r[k] for k in spec["key"]) for r in rows]
     if len(keys) != len(set(keys)):
         raise PublicationError(f"{name}: duplicate keys {spec['key']}")
+
+
+def _check_text(column: str, values: list, max_chars: int) -> None:
+    """``string(n)``: at most n ASCII characters (consumer contract). The SQL Server consumer
+    column is VARCHAR(n), whose code page cannot hold arbitrary Unicode; with ASCII, n means n
+    characters on every engine, so a permissive store (SQLite) cannot hide a violation."""
+    present = [v for v in values if v is not None]
+    if (longest := max((len(v) for v in present), default=0)) > max_chars:
+        raise PublicationError(f"{column}: value of {longest} characters violates string({max_chars})")
+    if not all(v.isascii() for v in present):
+        raise PublicationError(f"{column}: non-ASCII value violates string({max_chars})")
 
 
 def _type_matches(logical: str, arrow_type: pa.DataType) -> bool:

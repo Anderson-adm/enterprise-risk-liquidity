@@ -49,6 +49,25 @@ refactor, then the documentation/evidence commit. `dist/` was rebuilt from `c814
 * Four regressions fail on the unfixed code and pass now; fast 118, dbt 11, build + smoke green.
   [review_fixes.txt](../evidence/refactor/review_fixes.txt)
 
+### Adversarial review fixes H1-H3 (after 277fec0)
+
+* **H1 row identity:** `meta_row_hash` was SHA-256 of values joined with `\x1f`, so different field
+  sequences could collide and a changed snapshot be recorded as `DUPLICATE`. It is now SHA-256 of
+  the compact ASCII-escaped JSON array of the canonical text values (version 2). Landing manifests
+  record `content_hash_version`, ingestion manifests `input_hash_version`; duplicates are only
+  matched within the same version, so a legacy (unversioned) accepted snapshot is never taken as a
+  duplicate of a new one - it is accepted again (same content, a new version). No migration.
+* **H2 `string(n)`:** the validator now enforces at most n characters and ASCII (the SQL Server
+  consumer column is VARCHAR(n)); documented in `consumer_contract.json`. SQLite would store 21
+  characters in `VARCHAR(20)`; the package is refused before that.
+* **H3 checkpoints:** the run state records a context (mode, source backend, source and consumer
+  targets without passwords, and in aws mode bucket/account/region/prefix). A step reuses
+  checkpoints only in the same context; another context or a legacy state with checkpoints but no
+  context is refused with `ConfigurationError` and the state is left untouched. Batch size, log
+  level, dbt location and AWS profile do not count.
+* Evidence: [adversarial_fixes.txt](../evidence/refactor/adversarial_fixes.txt).
+
+### Not tested
 
 * Spark: no JVM here, so `src/spark` and the Glue jobs only had import/graph checks with stubs;
   Glue's Python 3.11 runtime and module list were not available (syntax targets py311 via ruff).

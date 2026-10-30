@@ -28,7 +28,14 @@ from sqlalchemy.types import TypeEngine
 
 from extract.sql_query import execute_query_in_batches
 from storage.objects import ObjectStore
-from transform.bronze_records import ROW_HASH, ROW_NUMBER, landing_schema, row_hash, stringify
+from transform.bronze_records import (
+    ROW_HASH,
+    ROW_HASH_VERSION,
+    ROW_NUMBER,
+    landing_schema,
+    row_hash,
+    stringify,
+)
 from utils import structured_log
 from utils.checksums import sha256_hex
 from utils.clock import utc_now_iso
@@ -104,6 +111,7 @@ def extract_to_landing(
         "object": prefix + f"{run_id}.parquet",
         "object_sha256": sha256_hex(payload),
         "content_sha256": content.hexdigest(),  # order-sensitive hash of row hashes
+        "content_hash_version": ROW_HASH_VERSION,
         "query": sql,
         "extracted_at": utc_now_iso(),
         "elapsed_seconds": round(time.monotonic() - started, 3),

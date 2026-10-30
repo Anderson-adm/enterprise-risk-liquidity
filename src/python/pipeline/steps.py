@@ -24,7 +24,7 @@ from ingestion import files, layout, manifests, snapshots
 from load import package, package_manifest, publisher
 from pipeline import config, extraction_catalog
 from pipeline.config import DB_SOURCES, FILE_SOURCES, Settings
-from pipeline.state import load_state, save_step
+from pipeline.state import check_context, load_state, run_context, save_step
 from utils import structured_log
 from utils.contracts import parquet_compression
 from utils.errors import ConfigurationError, ContractError, ErlError, QualityGateError, SourceUnavailableError
@@ -44,6 +44,7 @@ def run_step(
     state = load_state(settings, run_id)
     if state.get("reference_date", ref.isoformat()) != ref.isoformat():
         raise ConfigurationError(f"run {run_id} already belongs to {state['reference_date']}")
+    check_context(state, run_context(settings), run_id)
     previous = state["steps"].get(name, {})
     if name != "report" and previous.get("status") == "SUCCEEDED":
         # A successful step is a committed checkpoint. Retrying it must not append to

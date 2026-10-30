@@ -42,6 +42,7 @@ class LandingSnapshot:
     object_sha256: str
     content_sha256: str
     rows: int
+    content_hash_version: int | None  # None: landing written before identities were versioned
 
     @classmethod
     def read(cls, store: ObjectStore, manifest_key: str) -> LandingSnapshot:
@@ -56,6 +57,7 @@ class LandingSnapshot:
             object_sha256=lm["object_sha256"],
             content_sha256=lm["content_sha256"],
             rows=lm["rows"],
+            content_hash_version=lm.get("content_hash_version"),
         )
 
     @property
@@ -87,6 +89,7 @@ def _manifest(snapshot: LandingSnapshot, component: str, **fields) -> IngestionM
         input_object=snapshot.object,
         input_sha256=snapshot.content_sha256,
         snapshot_key=snapshot.snapshot_key,
+        input_hash_version=snapshot.content_hash_version,
         **fields,
     )
 
@@ -116,7 +119,12 @@ def record_duplicate(
     store: ObjectStore, snapshot: LandingSnapshot, component: str, records_read: int
 ) -> IngestionManifest | None:
     dup = manifests.find_accepted_duplicate(
-        store, snapshot.source_system, snapshot.entity, snapshot.reference_date, snapshot.content_sha256
+        store,
+        snapshot.source_system,
+        snapshot.entity,
+        snapshot.reference_date,
+        snapshot.content_sha256,
+        hash_version=snapshot.content_hash_version,
     )
     if dup is None:
         return None

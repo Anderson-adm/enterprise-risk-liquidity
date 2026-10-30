@@ -1,5 +1,5 @@
 {
-  "description": "Consumption contract for the SQL Server 'controle e relatorios' database. Columns must match the Gold dbt models (checked by tests/test_contracts.py). Types are logical: date, string(n), decimal(p,s), integer.",
+  "description": "Consumption contract for the SQL Server 'controle e relatorios' database. Columns must match the Gold dbt models (checked by tests/test_contracts.py). Types are logical: date, string(n) (at most n ASCII characters; stored as VARCHAR(n)), decimal(p,s), integer.",
   "version": 1,
   "products": {
     "liquidity_summary": {

@@ -7,6 +7,7 @@ as received (exact decimals, ISO dates); typing happens in Silver (dbt).
 from __future__ import annotations
 
 import hashlib
+import json
 from collections.abc import Iterable, Mapping, Sequence
 from datetime import date, datetime
 from decimal import Decimal
@@ -17,6 +18,10 @@ from utils.contracts import BronzeEntity, metadata_columns
 
 ROW_NUMBER = "meta_row_number"
 ROW_HASH = "meta_row_hash"
+# Encoding of row identities (meta_row_hash, and the landing content_sha256 built from them).
+# 2: SHA-256 of the canonical JSON array of the values. 1 (implicit, unversioned data): values
+# joined with "\x1f", which let different field sequences collide. Never compare across versions.
+ROW_HASH_VERSION = 2
 
 
 def stringify(value: object) -> str | None:
@@ -33,9 +38,14 @@ def stringify(value: object) -> str | None:
 
 
 def row_hash(values: Iterable[str | None]) -> str:
-    """Stable hash of a record's business values (NULL distinct from empty string)."""
-    joined = "\x1f".join("\x00" if v is None else v for v in values)
-    return hashlib.sha256(joined.encode("utf-8")).hexdigest()
+    """SHA-256 of a record's business values in contract column order (``ROW_HASH_VERSION``).
+
+    Values are canonical text or NULL (see ``stringify``). The JSON array keeps field boundaries,
+    arity and NULL vs empty string unambiguous, and ASCII escaping makes it byte-deterministic."""
+    fields = list(values)
+    if any(v is not None and not isinstance(v, str) for v in fields):
+        raise TypeError("row identity is defined on canonical text values (str) or None")
+    return hashlib.sha256(json.dumps(fields, separators=(",", ":")).encode("ascii")).hexdigest()
 
 
 def landing_schema(columns: Sequence[str]) -> pa.Schema:

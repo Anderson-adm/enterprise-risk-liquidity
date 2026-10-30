@@ -5,6 +5,7 @@
   "commit_visibility": "Silver reads only Bronze rows matched to an ACCEPTED ingestion manifest by source_system, entity, run_id and input_object. The manifest is the commit marker for the whole delivery.",
   "partition_column": "bronze_reference_date",
   "parquet_compression": "zstd",
+  "row_hash_note": "meta_row_hash (version 2) = SHA-256 of the compact, ASCII-escaped JSON array of the business values (text or null) in contract column order. A landing snapshot content_sha256 hashes its row hashes in order; manifests record content_hash_version / input_hash_version, and identities of different versions (absent = version 1, an ambiguous separator encoding) are never compared as duplicates.",
   "parquet_compression_note": "Codec of every Parquet object the platform writes with PyArrow (landing snapshots, Bronze, publication packages). Readers: DuckDB, Spark 3.5 (Glue 5.0), Athena engine 3. Writers must prove the codec with a round-trip before writing (storage check); the Lambda package bundles its own pinned PyArrow because the managed pandas layer could not write it.",
   "metadata_columns": [
     {"name": "meta_source_system", "type": "string"},

@@ -1,0 +1,23 @@
+# Adversarial review H1-H3 fixes (2026-10-30), offline, no containers, DBT_SEND_ANONYMOUS_USAGE_STATS=false
+## new tests against 277fec0 (before the fixes)
+FAILED tests/test_review_regressions.py::test_row_identity_distinguishes_different_field_sequences[a0-b0]
+FAILED tests/test_review_regressions.py::test_row_identity_distinguishes_different_field_sequences[a1-b1]
+FAILED tests/test_review_regressions.py::test_row_identity_distinguishes_different_field_sequences[a3-b3]
+FAILED tests/test_review_regressions.py::test_snapshots_differing_only_in_field_boundaries_are_both_accepted
+FAILED tests/test_review_regressions.py::test_content_identities_of_different_versions_are_never_duplicates
+FAILED tests/test_review_regressions.py::test_string_columns_respect_the_declared_length_and_charset[PPPPPPPPPPPPPPPPPPPPP-False]
+FAILED tests/test_review_regressions.py::test_string_columns_respect_the_declared_length_and_charset[\xe9\xe9\xe9\xe9\xe9\xe9\xe9\xe9\xe9\xe9\xe9\xe9\xe9\xe9\xe9\xe9\xe9\xe9\xe9\xe9-False]
+FAILED tests/test_review_regressions.py::test_string_columns_respect_the_declared_length_and_charset[PRT-0001\U0001f600-False]
+FAILED tests/test_review_regressions.py::test_a_permissive_consumer_cannot_mask_a_string_contract_violation
+FAILED tests/test_review_regressions.py::test_checkpoints_are_not_reused_in_an_incompatible_context
+FAILED tests/test_review_regressions.py::test_legacy_checkpoints_without_context_are_refused_explicitly
+FAILED tests/test_review_regressions.py::test_checkpoint_context_holds_no_secret
+12 failed, 7 passed, 22 deselected in 3.49s
+## new tests with the fixes
+19 passed (tests/test_review_regressions.py, H1-H3 selection)
+## suites with the fixes
+fast: 137 passed, 35 deselected in 116.11s (0:01:56)
+dbt: 11 passed, 161 deselected in 301.34s (0:05:01)
+build + smoke of dist/: exit 0 (Lambda ZIP and Glue library contain the changed modules)
+8 scenarios, SQLite, ext4 worktree of 277fec0 + this diff vs 4bc1f65 baseline: identical (comparison/diff_sqlite_ext4_h1_h3.json); 80 landing manifests with content_hash_version 2
+integration (containers): not rerun - no database-engine-specific code changed

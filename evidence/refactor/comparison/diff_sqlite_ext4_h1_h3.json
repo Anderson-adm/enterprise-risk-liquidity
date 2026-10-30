@@ -1,0 +1,32 @@
+{
+  "label": "sqlite ext4: 4bc1f65 vs 277fec0+H1-H3",
+  "identical": true,
+  "differences": [],
+  "compared": {
+    "scenarios": [
+      "01_first_run_d1:SUCCEEDED:ACTIVE",
+      "02_first_run_d2_quarantine_and_rejections:SUCCEEDED:ACTIVE",
+      "03_first_run_d3_late_arrival_for_d2:SUCCEEDED:ACTIVE",
+      "04_reprocess_d2_after_late_arrival:SUCCEEDED:ACTIVE",
+      "05_rerun_d2_idempotent:SUCCEEDED:SKIPPED_IDENTICAL",
+      "06_correction_of_published_position_d3:SUCCEEDED:ACTIVE",
+      "07_critical_quality_failure_d3:FAILED:None",
+      "08_source_unavailable_d1:FAILED:None"
+    ],
+    "run_reports": 8,
+    "liquidity_summary_rows": 24,
+    "exposure_compliance_rows": 24,
+    "decimal_values_compared_as_text": 248,
+    "publication_log_rows": 6
+  },
+  "excluded": [
+    "run ids",
+    "timestamps",
+    "elapsed times",
+    "dbt invocation ids",
+    "publication ids",
+    "content_sha256 (embeds Bronze run ids via lineage_bronze_runs)",
+    "lineage_bronze_runs column",
+    "query text in landing manifests (not in reports)"
+  ]
+}
