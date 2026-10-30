@@ -56,7 +56,7 @@ rejected as `NOT_SOURCE_OF_RECORD`.
 Bronze metadata columns: `meta_source_system`, `meta_entity`, `meta_run_id`,
 `meta_ingested_at`, `meta_component`, `meta_source_object`, `meta_source_sha256`,
 `meta_snapshot_key`, `meta_row_number`, `meta_row_hash`. The single source of truth for
-Bronze columns is `src/erl/contracts/bronze_contract.json`; Terraform generates the Glue
+Bronze columns is `src/contracts/bronze_contract.json`; Terraform generates the Glue
 Catalog Bronze tables from the same file.
 
 ### Snapshots and reprocessing
@@ -158,7 +158,7 @@ both; the pipeline's `gate` step then refuses to load/publish.
 
 Warning (non-blocking): `assert_active_portfolios_have_positions` — reported in the run report.
 
-## Consumer contract (`src/erl/contracts/consumer_contract.json`)
+## Consumer contract (`src/contracts/consumer_contract.json`)
 
 Columns, logical types and keys of `rpt.liquidity_summary` and `rpt.exposure_compliance`
 (plus `publication_id`). Money is `DECIMAL(20,2)`, ratios `DECIMAL(9,6)`; no binary floats

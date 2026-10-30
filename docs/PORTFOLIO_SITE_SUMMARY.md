@@ -38,11 +38,22 @@ budget; GitHub Actions CI (green on GitHub, including the PostgreSQL + SQL Serve
   Evidence: [first AWS attempt](../evidence/aws/functional/2026-10-26/summary.json),
   [teardown](../evidence/aws/teardown/verification.json).
 
+## Fixed offline after the AWS attempt (2026-10-30, not deployed)
+
+* Lambda packaging: the ZIP bundles its own PyArrow/lxml pinned to `uv.lock` (no managed layer),
+  writers prove the Parquet codec before any write, and the built ZIP passes a local smoke test
+  (isolated interpreter, S3 mock). Not run on AWS.
+* The one-date generator defect is fixed and covered by tests.
+* Code reorganised by responsibility (connections, extraction, ingestion, transformation, load,
+  storage; SQL in versioned files; thin Lambda/Glue entry points); artifacts are built, hashed
+  and smoke-tested before Terraform, in a separate artifacts bucket. Business results compared
+  exactly before/after for the eight scenarios on both local backends.
+
 ## Planned / pending
 
-Codec-compatible Lambda packaging, the one-date generator defect and complete AWS execution
-remain unresolved. The owner stopped cloud work and removed resources; any future deployment
-or paid validation requires a new explicit decision. No further cloud work is authorised.
+Complete AWS execution (Glue, Athena/Iceberg, Gold Load, hybrid publication) remains unvalidated.
+The owner stopped cloud work and removed resources; any future deployment or paid validation
+requires a new explicit decision. No further cloud work is authorised.
 
 ## Measured technical results (this reconstruction)
 
@@ -63,7 +74,7 @@ AWS pipeline result; databases are local containers, not managed or enterprise i
 |---|---|
 | 7 sources integrated into one validated base | validated locally (PostgreSQL + SQL Server containers; also SQLite stand-ins) |
 | Glue jobs (GB, TB, Load) | implemented, not executed |
-| Lambdas (B3 daily, internal XML, external XML) | implemented; moto tested; external XML invoked once on AWS and failed on missing Zstandard codec; others not invoked |
+| Lambdas (B3 daily, internal XML, external XML) | implemented; moto tested; external XML invoked once on AWS and failed on missing Zstandard codec (managed layer); packaging fixed and smoke-tested locally, not redeployed |
 | Bronze / Silver / Gold on S3 + Iceberg | validated locally; AWS has Landing and one uncommitted raw XML only; no committed Bronze delivery or Iceberg tables produced; objects later deleted |
 | Athena + dbt, tests block promotion, invalid data goes to quarantine | dbt + gate validated locally on DuckDB; Athena not executed |
 | Airflow, idempotent reprocessing by reference date, failed-step alert | validated locally (Airflow 3.3.2 `dags test`; alert = structured log locally) |

@@ -1,0 +1,10 @@
+# tests/test_synthetic_generation.py (non-dbt) executed against the baseline worktree 4bc1f65
+FAILED tests/test_synthetic_generation.py::test_single_date_receives_no_event_of_another_date
+FAILED tests/test_synthetic_generation.py::test_generation_is_prefix_stable[1]
+FAILED tests/test_synthetic_generation.py::test_scenario_roles_follow_the_requested_dates
+FAILED tests/test_synthetic_generation.py::test_dates_must_be_strictly_increasing[dates0]
+FAILED tests/test_synthetic_generation.py::test_dates_must_be_strictly_increasing[dates1]
+FAILED tests/test_synthetic_generation.py::test_dates_must_be_strictly_increasing[dates2]
+FAILED tests/test_synthetic_generation.py::test_dates_must_be_strictly_increasing[dates3]
+FAILED tests/test_synthetic_generation.py::test_cli_refuses_unordered_dates
+8 failed, 2 passed, 1 deselected in 0.21s

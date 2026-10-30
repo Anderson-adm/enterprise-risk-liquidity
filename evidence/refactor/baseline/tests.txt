@@ -1,0 +1,15 @@
+# baseline 4bc1f65 (clean tree), 2026-10-30, this machine (WSL2), containers already running
+## ruff
+All checks passed!
+ruff exit 0
+40 files already formatted
+format exit 0
+## fast
+72 passed, 34 deselected in 72.75s (0:01:12)
+exit 0
+## dbt
+10 passed, 96 deselected in 285.50s (0:04:45)
+exit 0
+## integration
+24 passed, 82 deselected in 105.67s (0:01:45)
+exit 0

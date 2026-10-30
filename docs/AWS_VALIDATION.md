@@ -134,6 +134,7 @@ The commands below are the general preparation sequence; do not overwrite the sa
 generate a replacement without preserving/reviewing the new plan:
 
 ```bash
+# historical (2026-10-29); the current sequence is in "Future run proposal" below
 scripts/build_lambda.sh
 cp infra/environments/dev/backend.hcl.example infra/environments/dev/backend.hcl
 cp infra/environments/dev/terraform.tfvars.example infra/environments/dev/dev.auto.tfvars
@@ -259,3 +260,37 @@ deliberately has no permission to remove object versions or delete the lab's res
 The teardown helper additionally requires dev lab bucket tags and exact Silver/Gold database
 names, excludes the state bucket and stops on per-object/per-table deletion errors. Incomplete
 multipart uploads and unexpected resources still need inventory/review before final teardown.
+
+## Future run proposal (not authorised)
+
+Written 2026-10-30 after the offline fixes and refactor. **Nothing below has been executed**;
+each step needs an explicit owner decision at that moment. The old plans and backend no longer
+exist and must not be reused.
+
+1. Local gate (no cost): clean `main`; `uv run pytest` (fast, dbt, integration on the
+   containers); `scripts/build/build_artifacts.py` + `smoke_artifacts.py` on that commit
+   (`dist/manifest.json` with `dirty: false`); `scripts/terraform_checks.sh`.
+2. Bootstrap (authorisation 1): fresh state bucket via `infra/bootstrap` (7 resources), SSO
+   `data-dev`, account id verified, `sa-east-1`.
+3. Dev plan (authorisation 2): `init -backend-config` against the new bucket, `plan -out`,
+   review: now **3 + 1 buckets** (data, Athena results, artifacts; state separate), Lambdas from
+   `case01/lambda/bronze/file_ingestion.zip` without any layer, Glue scripts/library from
+   `case01/glue/...` with `ScriptSha256`/`LibrarySha256` tags. Compare object hashes with
+   `dist/manifest.json` before apply.
+4. Apply (authorisation 3), then read-only verification as before.
+5. Functional run for **2026-10-26** only (authorisation 4): `erl generate --dates 2026-10-26`
+   (now a clean D1 slice), then the hybrid run. Stop at the first failure; no automatic retry.
+   First checks: the three Lambdas write ZSTD Parquet with manifests; Glue imports from the
+   library ZIP and installs the pinned boto3; Ion manifest reads; dbt on Athena/Iceberg; Gold
+   Load package; local SQL Server publication; decimal comparison with the local reference.
+6. Teardown (authorisation 5) with `scripts/teardown_aws.py` (now three lab buckets) and a
+   reviewed destroy plan.
+
+Cost estimate for step 5 (sa-east-1 rates captured on 2026-10-29, see
+[TERRAFORM.md](TERRAFORM.md#cost-model-estimate--verify-before-apply)): Glue 3 jobs × 2 DPU ×
+2–5 min = USD 0.14–0.35; Athena USD 0.01–0.03 if 1–3 GB are billed (10 MB minimum per query);
+Lambda and S3 requests below USD 0.01; artifacts bucket ~55 MiB (+ replaced versions for up to
+30 days) ≈ USD 0.002/month; CloudWatch alarms ≈ USD 0.405/month if kept a full month. Provisional
+reserve for one date including small diagnostics: **USD 1–3**, which is an estimate, not a cap.
+A Glue job that runs to its 15-minute timeout costs about USD 0.35 each. Taxes, exchange rate
+and free tiers excluded; actual cost must be read from billing after the run.

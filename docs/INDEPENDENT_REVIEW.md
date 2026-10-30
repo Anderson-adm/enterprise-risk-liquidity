@@ -1,5 +1,9 @@
 # Case 01 — Revisão independente de engenharia
 
+> **Historical document.** File links and paths below refer to the layout before the
+> 2026-10-30 refactoring (`src/erl/...`, `glue/jobs/...`); see
+> [REFACTORING.md](REFACTORING.md) for where each module lives now. Content is unchanged.
+
 Codex · 2026-10-29 · base da revisão `13f9820` · correções em `5fe19db`.
 Publicação autorizada pelo proprietário no fechamento; estado do CI em [HANDOFF.md](HANDOFF.md).
 

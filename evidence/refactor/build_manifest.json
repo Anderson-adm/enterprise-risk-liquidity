@@ -1,0 +1,79 @@
+{
+  "project": "enterprise-risk-liquidity",
+  "git": {
+    "commit": "c81446a2c2a362e446113fa6f3896a88966c4745",
+    "dirty": false
+  },
+  "uv_lock_sha256": "154b51ede5e99fe3c5b8a3b7d221dd2f456b92d68d97373b2c4757f715d663aa",
+  "artifacts": {
+    "glue/bronze/db_ingest.py": {
+      "runtime": {
+        "service": "glue",
+        "glue_version": "5.0",
+        "python": "3.11",
+        "spark": "3.5"
+      },
+      "files": 1,
+      "s3_key": "case01/glue/bronze/db_ingest.py",
+      "sha256": "d47a015e44f21726d1dc29432f958702bb27af3175937c1b4f5fab1215aab34f",
+      "bytes": 4960
+    },
+    "glue/lib/erl_glue_lib.zip": {
+      "runtime": {
+        "service": "glue",
+        "glue_version": "5.0",
+        "python": "3.11",
+        "spark": "3.5"
+      },
+      "packages": [
+        "utils",
+        "storage",
+        "ingestion",
+        "load",
+        "contracts",
+        "readers",
+        "transforms",
+        "writers"
+      ],
+      "files": 35,
+      "s3_key": "case01/glue/lib/erl_glue_lib.zip",
+      "sha256": "c1cd4277bf389b344c619dcbc961fcc3c33d2474558dd51166a151170e9488c5",
+      "bytes": 34270
+    },
+    "glue/load/gold_load.py": {
+      "runtime": {
+        "service": "glue",
+        "glue_version": "5.0",
+        "python": "3.11",
+        "spark": "3.5"
+      },
+      "files": 1,
+      "s3_key": "case01/glue/load/gold_load.py",
+      "sha256": "06acbf4bccae844aa2c03040ad68fcc9cf370f90066602482994c316bf82bb27",
+      "bytes": 4113
+    },
+    "lambda/bronze/file_ingestion.zip": {
+      "runtime": {
+        "service": "lambda",
+        "runtime": "python3.12",
+        "architecture": "x86_64"
+      },
+      "handler_module": "file_ingestion",
+      "third_party": {
+        "lxml": "6.1.3",
+        "pyarrow": "26.0.0"
+      },
+      "packages": [
+        "utils",
+        "storage",
+        "transform",
+        "ingestion",
+        "contracts"
+      ],
+      "files": 281,
+      "s3_key": "case01/lambda/bronze/file_ingestion.zip",
+      "sha256": "efb9da054aa9df54810b0171e3bdc97eac256fefb2058420f313896445901056",
+      "bytes": 56896444
+    }
+  }
+}

@@ -1,0 +1,50 @@
+{
+  "what": "collect_evidence.py, SQLite backend, git worktrees on /tmp (ext4), same machine, sequential, 2026-10-30",
+  "note": "runs on /mnt/c (9p, swap exhausted at the time) took 68-117 s per scenario; not comparable",
+  "total_s": {
+    "baseline": 59.56,
+    "refactor": 53.75
+  },
+  "scenarios": [
+    {
+      "scenario": "01_first_run_d1",
+      "baseline_4bc1f65_s": 9.98,
+      "refactor_c81446a_s": 8.42
+    },
+    {
+      "scenario": "02_first_run_d2_quarantine_and_rejections",
+      "baseline_4bc1f65_s": 7.37,
+      "refactor_c81446a_s": 7.21
+    },
+    {
+      "scenario": "03_first_run_d3_late_arrival_for_d2",
+      "baseline_4bc1f65_s": 8.51,
+      "refactor_c81446a_s": 7.41
+    },
+    {
+      "scenario": "04_reprocess_d2_after_late_arrival",
+      "baseline_4bc1f65_s": 7.73,
+      "refactor_c81446a_s": 7.65
+    },
+    {
+      "scenario": "05_rerun_d2_idempotent",
+      "baseline_4bc1f65_s": 8.87,
+      "refactor_c81446a_s": 7.52
+    },
+    {
+      "scenario": "06_correction_of_published_position_d3",
+      "baseline_4bc1f65_s": 7.93,
+      "refactor_c81446a_s": 7.72
+    },
+    {
+      "scenario": "07_critical_quality_failure_d3",
+      "baseline_4bc1f65_s": 9.1,
+      "refactor_c81446a_s": 7.78
+    },
+    {
+      "scenario": "08_source_unavailable_d1",
+      "baseline_4bc1f65_s": 0.07,
+      "refactor_c81446a_s": 0.04
+    }
+  ]
+}

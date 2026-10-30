@@ -1,0 +1,9 @@
+# baseline 4bc1f65: synthetic.generate((2026-10-26,)) vs D1 slice of generate(DEFAULT_DATES)
+positions D1 full: 23  single: 25
+version-2 positions in single-date D1: [('prt0002', 'SYN-EQ-005', 2)]
+files D1 full:   [('external_xml', 'transfer_in_ADM77_EXT77-0001_20261026.xml', 573), ('external_xml', 'transfer_in_ADM77_EXT77-0002_20261026.xml', 414), ('internal_xml', 'statement_PRT-0006_20261026.xml', 887), ('market_data', 'market_data_20261026.csv', 904)]
+files D1 single: [('external_xml', 'transfer_in_ADM77_EXT77-0001_20261026.xml', 573), ('external_xml', 'transfer_in_ADM77_EXT77-0002_20261026.xml', 396), ('internal_xml', 'statement_PRT-0006_20261026.xml', 887), ('internal_xml', 'statement_PRT-0006_20261026_resend.xml', 443), ('market_data', 'market_data_20261026.csv', 955)]
+extra files in single: [('external_xml', 'transfer_in_ADM77_EXT77-0002_20261026.xml', 396), ('internal_xml', 'statement_PRT-0006_20261026_resend.xml', 443), ('market_data', 'market_data_20261026.csv', 955)]
+market_data lines single: 18 duplicated lines: 1
+tb_resgate dt_pedido single: [(1, '2026-10-24'), (2, '2026-10-25'), (3, '2026-10-26'), (4, '2026-10-26')]
+BUG REPRODUCED: True

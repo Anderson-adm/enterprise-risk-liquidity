@@ -1,0 +1,49 @@
+{
+  "what": "scripts/airflow_local.sh test 2026-10-26 (Airflow 3.3.2, own venv, SQLite metadata), after 'erl generate --dates 2026-10-26' (single-date generation); ERL_SOURCE_BACKEND=sqlite; containers stopped for memory",
+  "generated": {
+    "fund_ops": {
+      "fund": 4,
+      "portfolio": 8,
+      "source_identity_map": 34
+    },
+    "portfolio_risk": {
+      "processed_position": 23,
+      "processing_batch": 1
+    },
+    "legacy_finance": {
+      "tb_cart": 8,
+      "tb_resgate": 3,
+      "tb_saldo_caixa": 8
+    },
+    "exposure_compliance": {
+      "concentration_limit": 1,
+      "instrument_registry": 16,
+      "stock_position": 31
+    },
+    "inbox_files": 4
+  },
+  "dag_run": [
+    "run_duration=62.689174",
+    " state=success"
+  ],
+  "steps": {
+    "validate": "SUCCEEDED",
+    "extract": "SUCCEEDED",
+    "collect": "SUCCEEDED",
+    "ingest": "SUCCEEDED",
+    "transform": "SUCCEEDED",
+    "gate": "SUCCEEDED",
+    "load": "SUCCEEDED",
+    "publish": "SUCCEEDED",
+    "report": "SUCCEEDED"
+  },
+  "publication": {
+    "publication_status": "ACTIVE",
+    "rows": {
+      "liquidity_summary": 8,
+      "exposure_compliance": 8
+    }
+  },
+  "quality_gate": "PASSED",
+  "files_rejected": []
+}

@@ -1,0 +1,43 @@
+# 2026-10-30T19:12:07Z  Terraform v1.16.6, tflint 0.65.0
+## terraform fmt -check -recursive
+pass
+## modules/secure_bucket: validate
+Success! The configuration is valid.
+
+## modules/secure_bucket: test
+  run "secure_defaults"... pass
+  run "prefix_retention_rules"... pass
+  run "invalid_bucket_name_is_rejected"... pass
+Success! 3 passed, 0 failed.
+## modules/secure_bucket: tflint
+0 issues
+## bootstrap: validate
+Success! The configuration is valid.
+
+## bootstrap: test
+## bootstrap: tflint
+0 issues
+## environments/dev: validate
+Success! The configuration is valid.
+
+## environments/dev: test
+  run "secure_and_cost_controlled_defaults"... pass
+  run "iam_policies_have_no_service_wildcards"... pass
+  run "alert_email_enables_subscription_and_budget_notifications"... pass
+  run "rejects_prod_environment"... pass
+  run "rejects_default_profile"... pass
+  run "rejects_other_regions"... pass
+  run "rejects_malformed_account_id"... pass
+  run "rejects_too_small_athena_cutoff"... pass
+  run "artifacts_come_from_the_dedicated_bucket"... pass
+  run "rejects_short_artifact_recovery_window"... pass
+  run "rejects_oversized_glue_jobs"... pass
+Success! 11 passed, 0 failed.
+## environments/dev: tflint
+0 issues
+## checkov 3.4.0
+terraform scan results:
+
+Passed checks: 162, Failed checks: 0, Skipped checks: 40
+
+

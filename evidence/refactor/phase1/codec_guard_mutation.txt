@@ -1,0 +1,4 @@
+# Phase 1 tree (committed as 9cdb750) with the require_parquet_codec() call in ingestion/files.py replaced by "pass" (mutation); file restored before the commit
+FAILED tests/test_parquet_codec.py::test_file_delivery_fails_before_any_write_without_the_codec
+FAILED tests/test_aws_components.py::test_lambda_without_the_parquet_codec_leaves_only_the_landing_object
+2 failed, 1 passed, 13 deselected in 23.14s

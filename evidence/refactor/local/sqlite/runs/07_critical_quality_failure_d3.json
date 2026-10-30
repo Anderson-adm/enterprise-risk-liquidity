@@ -1,0 +1,103 @@
+{
+  "run_id": "20261030T190408Z-0b3a13",
+  "reference_date": "2026-10-28",
+  "mode": "local",
+  "steps": {
+    "validate": "SUCCEEDED",
+    "extract": "SUCCEEDED",
+    "collect": "SUCCEEDED",
+    "ingest": "SUCCEEDED",
+    "transform": "SUCCEEDED",
+    "gate": "FAILED"
+  },
+  "records_read": {
+    "fund_ops": {
+      "fund": 4,
+      "portfolio": 8,
+      "source_identity_map": 34
+    },
+    "portfolio_risk": {
+      "processing_batch": 1,
+      "processed_position": 24
+    },
+    "legacy_finance": {
+      "cash_balance": 8,
+      "pending_redemption": 3
+    },
+    "exposure_compliance": {
+      "instrument_registry": 16,
+      "stock_position": 31,
+      "concentration_limit": 1
+    }
+  },
+  "ingestion": {
+    "by_status": {
+      "DUPLICATE": 14,
+      "ACCEPTED": 1
+    },
+    "records_written": 3,
+    "files_rejected": [],
+    "late_arrivals": [
+      "transfer_in_ADM77_EXT77-0002_20261027_retransmission.xml"
+    ]
+  },
+  "quality_gate": {
+    "status": "FAILED",
+    "dbt_invocation_id": "09eb1973-b86a-4ee0-95ee-429e4490bfda",
+    "tests_failed": [
+      "test.erl.rejection_ratio_within_gold_liquidity_summary_candidate__var_max_rejected_ratio_.7d520f3666"
+    ],
+    "warnings": [
+      "test.erl.assert_active_portfolios_have_positions"
+    ]
+  },
+  "publication": {
+    "publication_status": null,
+    "publication_id": null,
+    "superseded": null,
+    "rows": null,
+    "content_sha256": null
+  },
+  "rejected_records": [
+    {
+      "entity": "portfolio_position",
+      "source_system": "external_xml",
+      "reason": "MISSING_MARKET_DATA",
+      "records": 5
+    },
+    {
+      "entity": "portfolio_position",
+      "source_system": "internal_xml",
+      "reason": "MISSING_MARKET_DATA",
+      "records": 3
+    },
+    {
+      "entity": "portfolio_position",
+      "source_system": "portfolio_risk",
+      "reason": "MISSING_MARKET_DATA",
+      "records": 16
+    },
+    {
+      "entity": "portfolio_position",
+      "source_system": "portfolio_risk",
+      "reason": "UNMAPPED_PORTFOLIO",
+      "records": 2
+    },
+    {
+      "entity": "stock_position",
+      "source_system": "exposure_compliance",
+      "reason": "MISSING_MARKET_DATA",
+      "records": 24
+    }
+  ],
+  "step_elapsed_seconds": {
+    "validate": 0.0,
+    "extract": 0.886,
+    "collect": 0.397,
+    "ingest": 12.026,
+    "transform": 103.009,
+    "gate": 0.003,
+    "report": 0.041
+  },
+  "total_elapsed_seconds": 116.46
+}

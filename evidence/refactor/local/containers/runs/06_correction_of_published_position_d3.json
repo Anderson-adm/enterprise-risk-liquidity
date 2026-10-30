@@ -1,0 +1,82 @@
+{
+  "run_id": "20261030T184914Z-e35328",
+  "reference_date": "2026-10-28",
+  "mode": "local",
+  "steps": {
+    "validate": "SUCCEEDED",
+    "extract": "SUCCEEDED",
+    "collect": "SUCCEEDED",
+    "ingest": "SUCCEEDED",
+    "transform": "SUCCEEDED",
+    "gate": "SUCCEEDED",
+    "load": "SUCCEEDED",
+    "publish": "SUCCEEDED"
+  },
+  "records_read": {
+    "fund_ops": {
+      "fund": 4,
+      "portfolio": 8,
+      "source_identity_map": 34
+    },
+    "portfolio_risk": {
+      "processing_batch": 1,
+      "processed_position": 24
+    },
+    "legacy_finance": {
+      "cash_balance": 8,
+      "pending_redemption": 3
+    },
+    "exposure_compliance": {
+      "instrument_registry": 16,
+      "stock_position": 31,
+      "concentration_limit": 1
+    }
+  },
+  "ingestion": {
+    "by_status": {
+      "DUPLICATE": 14,
+      "ACCEPTED": 1
+    },
+    "records_written": 24,
+    "files_rejected": [],
+    "late_arrivals": [
+      "transfer_in_ADM77_EXT77-0002_20261027_retransmission.xml"
+    ]
+  },
+  "quality_gate": {
+    "status": "PASSED",
+    "dbt_invocation_id": "bbea15a4-ae1d-4aec-9cda-941feeb6086d",
+    "tests_failed": [],
+    "warnings": []
+  },
+  "publication": {
+    "publication_status": "ACTIVE",
+    "publication_id": "20261028-20261030T184914Z-e35328-f3625aafefe74ac2adb509c1c1c0908c",
+    "superseded": "20261028-20261030T184410Z-463f71-535d5675ebb0443f862c154ec5aea5ba",
+    "rows": {
+      "liquidity_summary": 8,
+      "exposure_compliance": 8
+    },
+    "content_sha256": "60d7e3239a5e46148152d367932be00af42901f6582ce85f818dd36e3ed4ca44"
+  },
+  "rejected_records": [
+    {
+      "entity": "portfolio_position",
+      "source_system": "portfolio_risk",
+      "reason": "UNMAPPED_PORTFOLIO",
+      "records": 2
+    }
+  ],
+  "step_elapsed_seconds": {
+    "validate": 0.0,
+    "extract": 1.149,
+    "collect": 0.268,
+    "ingest": 11.619,
+    "transform": 100.084,
+    "gate": 0.004,
+    "load": 0.136,
+    "publish": 0.132,
+    "report": 0.043
+  },
+  "total_elapsed_seconds": 113.56
+}

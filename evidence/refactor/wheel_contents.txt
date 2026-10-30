@@ -1,0 +1,27 @@
+# uv build --wheel (non-editable) of the refactored tree: erl_platform-0.1.0-py3-none-any.whl
+# a first build showed python/ and spark/ prefixes (hatch 'packages' strips only src/);
+# fixed with only-include + sources; tests/test_layout_and_artifacts.py guards the mapping
+connect                                  4 files
+contracts                                5 files
+erl_platform-0.1.0.dist-info             4 files
+extract                                  3 files
+ingestion                                7 files
+load                                     4 files
+pipeline                                 7 files
+readers                                  3 files
+sources                                  4 files
+sql                                      19 files
+storage                                  3 files
+transform                                2 files
+transforms                               2 files
+utils                                    9 files
+writers                                  2 files
+sql resources: 18
+contract resources: ['contracts/bronze_contract.json', 'contracts/consumer_contract.json', 'contracts/internal_portfolio_statement.xsd', 'contracts/transfer_in_portfolio.xsd']
+python/, spark/, src/ or erl/ prefixes present: False
+# wheel installed into an isolated venv (uv venv + uv pip install <wheel>), python -I; data in a temp dir
+# note: an installed (non-editable) pipeline needs ERL_DBT_PROJECT_DIR (dbt/ is not packaged)
+imports from installed wheel: 10
+sql resource: SELECT pg_advisory_xact_lock(:lock_key) | codec: zstd
+erl generate --dates 2026-10-26 -> {'fund_ops': {'fund': 4, 'portfolio': 8, 'source_identity_map': 34}, 'portfolio_risk': {'processed_position': 23, 'processing_batch': 1}, 'legacy_finance': {'tb_cart': 8, 'tb_resgate': 3, 'tb_saldo_caixa': 8}, 'exposure_compliance': {'concentration_limit': 1, 'instrument_registry': 16, 'stock_position': 31}, 'inbox_files': 4}
+erl generate unordered dates exit code: 2

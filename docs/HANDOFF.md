@@ -1,12 +1,94 @@
 # HANDOFF
 
+_Last update: 2026-10-30 (America/Fortaleza) by Claude Code: offline fix of the two defects found
+on AWS, refactoring to the `data-project-engineering` layout, pre-Terraform build of artifacts.
+**Local commits only; nothing was pushed.** `origin/main` is still `4bc1f65` (last green CI
+`41068977870` per the owner). No AWS resource exists or was created; see "Incidents" for the one
+unintended AWS request of this session._
+
+## State (2026-10-30)
+
+| Area | State |
+|---|---|
+| AWS | fully decommissioned (unchanged); nothing deployed, applied, invoked or billed in this session |
+| Lambda Parquet codec (AWS failure) | **fixed locally**: codec in the Bronze contract, round-trip proof before any write, Lambda ZIP bundles PyArrow/lxml pinned to `uv.lock`, no managed layer; built ZIP smoke-tested locally. **Not validated on AWS** |
+| Single-date generator (D2 on D1) | **fixed**: positional roles, strictly increasing dates, prefix-stable; `erl generate --dates 2026-10-26` = clean D1 slice |
+| Layout | `src/python`, `src/spark`, `src/sql`, `src/contracts`, thin `lambda/` + `glue/` entry points; `src/erl` removed ([REFACTORING.md](REFACTORING.md)) |
+| Build | `scripts/build/build_artifacts.py` -> `dist/` + `manifest.json`; `smoke_artifacts.py` tests the built Lambda ZIP and Glue library; wheel mapping fixed and tested |
+| Terraform | artifacts bucket (separate from state and lake), Lambda from S3 object version, Glue script + `--extra-py-files` library with SHA-256 tags; never applied |
+| Local validation | see table below - all green |
+
+Commits (on top of `4bc1f65`): `9cdb750` fix (codec + generator, with tests), `c81446a`
+refactor, then the documentation/evidence commit. `dist/` was rebuilt from `c81446a`
+(`dirty: false`); the SHA-256 values equal the pre-commit build (deterministic archives).
+
+### What was run (2026-10-30, this machine, WSL2; containers were already running)
+
+| Check | Result | Evidence |
+|---|---|---|
+| Baseline `4bc1f65` | ruff clean; 72 fast + 10 dbt + 24 integration = 106 passed | [baseline/tests.txt](../evidence/refactor/baseline/tests.txt) |
+| Defect reproduction | single-date generation put the D2 correction, duplicate row, truncated resend, XSD-failing XML, duplicated CSV line and a D2 redemption into D1; the managed layer itself could not be fetched offline (would be an AWS call) | [generator_single_date_before.txt](../evidence/refactor/baseline/generator_single_date_before.txt) |
+| New regressions fail without the fixes | 8/10 generator tests fail on `4bc1f65`; both "no orphan object" codec tests fail with the guard removed | [baseline/](../evidence/refactor/baseline/), [phase1/](../evidence/refactor/phase1/) |
+| Phase 1 (`9cdb750`) | 89 fast + 11 dbt + 24 integration passed | [phase1/tests.txt](../evidence/refactor/phase1/tests.txt) |
+| After refactor | ruff clean; **114 fast + 11 dbt + 24 integration = 149 passed** (106 historical + 43 new) | [after/tests.txt](../evidence/refactor/after/tests.txt) |
+| Exact before/after comparison, 8 scenarios | **identical** on SQLite and on PostgreSQL + SQL Server (`4bc1f65` vs refactor): statuses, records read, ingestion statuses, quarantine reasons, gate, rejected-record counts, 24 + 24 consumer rows (248 DECIMAL values as exact text), 6 publication-log rows; SQLite vs containers also identical after the refactor. Timing on ext4 worktrees: 59.6 s baseline vs 53.8 s refactor for the 8 scenarios | [comparison/](../evidence/refactor/comparison/) |
+| Built artifacts | Lambda ZIP 54.3 MiB: PyArrow 26.0.0 + lxml 6.1.3 load from the package, ZSTD round-trip of DECIMAL(24,6)/(20,2) extremes, timestamp, date, NULL; 3 handlers ACCEPTED + 1 REJECTED on moto S3. Glue library: every job import resolves from the ZIP, no PyArrow/SQLAlchemy/lxml/DuckDB in the Glue path, acceptance steps + conditional copy on moto | [smoke_report.json](../evidence/refactor/smoke_report.json), [build_manifest.json](../evidence/refactor/build_manifest.json) |
+| Wheel | non-editable wheel holds exactly the 14 packages + SQL/contract resources; CLI runs from an isolated venv | [wheel_contents.txt](../evidence/refactor/wheel_contents.txt) |
+| Terraform (isolated copy, credentials hidden) | fmt, validate (3 dirs), 14 mocked tests, TFLint 0, Checkov 162/0/40 | [terraform_checks.txt](../evidence/refactor/terraform_checks.txt) |
+| Airflow 3.3.2 (`airflow dags test`) | DagRun **success** (62.7 s), 9 steps, ACTIVE publication 8 + 8 rows, after `erl generate --dates 2026-10-26`; SQLite backend (containers were stopped for memory, see incident 4) | [airflow_single_date.json](../evidence/refactor/airflow_single_date.json) |
+
+### Not tested
+
+* Spark: no JVM here, so `src/spark` and the Glue jobs only had import/graph checks with stubs;
+  Glue's Python 3.11 runtime and module list were not available (syntax targets py311 via ruff).
+* AWS: no Lambda, Glue, Athena/dbt-athena, Iceberg, Gold Load or hybrid publication run. S3
+  `If-None-Match` on `CompleteMultipartUpload` (Glue part commits) is verified with moto only.
+* The exact `AWSSDKPandas-Python312:32` layer was not reproduced (no local copy; fetching it is
+  an AWS call). The fix removes the dependency on it instead.
+* `dbt parse --target athena` was not used as evidence of Athena behaviour.
+
+### Incidents in this session (reported, not hidden)
+
+1. **One unintended AWS request.** Running `terraform init -backend=false` / `test` directly in
+   `infra/environments/dev` made Terraform try to refresh the cached SSO token (the local
+   `.terraform/` still holds S3 backend metadata from the destroyed lab). The SSO OIDC
+   `CreateToken` call was refused (`InvalidGrantException`, HTTP 400): no session, no resource
+   access, no cost. Prevention: `scripts/terraform_checks.sh` now runs on a temporary copy of the
+   versioned files with AWS credentials hidden (test added); AGENTS.md warns against running
+   Terraform directly in that directory.
+2. `terraform fmt .` rewrote whitespace in the private, git-ignored `dev.auto.tfvars` (values not
+   read or printed). It may still set the removed variables `lambda_pandas_layer_arn` /
+   `lambda_package_path`; review it before any future plan.
+3. While inspecting a private run-environment file under `data/aws-functional-2026-10-29/`, its
+   local database passwords and the data-dev account id were shown in this session's tool output
+   (not written to git or evidence). The passwords are local-only container passwords; rotating
+   them (`.env` + container re-creation) is recommended. Nothing was sent elsewhere.
+
+4. **Memory.** The first post-refactor SQLite evidence run on `/mnt/c` failed 3 dbt builds with
+   `IO Error ... Cannot allocate memory` (WSL swap exhausted: 2.0 GiB used, ~5 MiB free; SQL Server
+   container ~1.3-1.6 GiB; this session was running other commands in parallel). Not a code
+   defect: the containers run, an isolated rerun and an ext4 worktree run are all identical to the
+   baseline. Concurrent work was stopped and **this project's two containers were stopped**
+   (`docker compose stop`; `erl_pgdata`/`erl_mssqldata` and other projects' volumes untouched).
+   They were running when the session started; start them again with `docker compose up -d --wait`
+   when needed. Evidence: [memory_incident/](../evidence/refactor/memory_incident/).
+
+### Next step (each needs explicit authorisation)
+
+1. Review the local commits; if accepted, authorise a push to `Anderson-adm/enterprise-risk-liquidity`
+   and check GitHub Actions (the CI now builds and smoke-tests `dist/`).
+2. Any AWS resumption follows [AWS_VALIDATION.md - future run proposal](AWS_VALIDATION.md#future-run-proposal-not-authorised)
+   (fresh bootstrap, new plans, one date, estimated USD 1-3, not a cap). Nothing is authorised now.
+
+## Earlier header (Codex, before this session)
+
 _Last update: 2026-10-30 (America/Fortaleza) by Codex, documentation/evidence publication and AI handoff prompt. Review fixes are in
 `5fe19db`; documentation and review evidence accompany publication to `main`, authorised by
 the owner. Current remote validation: [GitHub Actions](https://github.com/Anderson-adm/enterprise-risk-liquidity/actions/workflows/ci.yml).
 The review baseline was `13f9820`; `evidence/review/verification.json` preserves that tested
 snapshot, before the publication-only documentation updates._
 
-## State
+## State before the 2026-10-30 refactor (Codex)
 
 **AWS Case 01 is fully decommissioned.** At the owner's explicit request, Terraform removed
 all **69 dev + 7 bootstrap resources**, including all three S3 buckets, object versions,
@@ -192,7 +274,7 @@ publications for one date.
   `git update-index --chmod=+x <file>`. Pushes run through Windows `git.exe` (Git Credential
   Manager); WSL git has no GitHub credentials.
 
-## Known issues / limitations
+## Known issues / limitations (as of 4bc1f65; the codec and generator items are fixed in 9cdb750)
 
 * **AWS ingestion blocked:** the managed `AWSSDKPandas-Python312:32` layer's PyArrow 24.0.0
   build cannot write the Zstandard codec required by `src/erl/ingestion/bronze.py:237`.
@@ -258,7 +340,7 @@ Observed inputs imply USD 0.00007845 for Lambda and USD 0.000175 for at least 25
 estimate excluding unmetered reads/logs/SNS/storage and existing alarms, not an invoice.
 Pipeline wall time to stop: 89.845 s. No billing API was queried.
 
-## Next concrete step
+## Next step as of 4bc1f65 (superseded by the section at the top)
 
 1. Keep the private archives and sanitised evidence. Do not reuse consumed plans or attempt
    to access the removed S3 backend. No further AWS action is authorised by the teardown.

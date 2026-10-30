@@ -1,5 +1,9 @@
 # Independent review brief (Codex)
 
+> **Historical document.** File links and paths below refer to the layout before the
+> 2026-10-30 refactoring (`src/erl/...`, `glue/jobs/...`); see
+> [REFACTORING.md](REFACTORING.md) for where each module lives now. Content is unchanged.
+
 ## Objective
 
 Review the code and **run** the checks. Do not rely on the README. Find and fix defects locally,

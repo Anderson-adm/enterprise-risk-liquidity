@@ -65,6 +65,7 @@ uv run erl generate      # creates the 5 logical databases and loads the synthet
 uv run erl run --date 2026-10-26
 ERL_IT_CONTAINERS=1 uv run pytest -m integration          # it_* databases
 uv run python scripts/collect_evidence.py                 # ev_* databases -> evidence/local/containers
+# ERL_EVIDENCE_OUT=<dir> writes elsewhere (keeps earlier evidence; used for evidence/refactor/local/)
 uv run python scripts/collect_db_evidence.py              # -> evidence/databases/*.json
 docker compose -f docker/compose.yaml down                # stops; keeps the named volumes
 ```

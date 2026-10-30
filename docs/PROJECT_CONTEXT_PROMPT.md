@@ -1,4 +1,4 @@
-# Prompt de contexto do Case 01 — atualizado em 30/10/2026
+# Prompt de contexto do Case 01 — atualizado em 30/10/2026 (após correção e refatoração offline)
 
 Copie o bloco abaixo para continuar a discussão técnica em outro chat. As evidências AWS
 registram eventos anteriores; nenhum recurso foi recriado para produzir este resumo.
@@ -89,17 +89,30 @@ independentemente auditados: não afirmar conta literalmente vazia ou fatura zer
 States, configurações e evidências brutas foram preservados privadamente/localmente;
 somente evidências sanitizadas são públicas. Data-prod/default não foram usados.
 
-5. PENDÊNCIAS E DIREÇÃO DISCUTIDA
-A incompatibilidade codec/build PyArrow permanece sem correção/deploy.
-Outro defeito: gerar uma única data pelo CLI reutiliza os fixtures D2 na D1.
-A rodada usou um recorte canônico D1, sem cenários de falha intencionais, para evitar
-esse problema; o código do gerador não foi corrigido.
+5. CORREÇÃO E REFATORAÇÃO OFFLINE (30/10/2026, commits locais, sem AWS)
+Codec: o contrato Bronze declara o codec Parquet (zstd); os writers provam o codec com um
+round-trip antes da primeira escrita (sem objetos órfãos); o ZIP da Lambda passou a embutir
+PyArrow/lxml fixados no uv.lock, sem a layer gerenciada (~54 MiB, acima do limite de upload
+direto, por isso via S3). A layer exata não pôde ser reproduzida offline; o ZIP final foi
+testado localmente em interpretador isolado com S3 simulado (moto). Não houve novo deploy.
+Gerador: papéis de cenário posicionais (D1 limpa, D2 problemas, D3 chegada tardia), datas
+estritamente crescentes, geração estável por prefixo; uma data gera só a D1 limpa.
+Estrutura: src/python/{connect,extract,transform,load,ingestion,storage,utils}, pipeline e
+sources; src/spark/{readers,transforms,writers}; SQL versionado em src/sql; contratos em
+src/contracts; entrypoints finos lambda/bronze, glue/bronze, glue/load; build pré-Terraform em
+scripts/build -> dist/ com manifest (SHA-256, commit, runtime) e smoke dos artefatos; bucket de
+artefatos separado do state e do data lake. O wrapper src/erl foi removido.
+Validação local após a refatoração: 149 casos (106 históricos + 43 novos), Terraform com
+14 testes mockados, TFLint 0, Checkov 162/0/40; comparação exata antes/depois dos oito
+cenários em SQLite e em PostgreSQL+SQL Server. Spark não foi executado (sem JVM local) e
+nenhum Glue/Athena/Iceberg rodou na AWS.
+
+6. PENDÊNCIAS E DIREÇÃO DISCUTIDA
 Ainda faltam execução real de Glue, instalação das dependências, Ion SerDe,
 dbt/Athena/Iceberg, comparação decimal e publicação SQL Server em modo híbrido.
-Para evolução profissional discutimos código modular, dependências/artefatos
-imutáveis no S3, CI/CD com OIDC e Terraform atualizando os apontamentos dos jobs.
-Isso foi uma discussão de arquitetura: não foi implementado nem autorizado como
-novo trabalho. A CI atual testa o repositório; não faz deploy AWS.
+Código modular e artefatos com hash no S3 (chaves estáveis + bucket versionado) foram
+implementados offline em 30/10; releases imutáveis por hash e CI/CD com OIDC continuam
+apenas discutidos. A CI testa o repositório e constrói/testa os artefatos; não faz deploy AWS.
 Hoje não há laboratório AWS do Case 01 ativo. Não há autorização vigente para
 recriar recursos, fazer deploy, gastar ou repetir o pipeline. Qualquer retomada
 exige decisão explícita e novos planos; os antigos foram consumidos e o backend removido.

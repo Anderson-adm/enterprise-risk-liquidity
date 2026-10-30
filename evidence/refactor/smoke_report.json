@@ -1,0 +1,105 @@
+{
+  "scope": "emulated package test on this machine; not a Lambda or Glue execution",
+  "git": {
+    "commit": "c81446a2c2a362e446113fa6f3896a88966c4745",
+    "dirty": false
+  },
+  "artifacts": {
+    "glue/bronze/db_ingest.py": "d47a015e44f21726d1dc29432f958702bb27af3175937c1b4f5fab1215aab34f",
+    "glue/lib/erl_glue_lib.zip": "c1cd4277bf389b344c619dcbc961fcc3c33d2474558dd51166a151170e9488c5",
+    "glue/load/gold_load.py": "06acbf4bccae844aa2c03040ad68fcc9cf370f90066602482994c316bf82bb27",
+    "lambda/bronze/file_ingestion.zip": "efb9da054aa9df54810b0171e3bdc97eac256fefb2058420f313896445901056"
+  },
+  "lambda": {
+    "python": "3.12.14",
+    "codec": "zstd",
+    "pyarrow": "26.0.0",
+    "lxml": "6.1.3",
+    "roundtrip": {
+      "rows": 2,
+      "column_compression": "ZSTD"
+    },
+    "invocations": [
+      {
+        "handler": "market_data_handler",
+        "object": "market_data_20261026.csv",
+        "status": "ACCEPTED",
+        "expected": "ACCEPTED",
+        "bronze_rows": 16,
+        "bronze_compression": "ZSTD"
+      },
+      {
+        "handler": "internal_xml_handler",
+        "object": "statement_PRT-0006_20261026.xml",
+        "status": "ACCEPTED",
+        "expected": "ACCEPTED",
+        "bronze_rows": 4,
+        "bronze_compression": "ZSTD"
+      },
+      {
+        "handler": "external_xml_handler",
+        "object": "transfer_in_ADM77_EXT77-0001_20261026.xml",
+        "status": "ACCEPTED",
+        "expected": "ACCEPTED",
+        "bronze_rows": 4,
+        "bronze_compression": "ZSTD"
+      },
+      {
+        "handler": "external_xml_handler",
+        "object": "transfer_in_ADM77_EXT77-0002_20261027.xml",
+        "status": "REJECTED",
+        "expected": "REJECTED",
+        "rejection_reason": "XSD_VALIDATION_FAILED"
+      }
+    ],
+    "project_modules_from_package": true
+  },
+  "glue": {
+    "python": "3.12.14",
+    "scripts": {
+      "db_ingest.py": {
+        "project_modules_from_zip": [
+          "ingestion",
+          "ingestion.snapshot_manifests",
+          "readers.parquet",
+          "storage.objects",
+          "transforms.bronze_columns",
+          "utils",
+          "utils.clock",
+          "utils.contracts",
+          "utils.errors",
+          "writers.parquet"
+        ]
+      },
+      "gold_load.py": {
+        "project_modules_from_zip": [
+          "load",
+          "readers.tables",
+          "storage.objects",
+          "utils",
+          "utils.contracts",
+          "utils.errors",
+          "writers.parquet"
+        ]
+      }
+    },
+    "not_imported": [
+      "pyarrow",
+      "sqlalchemy",
+      "lxml",
+      "duckdb",
+      "psycopg",
+      "pymssql"
+    ],
+    "acceptance_on_moto_s3": {
+      "status": "ACCEPTED",
+      "bronze_object": "bronze/structured/fund_ops/fund/bronze_reference_date=2026-10-26/20261026T190000Z-abcdef.parquet",
+      "retry_reused_commit": true,
+      "overwrite_refused": true
+    },
+    "volume_profiles": {
+      "gb_10M_rows": 1,
+      "tb_2.5M_rows": 3
+    }
+  }
+}

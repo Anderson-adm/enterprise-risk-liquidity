@@ -1,0 +1,12 @@
+# refactored tree (committed afterwards), 2026-10-30
+## ruff check + format --check (src tests airflow glue lambda scripts)
+All checks passed! / 74 files already formatted
+## fast (before the wheel-mapping test was added; rerun after the commit is appended below)
+113 passed, 35 deselected in 105.14s (0:01:45)
+## dbt
+11 passed, 137 deselected in 337.14s (0:05:37)
+## integration (real PostgreSQL 17 + SQL Server 2022, it_* databases)
+24 passed, 125 deselected in 78.68s (0:01:18)
+## collected: 149 = 114 fast + 11 dbt + 24 integration (106 historical + 43 new)
+## fast rerun on commit c81446a
+114 passed, 35 deselected in 100.68s (0:01:40)
