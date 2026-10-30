@@ -2,6 +2,10 @@
 # Static Terraform checks, no AWS access (no backend, mocked provider, plan only).
 #   scripts/terraform_checks.sh            # prints and writes evidence/terraform/checks.txt
 # Needs terraform, tflint (PATH or .tools/bin) and uv (for checkov via uvx).
+#
+# The checks run on a temporary copy of the versioned files, with AWS credentials hidden:
+# a local .terraform/ left by a real deployment (S3 backend metadata), *.tfvars or backend.hcl
+# can never be picked up, and no command can open an AWS session.
 set -euo pipefail
 root="$(cd "$(dirname "$0")/.." && pwd)"
 out="$root/evidence/terraform/checks.txt"
@@ -10,7 +14,21 @@ tflint="$(command -v tflint || echo "$root/.tools/bin/tflint")"
 if [ -z "${TFLINT_PLUGIN_DIR:-}" ] && [ -d "$root/.tools/tflint-plugins" ]; then
   export TFLINT_PLUGIN_DIR="$root/.tools/tflint-plugins"
 fi
-cd "$root/infra"
+if [ -z "${TF_PLUGIN_CACHE_DIR:-}" ] && [ -d "$root/.tools" ]; then
+  export TF_PLUGIN_CACHE_DIR="$root/.tools/terraform-plugin-cache"
+  mkdir -p "$TF_PLUGIN_CACHE_DIR"
+fi
+
+work="$(mktemp -d)"
+trap 'rm -rf "$work"' EXIT
+if git -C "$root" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+  (cd "$root" && git ls-files -co --exclude-standard -z | tar --null --ignore-failed-read -T - -cf - | tar -C "$work" -xf -)
+else # copy used by the script's own tests (no git checkout)
+  tar -C "$root" --exclude=.terraform --exclude='*.tfvars' --exclude=backend.hcl -cf - infra | tar -C "$work" -xf -
+fi
+unset AWS_PROFILE AWS_DEFAULT_PROFILE AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_SESSION_TOKEN
+export AWS_CONFIG_FILE=/dev/null AWS_SHARED_CREDENTIALS_FILE=/dev/null AWS_EC2_METADATA_DISABLED=true
+cd "$work/infra"
 
 {
   echo "# $(date -u +%FT%TZ)  $(terraform version | head -1), tflint $("$tflint" --version | head -1 | awk '{print $3}')"

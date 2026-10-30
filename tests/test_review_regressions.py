@@ -292,3 +292,36 @@ def test_local_financial_ratios_do_not_round_through_binary_float():
         value, kind = con.execute(f"SELECT cast({sql} as decimal(18,6)), typeof({sql})").fetchone()
     assert value == Decimal("333333333333.330000")
     assert kind.startswith("DECIMAL"), kind
+
+
+def test_terraform_checks_never_see_credentials_or_a_local_backend(tmp_path):
+    """A .terraform/ left by a real deployment holds S3 backend metadata; checks run on a copy."""
+    (tmp_path / "scripts").mkdir()
+    (tmp_path / "evidence/terraform").mkdir(parents=True)
+    dev = tmp_path / "infra/environments/dev"
+    (dev / ".terraform").mkdir(parents=True)
+    (dev / ".terraform/terraform.tfstate").write_text('{"backend": {"type": "s3"}}')
+    (dev / "dev.auto.tfvars").write_text('allowed_account_id = "000000000000"')
+    (dev / "main.tf").write_text("")
+    script = tmp_path / "scripts/terraform_checks.sh"
+    shutil.copyfile(ROOT / "scripts/terraform_checks.sh", script)
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    seen = tmp_path / "seen.txt"
+    (bin_dir / "terraform").write_text(
+        "#!/bin/bash\n"
+        f'echo "$AWS_PROFILE|$AWS_CONFIG_FILE|$AWS_SHARED_CREDENTIALS_FILE|$(find . -name .terraform -o '
+        f'-name "*.tfvars" | wc -l)" >> {seen}\necho Success\n'
+    )
+    (bin_dir / "tflint").write_text('#!/bin/bash\necho "TFLint version 0.65"\n')
+    (bin_dir / "uvx").write_text('#!/bin/bash\necho "Passed checks: 1"\n')
+    for f in bin_dir.iterdir():
+        f.chmod(0o700)
+    result = subprocess.run(
+        ["bash", str(script)],
+        capture_output=True,
+        text=True,
+        env=os.environ | {"PATH": f"{bin_dir}:{os.environ['PATH']}", "AWS_PROFILE": "data-dev"},
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert set(seen.read_text().split()) == {"|/dev/null|/dev/null|0"}

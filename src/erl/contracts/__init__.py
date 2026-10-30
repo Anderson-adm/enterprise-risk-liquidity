@@ -56,6 +56,11 @@ def entities_for(source_system: str) -> list[BronzeEntity]:
     ]
 
 
+def parquet_compression() -> str:
+    """Parquet codec required by the Bronze contract for every object written with PyArrow."""
+    return bronze_contract()["parquet_compression"]
+
+
 def metadata_columns() -> list[str]:
     return [c["name"] for c in bronze_contract()["metadata_columns"]]
 

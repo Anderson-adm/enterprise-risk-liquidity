@@ -8,7 +8,7 @@ import sys
 from datetime import date
 
 from erl import config, log, pipeline
-from erl.errors import ErlError
+from erl.errors import ConfigurationError, ErlError
 from erl.ingestion import bronze
 from erl.sources import seed, synthetic
 
@@ -24,6 +24,16 @@ EXIT_CODES = {
 
 def _print(obj) -> None:
     print(json.dumps(obj, indent=2, default=str))
+
+
+def parse_generation_dates(values: list[str]) -> tuple[date, ...]:
+    """Dates for ``erl generate``: ISO, strictly increasing (scenario roles are positional)."""
+    try:
+        dates = tuple(date.fromisoformat(v) for v in values)
+        synthetic.scenario_dates(dates)
+    except ValueError as exc:
+        raise ConfigurationError(f"invalid --dates: {exc}") from exc
+    return dates
 
 
 def notify_failure(settings: config.Settings, step: str, run_id: str, ref: str, airflow_run: str) -> dict:
@@ -92,7 +102,7 @@ def main(argv: list[str] | None = None) -> int:
 
     try:
         if args.command == "generate":
-            _print(seed.generate_all(settings, tuple(date.fromisoformat(d) for d in args.dates)))
+            _print(seed.generate_all(settings, parse_generation_dates(args.dates)))
         elif args.command == "run":
             ref = pipeline.parse_reference_date(args.date)
             state = pipeline.run_all(ref, args.run_id, settings)

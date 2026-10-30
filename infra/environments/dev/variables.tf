@@ -79,23 +79,20 @@ variable "landing_retention_days" {
   default     = 30
 }
 
-variable "lambda_package_path" {
-  description = "Zip built by scripts/build_lambda.sh."
+variable "artifacts_dir" {
+  description = "dist/ directory produced by scripts/build/build_artifacts.py (relative to this module). Terraform only uploads these files; it never builds them."
   type        = string
-  default     = "../../../build/lambda.zip"
+  default     = "../../../dist"
 }
 
-variable "lambda_pandas_layer_arn" {
-  description = <<-EOT
-    ARN of the AWS-managed "AWS SDK for pandas" layer for python3.12 / x86_64 in the lab
-    region (provides pyarrow). Look up the current version in the official list:
-    https://aws-sdk-pandas.readthedocs.io/en/stable/layers.html
-  EOT
-  type        = string
+variable "artifact_noncurrent_retention_days" {
+  description = "Days a replaced artifact version stays recoverable in the artifacts bucket."
+  type        = number
+  default     = 30
 
   validation {
-    condition     = can(regex("^arn:aws:lambda:[a-z0-9-]+:336392948345:layer:AWSSDKPandas-Python312:[0-9]+$", var.lambda_pandas_layer_arn))
-    error_message = "Must be the AWS-managed AWSSDKPandas-Python312 layer ARN (account 336392948345)."
+    condition     = var.artifact_noncurrent_retention_days >= 7 && var.artifact_noncurrent_retention_days <= 90
+    error_message = "Keep replaced artifacts between 7 and 90 days."
   }
 }
 

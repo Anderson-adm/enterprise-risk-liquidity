@@ -38,9 +38,8 @@ mock_provider "aws" {
 }
 
 variables {
-  allowed_account_id      = "111111111111"
-  lambda_package_path     = "tests/fixtures/lambda.zip"
-  lambda_pandas_layer_arn = "arn:aws:lambda:sa-east-1:336392948345:layer:AWSSDKPandas-Python312:1"
+  allowed_account_id = "111111111111"
+  artifacts_dir      = "tests/fixtures/dist"
 }
 
 run "secure_and_cost_controlled_defaults" {
@@ -195,12 +194,28 @@ run "rejects_too_small_athena_cutoff" {
   expect_failures = [var.athena_bytes_scanned_cutoff]
 }
 
-run "rejects_untrusted_lambda_layer" {
+run "artifacts_come_from_the_dedicated_bucket" {
+  command = plan
+
+  assert {
+    condition = alltrue([for f in aws_lambda_function.ingest :
+      try(length(f.layers), 0) == 0 && f.s3_key == "case01/lambda/bronze/file_ingestion.zip" && f.filename == null
+    ])
+    error_message = "Lambdas must run the self-contained package from the artifacts bucket, without the managed pandas layer."
+  }
+
+  assert {
+    condition     = aws_s3_object.lambda_package.key == "case01/lambda/bronze/file_ingestion.zip" && aws_s3_object.lambda_package.source_hash != null
+    error_message = "The Lambda package must be uploaded from dist/ with its content hash."
+  }
+}
+
+run "rejects_short_artifact_recovery_window" {
   command = plan
   variables {
-    lambda_pandas_layer_arn = "arn:aws:lambda:sa-east-1:999999999999:layer:AWSSDKPandas-Python312:1"
+    artifact_noncurrent_retention_days = 1
   }
-  expect_failures = [var.lambda_pandas_layer_arn]
+  expect_failures = [var.artifact_noncurrent_retention_days]
 }
 
 run "rejects_oversized_glue_jobs" {

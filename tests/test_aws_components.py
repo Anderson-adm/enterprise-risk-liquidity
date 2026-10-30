@@ -170,3 +170,32 @@ def test_s3_exists_works_with_prefix_scoped_list_permission():
     assert not store.exists("landing/file.json")
     client.list_objects_v2 = lambda **kw: {"Contents": [{"Key": "landing/file.json"}]}
     assert store.exists("landing/file.json")
+
+
+def test_lambda_without_the_parquet_codec_leaves_only_the_landing_object(s3, monkeypatch):
+    """The failed AWS attempt left a raw Bronze XML without manifest; now nothing is written."""
+    import pyarrow as pa
+    import pyarrow.parquet as pq
+
+    from erl.contracts import parquet_compression
+
+    monkeypatch.setenv("ERL_S3_BUCKET", BUCKET)
+    from erl.aws import lambda_handlers
+
+    real = pq.write_table
+
+    def write_table(table, where, *args, compression="snappy", **kwargs):
+        if compression == parquet_compression():
+            raise pa.ArrowNotImplementedError("Support for codec 'zstd' not built")
+        return real(table, where, *args, compression=compression, **kwargs)
+
+    monkeypatch.setattr(pq, "write_table", write_table)
+    name, body = next((n, b) for s, d, n, b in synthetic.generate().files if s == "external_xml" and d == D1)
+    run = run_id()
+    key = f"landing/files/external_xml/delivery_date={D1}/{run}/{name}"
+    s3.put_object(Bucket=BUCKET, Key=key, Body=body)
+    with pytest.raises(ConfigurationError, match="cannot use Parquet codec"):
+        lambda_handlers.external_xml_handler(
+            {"bucket": BUCKET, "key": key, "run_id": run, "reference_date": D1.isoformat()}, None
+        )
+    assert [o["Key"] for o in s3.list_objects_v2(Bucket=BUCKET)["Contents"]] == [key]

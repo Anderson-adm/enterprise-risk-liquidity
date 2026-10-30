@@ -190,11 +190,13 @@ def ingest_file(
 ) -> bronze.IngestionManifest:
     """Validate one delivered file and append it to Bronze. Never raises for bad *data*:
     contract violations end in quarantine with a REJECTED manifest. Infrastructure errors
-    (storage unavailable) do propagate."""
+    (storage unavailable) and a runtime unable to write the contract's Parquet codec
+    (``ConfigurationError``, raised before any write) do propagate."""
     entity_name, _ = FILE_SOURCES[source_system]
     digest = bronze.sha256_hex(data)
     if completed := bronze.completed_delivery(store, source_system, entity_name, run_id, object_name, digest):
         return completed
+    bronze.require_parquet_codec()  # fail before the raw copy: no orphan objects on a bad runtime
     raw_key = bronze.write_raw(store, source_system, run_reference_date, run_id, object_name, data)
 
     def manifest(**kw) -> bronze.IngestionManifest:

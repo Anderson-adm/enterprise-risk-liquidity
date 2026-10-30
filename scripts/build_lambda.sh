@@ -1,20 +1,28 @@
 #!/usr/bin/env bash
-# Build build/lambda.zip for the three ingestion Lambdas (python3.12, x86_64).
+# Build dist/lambda/bronze/file_ingestion.zip for the three ingestion Lambdas (python3.12, x86_64).
 #   * erl package (only the modules the handlers import + contracts/XSDs)
-#   * lxml wheel for manylinux x86_64 / CPython 3.12
-#   * pyarrow and boto3 are NOT bundled: pyarrow comes from the AWS-managed
-#     "AWS SDK for pandas" layer, boto3 from the Lambda runtime.
+#   * pyarrow and lxml wheels for manylinux x86_64 / CPython 3.12, pinned to uv.lock.
+#     pyarrow is bundled: the AWS-managed "AWS SDK for pandas" layer's PyArrow 24.0.0 could
+#     not write the contract's Zstandard codec (AWS attempt of 2026-10-30). No layer is used.
+#   * boto3 is NOT bundled: it comes from the Lambda runtime.
+# The ZIP is above the 50 MB direct-upload limit; Terraform uploads it to the artifacts bucket.
+# Smoke test of the built file: uv run python scripts/smoke_lambda_package.py
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
 OUT=build/lambda
-ZIP=build/lambda.zip
-LXML_VERSION=$(uv export --frozen --no-hashes --format requirements-txt | sed -n 's/^lxml==\([0-9.]*\).*/\1/p')
+ZIP=dist/lambda/bronze/file_ingestion.zip
+pin() { uv export --frozen --no-hashes --format requirements-txt | sed -n "s/^$1==\([0-9.]*\).*/\1/p"; }
+LXML_VERSION=$(pin lxml)
+PYARROW_VERSION=$(pin pyarrow)
 
 rm -rf "$OUT" "$ZIP"
-mkdir -p "$OUT/erl"
+mkdir -p "$OUT/erl" "$(dirname "$ZIP")"
 uv pip install --quiet --target "$OUT" --python-platform x86_64-manylinux_2_28 --python-version 3.12 \
-  --only-binary :all: --no-deps "lxml==${LXML_VERSION}"
+  --only-binary :all: --no-deps "lxml==${LXML_VERSION}" "pyarrow==${PYARROW_VERSION}"
+# headers, test suites and Cython sources are not needed at runtime
+rm -rf "$OUT/pyarrow/include" "$OUT/pyarrow/tests" "$OUT/pyarrow/src"
+find "$OUT/pyarrow" \( -name '*.pyx' -o -name '*.pxd' \) -delete
 
 for f in __init__.py errors.py log.py storage.py; do cp "src/erl/$f" "$OUT/erl/"; done
 mkdir -p "$OUT/erl/ingestion" "$OUT/erl/aws" "$OUT/erl/contracts"
@@ -36,4 +44,4 @@ with zipfile.ZipFile(dst, "w", zipfile.ZIP_DEFLATED) as z:
         with open(path, "rb") as fh:
             z.writestr(info, fh.read())
 PY
-echo "built $ZIP ($(du -h "$ZIP" | cut -f1)), lxml ${LXML_VERSION}, sha256 $(sha256sum "$ZIP" | cut -c1-16)"
+echo "built $ZIP ($(du -h "$ZIP" | cut -f1)), pyarrow ${PYARROW_VERSION}, lxml ${LXML_VERSION}, sha256 $(sha256sum "$ZIP" | cut -c1-16)"

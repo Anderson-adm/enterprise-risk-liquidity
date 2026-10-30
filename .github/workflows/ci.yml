@@ -38,8 +38,10 @@ jobs:
         run: uv run pytest -m "not dbt and not integration"
       - name: End-to-end scenarios (dbt build on DuckDB, SQLite stand-ins for the databases)
         run: uv run pytest -m "dbt and not integration"
-      - name: Lambda package builds
-        run: scripts/build_lambda.sh
+      - name: Lambda package builds and runs from the built ZIP (pinned pyarrow, moto S3)
+        run: |
+          scripts/build_lambda.sh
+          uv run python scripts/smoke_lambda_package.py
 
   integration:
     name: integration (real PostgreSQL + SQL Server containers)

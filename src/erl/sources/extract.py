@@ -31,7 +31,7 @@ from sqlalchemy import ColumnClause, Date, Engine, bindparam, column, text
 from sqlalchemy.exc import DBAPIError, OperationalError
 
 from erl import log
-from erl.contracts import bronze_entity
+from erl.contracts import bronze_entity, parquet_compression
 from erl.errors import ContractError, SourceUnavailableError
 from erl.ingestion import bronze
 from erl.sources.schemas import SOURCE_METADATA
@@ -131,9 +131,10 @@ def extract_entity(
     content = hashlib.sha256()
     rows_total = 0
     started = time.monotonic()
+    codec = parquet_compression()
     with tempfile.TemporaryDirectory() as tmp:
         path = Path(tmp) / "extract.parquet"
-        with pq.ParquetWriter(path, schema, compression="zstd") as writer, engine.connect() as conn:
+        with pq.ParquetWriter(path, schema, compression=codec) as writer, engine.connect() as conn:
             stmt = text(sql).bindparams(bindparam("d", type_=Date)) if ":d" in sql else text(sql)
             stmt = stmt.columns(*_result_columns(source, spec.from_object, contract.columns))
             result = conn.execution_options(stream_results=True).execute(
@@ -150,7 +151,7 @@ def extract_entity(
                 writer.write_table(pa.Table.from_pydict(data, schema=schema))
                 rows_total += len(values)
         if rows_total == 0:
-            pq.write_table(schema.empty_table(), path)
+            pq.write_table(schema.empty_table(), path, compression=codec)
         payload = path.read_bytes()
 
     data_key = store.put(prefix + f"{run_id}.parquet", payload)

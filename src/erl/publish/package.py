@@ -11,7 +11,6 @@ passed. The publisher re-verifies everything it reads.
 
 from __future__ import annotations
 
-import io
 import json
 import logging
 from datetime import date
@@ -19,7 +18,6 @@ from pathlib import Path
 
 import duckdb
 import pyarrow as pa
-import pyarrow.parquet as pq
 
 from erl import log
 from erl.contracts import consumer_contract
@@ -72,9 +70,7 @@ def build_from_duckdb(store: ObjectStore, warehouse: Path, ref: date, run_id: st
 
 
 def _put_product(store: ObjectStore, prefix: str, name: str, table: pa.Table) -> dict:
-    buf = io.BytesIO()
-    pq.write_table(table, buf, compression="zstd")
-    data = buf.getvalue()
+    data = bronze.parquet_bytes(table)
     key = prefix + f"{name}.parquet"
     store.put(key, data)
     return {"object": key, "sha256": bronze.sha256_hex(data), "rows": table.num_rows}

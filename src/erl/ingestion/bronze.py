@@ -26,8 +26,14 @@ from datetime import UTC, date, datetime
 import pyarrow as pa
 import pyarrow.parquet as pq
 
-from erl.contracts import PARTITION_COLUMN, BronzeEntity, bronze_contract, metadata_columns
-from erl.errors import ContractError
+from erl.contracts import (
+    PARTITION_COLUMN,
+    BronzeEntity,
+    bronze_contract,
+    metadata_columns,
+    parquet_compression,
+)
+from erl.errors import ConfigurationError, ContractError
 from erl.storage import ObjectStore
 
 ACCEPTED = "ACCEPTED"
@@ -232,10 +238,36 @@ def build_bronze_table(
     return pa.Table.from_pydict(cols, schema=bronze_schema(entity))
 
 
-def parquet_bytes(table: pa.Table) -> bytes:
+def require_parquet_codec(compression: str | None = None) -> str:
+    """Prove that this runtime's PyArrow can write *and* read the contract's Parquet codec.
+
+    Called before the first object of a delivery is written, so an incompatible runtime fails
+    without leaving partial objects. ``import pyarrow`` or ``Codec.is_available`` is not proof:
+    the AWS-managed pandas layer imported fine and then failed with "Support for codec 'zstd'
+    not built" (AWS attempt of 2026-10-30).
+    """
+    codec = compression or parquet_compression()
+    probe = pa.table({"probe": pa.array(["x", None], pa.string())})
+    try:
+        restored = pq.read_table(io.BytesIO(_write_parquet(probe, codec)))
+    except (pa.ArrowException, NotImplementedError, OSError) as exc:
+        raise ConfigurationError(
+            f"pyarrow {pa.__version__} in this runtime cannot use Parquet codec {codec!r}: {exc}"
+        ) from exc
+    if not restored.equals(probe):
+        raise ConfigurationError(f"Parquet codec {codec!r} round-trip changed the data")
+    return codec
+
+
+def _write_parquet(table: pa.Table, compression: str) -> bytes:
     buf = io.BytesIO()
-    pq.write_table(table, buf, compression="zstd")
+    pq.write_table(table, buf, compression=compression)
     return buf.getvalue()
+
+
+def parquet_bytes(table: pa.Table, compression: str | None = None) -> bytes:
+    """Serialise ``table`` with the contract codec (or an explicit one)."""
+    return _write_parquet(table, compression or parquet_compression())
 
 
 def stringify(value: object) -> str | None:

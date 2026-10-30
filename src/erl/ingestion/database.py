@@ -36,6 +36,7 @@ def ingest_snapshot(
         store, source, entity_name, run_id, lm["object"], lm["content_sha256"]
     ):
         return completed
+    bronze.require_parquet_codec()  # before any write of this snapshot
     payload = store.get(lm["object"])
 
     base = dict(

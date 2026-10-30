@@ -19,6 +19,7 @@ Intentional, controlled problems (see docs/DATA_MODEL.md for the expected outcom
 
 from __future__ import annotations
 
+import itertools
 import random
 from dataclasses import dataclass, field
 from datetime import date, datetime, timedelta
@@ -133,12 +134,21 @@ def prices_for(dates: tuple[date, ...], rng: random.Random) -> dict[date, dict[s
     return out
 
 
+def scenario_dates(dates: tuple[date, ...]) -> tuple[date, date | None, date | None]:
+    """(D1, D2, D3) roles of the requested dates; a role without a requested date is ``None``."""
+    if not dates:
+        raise ValueError("at least one date is required")
+    if any(b <= a for a, b in itertools.pairwise(dates)):
+        raise ValueError(f"dates must be strictly increasing, got {[d.isoformat() for d in dates]}")
+    roles = (*dates[:3], None, None)
+    return roles[0], roles[1], roles[2]
+
+
 def generate(dates: tuple[date, ...] = DEFAULT_DATES, seed: int = SEED) -> SyntheticDataset:
+    d1, d2, d3 = scenario_dates(dates)  # comparisons with a missing role (None) are False
     rng = random.Random(seed)
     ds = SyntheticDataset(dates=dates)
     px = prices_for(dates, rng)
-    d1, d2 = dates[0], dates[1] if len(dates) > 1 else dates[0]
-    d3 = dates[2] if len(dates) > 2 else None
     epoch = date(2020, 1, 1)
 
     # ---- source 1: fund_ops -----------------------------------------------------------
@@ -260,14 +270,20 @@ def generate(dates: tuple[date, ...] = DEFAULT_DATES, seed: int = SEED) -> Synth
                 "vl_resgate": Decimal("9500000.00"),
                 "st_resgate": "PENDENTE",
             },
-            {
-                "id_resgate": 3,
-                "cod_cart": "C000104",
-                "dt_pedido": d2,
-                "dt_cotizacao": d2 + timedelta(days=3),
-                "vl_resgate": Decimal("1200000.00"),
-                "st_resgate": "PENDENTE",
-            },
+            *(
+                [
+                    {  # requested on D2: does not exist when only D1 is generated
+                        "id_resgate": 3,
+                        "cod_cart": "C000104",
+                        "dt_pedido": d2,
+                        "dt_cotizacao": d2 + timedelta(days=3),
+                        "vl_resgate": Decimal("1200000.00"),
+                        "st_resgate": "PENDENTE",
+                    }
+                ]
+                if d2 is not None
+                else []
+            ),
             {
                 "id_resgate": 4,
                 "cod_cart": "C000105",
@@ -351,7 +367,7 @@ def generate(dates: tuple[date, ...] = DEFAULT_DATES, seed: int = SEED) -> Synth
             broken = p == "PRT-0008" and d == d2  # scenario 4: fails XSD (missing qty)
             body = external_xml(admin, ext, d, HOLDINGS[p], px[d], drop_qty=broken)
             ds.files.append(("external_xml", d, f"transfer_in_{admin}_{ext}_{d:%Y%m%d}.xml", body))
-    if d3 is not None:  # scenario 5: late retransmission of PRT-0008 for D2, delivered on D3
+    if d2 is not None and d3 is not None:  # scenario 5: late PRT-0008 retransmission for D2, on D3
         admin, ext = EXTERNAL_IDS["PRT-0008"]
         body = external_xml(admin, ext, d2, HOLDINGS["PRT-0008"], px[d2])
         ds.files.append(

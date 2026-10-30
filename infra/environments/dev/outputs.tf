@@ -42,3 +42,8 @@ output "glue_jobs" {
   description = "Glue job names"
   value       = { for k, j in aws_glue_job.this : k => j.name }
 }
+
+output "artifacts_bucket" {
+  description = "Deployment artifacts bucket (never the Terraform state bucket)"
+  value       = module.artifacts_bucket.id
+}

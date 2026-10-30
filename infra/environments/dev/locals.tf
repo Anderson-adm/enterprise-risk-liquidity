@@ -11,9 +11,14 @@ locals {
     Repository  = "github.com/Anderson-adm/enterprise-risk-liquidity"
   }
 
-  data_bucket    = "${var.name_prefix}-data-${local.account_id}"
-  results_bucket = "${var.name_prefix}-athena-results-${local.account_id}"
-  glue_db_prefix = replace(var.name_prefix, "-", "_")
+  data_bucket      = "${var.name_prefix}-data-${local.account_id}"
+  results_bucket   = "${var.name_prefix}-athena-results-${local.account_id}"
+  artifacts_bucket = "${var.name_prefix}-artifacts-${local.account_id}"
+
+  # Built by scripts/build (dist/manifest.json lists the same keys and SHA-256 values).
+  lambda_package     = "${var.artifacts_dir}/lambda/bronze/file_ingestion.zip"
+  lambda_package_key = "case01/lambda/bronze/file_ingestion.zip"
+  glue_db_prefix     = replace(var.name_prefix, "-", "_")
 
   # Bronze contract shared with the Python ingestion code (single source of truth).
   bronze_contract = jsondecode(file("${path.module}/../../../src/erl/contracts/bronze_contract.json"))
