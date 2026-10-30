@@ -27,12 +27,22 @@ budget; GitHub Actions CI (green on GitHub, including the PostgreSQL + SQL Serve
 
 ## Tested on AWS
 
-None yet.
+* Terraform bootstrap (7 resources) and dev (69 resources) applied and verified through direct
+  AWS reads, then fully destroyed at the owner's request. No Case 01 AWS resources remain.
+* Landing uploads succeeded for 2026-10-26; one external-XML Lambda invocation failed while
+  writing Parquet because the managed PyArrow layer lacks Zstandard support. No retry.
+* CloudWatch recorded the real error and a successful alarm action to SNS. The subscription
+  was confirmed; human receipt was not verified.
+* **The complete AWS pipeline is not validated:** no Glue run, Athena processing query,
+  Iceberg Silver/Gold, AWS Gold product or SQL Server publication followed this attempt.
+  Evidence: [first AWS attempt](../evidence/aws/functional/2026-10-26/summary.json),
+  [teardown](../evidence/aws/teardown/verification.json).
 
 ## Planned / pending
 
-AWS lab apply, hybrid run (Lambda, Glue,
-Athena + Iceberg), CloudWatch/SNS alert evidence, teardown.
+Codec-compatible Lambda packaging, the one-date generator defect and complete AWS execution
+remain unresolved. The owner stopped cloud work and removed resources; any future deployment
+or paid validation requires a new explicit decision. No further cloud work is authorised.
 
 ## Measured technical results (this reconstruction)
 
@@ -44,8 +54,8 @@ Athena + Iceberg), CloudWatch/SNS alert evidence, teardown.
 
 ## Limitations
 
-Synthetic data and rules; tiny volumes; no AWS execution; databases are local containers, not
-managed or enterprise instances.
+Synthetic data and rules; tiny volumes; one failed AWS ingestion attempt, with no complete
+AWS pipeline result; databases are local containers, not managed or enterprise instances.
 
 ## Page claims vs. evidence in this repository (factual, no proposals)
 
@@ -53,11 +63,11 @@ managed or enterprise instances.
 |---|---|
 | 7 sources integrated into one validated base | validated locally (PostgreSQL + SQL Server containers; also SQLite stand-ins) |
 | Glue jobs (GB, TB, Load) | implemented, not executed |
-| Lambdas (B3 daily, internal XML, external XML) | implemented; handler logic tested with an S3 mock; not executed on AWS |
-| Bronze / Silver / Gold on S3 + Iceberg | Bronze/Silver/Gold validated locally (filesystem + DuckDB); S3 + Iceberg not executed |
+| Lambdas (B3 daily, internal XML, external XML) | implemented; moto tested; external XML invoked once on AWS and failed on missing Zstandard codec; others not invoked |
+| Bronze / Silver / Gold on S3 + Iceberg | validated locally; AWS has Landing and one uncommitted raw XML only; no committed Bronze delivery or Iceberg tables produced; objects later deleted |
 | Athena + dbt, tests block promotion, invalid data goes to quarantine | dbt + gate validated locally on DuckDB; Athena not executed |
 | Airflow, idempotent reprocessing by reference date, failed-step alert | validated locally (Airflow 3.3.2 `dags test`; alert = structured log locally) |
-| CloudWatch + SNS | implemented, not executed |
-| Terraform | static checks and mocked tests pass; never applied |
+| CloudWatch + SNS | real error logs and alarm action to SNS observed; subscription confirmed; human delivery/other alert paths not verified |
+| Terraform | local checks pass; 76 resources applied/verified and then destroyed; all cloud resources removed |
 | SQL Server "controle e relatórios" | validated locally on a SQL Server 2022 container (transactional, idempotent, concurrent publishers) |
 | "-80% time to deliver validated data", "one week to one day" | historical results of the original experience; not measured by this reconstruction |

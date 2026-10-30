@@ -1,0 +1,90 @@
+{
+  "checked_at_utc": "2026-10-29T20:15:12.775491+00:00",
+  "source": "AWS Pricing GetProducts, OnDemand, first usage tier",
+  "quote_region": "sa-east-1",
+  "location": "South America (Sao Paulo)",
+  "metadata_endpoint": "us-east-1",
+  "rates": {
+    "glue_etl": {
+      "sku": "HKVSWY3QE4VN4D6E",
+      "usage_type": "SAE1-ETL-DPU-Hour",
+      "location": "South America (Sao Paulo)",
+      "region_code": "sa-east-1",
+      "usd": "0.6900000000",
+      "unit": "DPU-Hour",
+      "effective_date": "2026-10-01T00:00:00Z",
+      "description": "$0.69 per Data Processing Unit-Hour for AWS Glue ETL job"
+    },
+    "athena_sql": {
+      "sku": "7WNS6XGWHAMEK4ZQ",
+      "usage_type": "SAE1-DataScannedInTB",
+      "location": "South America (Sao Paulo)",
+      "region_code": "sa-east-1",
+      "usd": "9.0000000000",
+      "unit": "Terabytes",
+      "effective_date": "2026-03-01T00:00:00Z",
+      "description": "9.00 USD per Terabytes for DataScannedInTB in South America (Sao Paulo)"
+    },
+    "cloudwatch_alarm": {
+      "sku": "H7K9WCM7G7GJWU8G",
+      "usage_type": "SAE1-CW:AlarmMonitorUsage",
+      "location": "South America (Sao Paulo)",
+      "region_code": null,
+      "usd": "0.1350000000",
+      "unit": "Alarms",
+      "effective_date": "2026-10-01T00:00:00Z",
+      "description": "$0.135 per alarm metric month (standard resolution) - South America (Sao Paulo)"
+    },
+    "cloudwatch_logs_ingestion": {
+      "sku": "AW4EB5RGNN8S75Q8",
+      "usage_type": "SAE1-DataProcessing-Bytes",
+      "location": "South America (Sao Paulo)",
+      "region_code": "sa-east-1",
+      "usd": "0.9000000000",
+      "unit": "GB",
+      "effective_date": "2026-10-01T00:00:00Z",
+      "description": "$0.90 per GB custom log data ingested in Standard log class - South America (Sao Paulo)"
+    },
+    "cloudwatch_logs_storage": {
+      "sku": "A2U5G2V8PAN8BBGE",
+      "usage_type": "SAE1-TimedStorage-ByteHrs",
+      "location": "South America (Sao Paulo)",
+      "region_code": "sa-east-1",
+      "usd": "0.0408000000",
+      "unit": "GB-Mo",
+      "effective_date": "2026-10-01T00:00:00Z",
+      "description": "$0.0408 per GB-mo of log storage - South America (Sao Paulo)"
+    },
+    "s3_standard_storage": {
+      "sku": "ZNX83R5ZU4NXKACG",
+      "usage_type": "SAE1-TimedStorage-ByteHrs",
+      "location": "South America (Sao Paulo)",
+      "region_code": "sa-east-1",
+      "usd": "0.0405000000",
+      "unit": "GB-Mo",
+      "effective_date": "2026-10-01T00:00:00Z",
+      "description": "$0.0405 per GB - first 50 TB / month of storage used"
+    },
+    "lambda_x86_compute": {
+      "sku": "JNXN2GCNDMDR7JAF",
+      "usage_type": "SAE1-Lambda-GB-Second",
+      "location": "South America (Sao Paulo)",
+      "region_code": "sa-east-1",
+      "usd": "0.0000166667",
+      "unit": "Lambda-GB-Second",
+      "effective_date": "2026-10-01T00:00:00Z",
+      "description": "AWS Lambda - Total Compute - South America (Sao Paulo)-Tier-1"
+    },
+    "lambda_requests": {
+      "sku": "7TZ969MZND3Z6HD7",
+      "usage_type": "SAE1-Request",
+      "location": "South America (Sao Paulo)",
+      "region_code": null,
+      "usd": "0.0000002000",
+      "unit": "Request",
+      "effective_date": "2026-10-01T00:00:00Z",
+      "description": "AWS Lambda - Total Requests - South America (Sao Paulo)"
+    }
+  },
+  "credits_free_tier_taxes_exchange_rate_included": false
+}

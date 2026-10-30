@@ -1,0 +1,220 @@
+{
+  "verified_at_utc": "2026-10-30T01:24:55.645636+00:00",
+  "account": "********8330",
+  "profile": "SSO data-dev",
+  "enabled_regions_checked": [
+    "ap-northeast-1",
+    "ap-northeast-2",
+    "ap-northeast-3",
+    "ap-south-1",
+    "ap-southeast-1",
+    "ap-southeast-2",
+    "ca-central-1",
+    "eu-central-1",
+    "eu-north-1",
+    "eu-west-1",
+    "eu-west-2",
+    "eu-west-3",
+    "sa-east-1",
+    "us-east-1",
+    "us-east-2",
+    "us-west-1",
+    "us-west-2"
+  ],
+  "disabled_regions_not_enabled_or_queried": [
+    "af-south-1",
+    "ap-east-1",
+    "ap-east-2",
+    "ap-south-2",
+    "ap-southeast-3",
+    "ap-southeast-4",
+    "ap-southeast-5",
+    "ap-southeast-6",
+    "ap-southeast-7",
+    "ca-west-1",
+    "eu-central-2",
+    "eu-south-1",
+    "eu-south-2",
+    "il-central-1",
+    "me-central-1",
+    "me-south-1",
+    "mx-central-1"
+  ],
+  "inventory_operations_initial": 840,
+  "inventory_operations_additional": 495,
+  "resolved_stepfunctions_checks": 17,
+  "unsupported_region_service_pairs": 27,
+  "unresolved_service_checks": [],
+  "deletion_summary": {
+    "completed_at_utc": "2026-10-30T01:21:55.103578+00:00",
+    "account": "********8330",
+    "lambda_functions_deleted": 1,
+    "buckets_deleted": 4,
+    "log_groups_deleted": 1,
+    "application_roles_deleted": 1,
+    "objects_versions_and_markers_deleted": 27,
+    "aws_managed_key_preserved": true,
+    "kms_key_reason": "alias/aws/lambda is AWS-managed; AWS prohibits deletion and key storage is free.",
+    "sso_organization_service_access_roles_preserved": 7,
+    "errors": []
+  },
+  "final_s3_buckets": 0,
+  "final_functions_logs_alarms_tags_by_region": [
+    {
+      "region": "ca-central-1",
+      "lambda": 0,
+      "logs": 0,
+      "cloudwatch": 0,
+      "resourcegroupstaggingapi": 0
+    },
+    {
+      "region": "eu-central-1",
+      "lambda": 0,
+      "logs": 0,
+      "cloudwatch": 0,
+      "resourcegroupstaggingapi": 0
+    },
+    {
+      "region": "eu-west-3",
+      "lambda": 0,
+      "logs": 0,
+      "cloudwatch": 0,
+      "resourcegroupstaggingapi": 0
+    },
+    {
+      "region": "eu-west-1",
+      "lambda": 0,
+      "logs": 0,
+      "cloudwatch": 0,
+      "resourcegroupstaggingapi": 0
+    },
+    {
+      "region": "eu-north-1",
+      "lambda": 0,
+      "logs": 0,
+      "cloudwatch": 0,
+      "resourcegroupstaggingapi": 0
+    },
+    {
+      "region": "eu-west-2",
+      "lambda": 0,
+      "logs": 0,
+      "cloudwatch": 0,
+      "resourcegroupstaggingapi": 0
+    },
+    {
+      "region": "ap-south-1",
+      "lambda": 0,
+      "logs": 0,
+      "cloudwatch": 0,
+      "resourcegroupstaggingapi": 0
+    },
+    {
+      "region": "ap-northeast-1",
+      "lambda": 0,
+      "logs": 0,
+      "cloudwatch": 0,
+      "resourcegroupstaggingapi": 0
+    },
+    {
+      "region": "ap-northeast-3",
+      "lambda": 0,
+      "logs": 0,
+      "cloudwatch": 0,
+      "resourcegroupstaggingapi": 0
+    },
+    {
+      "region": "ap-southeast-2",
+      "lambda": 0,
+      "logs": 0,
+      "cloudwatch": 0,
+      "resourcegroupstaggingapi": 0
+    },
+    {
+      "region": "sa-east-1",
+      "lambda": 0,
+      "logs": 0,
+      "cloudwatch": 0,
+      "resourcegroupstaggingapi": 0
+    },
+    {
+      "region": "ap-northeast-2",
+      "lambda": 0,
+      "logs": 0,
+      "cloudwatch": 0,
+      "resourcegroupstaggingapi": 0
+    },
+    {
+      "region": "ap-southeast-1",
+      "lambda": 0,
+      "logs": 0,
+      "cloudwatch": 0,
+      "resourcegroupstaggingapi": 0
+    },
+    {
+      "region": "us-east-1",
+      "lambda": 0,
+      "logs": 0,
+      "cloudwatch": 0,
+      "resourcegroupstaggingapi": 0
+    },
+    {
+      "region": "us-east-2",
+      "lambda": 0,
+      "logs": 0,
+      "cloudwatch": 0,
+      "resourcegroupstaggingapi": 0
+    },
+    {
+      "region": "us-west-1",
+      "lambda": 0,
+      "logs": 0,
+      "cloudwatch": 0,
+      "resourcegroupstaggingapi": 0
+    },
+    {
+      "region": "us-west-2",
+      "lambda": 0,
+      "logs": 0,
+      "cloudwatch": 0,
+      "resourcegroupstaggingapi": 0
+    }
+  ],
+  "final_application_roles": 0,
+  "remaining_access_service_roles": 7,
+  "remaining_aws_managed_keys": [
+    {
+      "manager": "AWS",
+      "state": "Enabled",
+      "regional_alias": "alias/aws/lambda",
+      "key_storage_monthly_charge_usd": "0",
+      "customer_deletion_supported": false
+    }
+  ],
+  "marketplace_active_agreements": 0,
+  "active_reserved_service_commitments": 0,
+  "reserved_commitment_unverified": [],
+  "active_savings_plans": 0,
+  "support_plan_status": "Support API returned SubscriptionRequiredException; exact billing/support tier not independently confirmed.",
+  "remaining_found_billable_resources": [],
+  "no_found_billable_resource_remaining": true,
+  "billing_api_queried": false,
+  "zero_invoice_guarantee": false,
+  "other_accounts_accessed": false,
+  "default_static_credentials_used": false,
+  "account_closed": false,
+  "scope_authorisation": "Owner explicitly expanded deletion to all pre-existing resources in data-dev; data-prod/default excluded.",
+  "sources": {
+    "kms_cannot_delete_aws_managed": "https://docs.aws.amazon.com/kms/latest/developerguide/deleting-keys.html",
+    "kms_managed_storage_free": "https://aws.amazon.com/kms/pricing/",
+    "iam_no_additional_charge": "https://aws.amazon.com/iam/faqs/"
+  },
+  "local_private_archive": "data/aws-account-cleanup-2026-10-29",
+  "notes": [
+    "The earlier Case 01-only teardown verification remains a historical snapshot; this later operation also removed the pre-existing application and buckets.",
+    "Default Athena primary workgroups, access/service identities and AWS-managed key metadata are not running workloads.",
+    "Unsupported regional endpoints were classified with the installed AWS SDK endpoint catalog; disabled regions were not enabled.",
+    "No complete AWS invoice or Support-plan audit was performed; past usage may still be billed.",
+    "No other AWS account, global credential configuration or local project repository/volume was changed."
+  ]
+}

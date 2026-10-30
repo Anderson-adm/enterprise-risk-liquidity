@@ -1,0 +1,146 @@
+{
+  "checked_at_utc": "2026-10-29T20:15:12.778730+00:00",
+  "source_commit": "f1e9fa5b20b8553372511e0847ef783e10e788e6",
+  "account": "********8330",
+  "region": "sa-east-1",
+  "profile": "data-dev",
+  "credential_method": "sso",
+  "expected_account_validation": "Explicit sso_account_id pinned to ignored project bootstrap variables before login; STS identity and Terraform plan variables matched it.",
+  "identity_match": true,
+  "sso_login_completed": true,
+  "permission_simulations": {
+    "bootstrap": {
+      "actions": 19,
+      "allowed": 19,
+      "not_allowed": []
+    },
+    "lab_iam": {
+      "actions": 8,
+      "allowed": 8,
+      "not_allowed": []
+    },
+    "lab_services": {
+      "actions": 27,
+      "allowed": 27,
+      "not_allowed": []
+    },
+    "lab_budget_requires_separate_approval": {
+      "actions": 2,
+      "allowed": 2,
+      "not_allowed": []
+    },
+    "state_backend": {
+      "actions": 4,
+      "allowed": 4,
+      "not_allowed": []
+    },
+    "future_execution_simulation_only": {
+      "actions": 8,
+      "allowed": 8,
+      "not_allowed": []
+    },
+    "future_teardown_simulation_only": {
+      "actions": 17,
+      "allowed": 17,
+      "not_allowed": []
+    }
+  },
+  "permission_simulation_limitations": "Identity-policy simulation is not a resource creation test; effective SCP/resource policy/runtime constraints may still apply.",
+  "quotas": {
+    "glue_max_task_dpus": 500.0,
+    "lambda_concurrent_executions": 10,
+    "lambda_unreserved_concurrent_executions": 10,
+    "athena_active_dml_queries": 20.0,
+    "athena_active_ddl_queries": 20.0,
+    "s3_general_purpose_bucket_limit": 10000.0,
+    "s3_general_purpose_buckets_current": 4,
+    "iam_roles_current": 8,
+    "iam_role_limit": 1000,
+    "cloudwatch_put_metric_alarm_requests_per_second": 3.0
+  },
+  "availability": {
+    "athena_engine_3_listed": true,
+    "managed_lambda_layer": {
+      "arn": "arn:aws:lambda:sa-east-1:336392948345:layer:AWSSDKPandas-Python312:32",
+      "version": 32,
+      "runtimes": [
+        "python3.12"
+      ],
+      "architectures": [
+        "x86_64"
+      ],
+      "code_size_bytes": 60893984
+    },
+    "glue_region_endpoint_responded": true,
+    "glue_5_spark_execution": "not_run",
+    "capacity_reserved": false
+  },
+  "inventory": {
+    "project_tag": "enterprise-risk-liquidity",
+    "tagged_matching_resources": 0,
+    "expected_named_resources_found": 0,
+    "expected_named_targets_absent": 19,
+    "read_errors": [],
+    "unrelated_resources_modified": false
+  },
+  "bootstrap_plan": {
+    "add": 7,
+    "change": 0,
+    "destroy": 0,
+    "complete": true,
+    "applyable": true,
+    "applied": false,
+    "sha256": "abae7580f58536ca813c5575298655bf39a374ef2ec3c89c3520853a888162c9",
+    "budget_changes": false
+  },
+  "regional_cost_estimate": {
+    "reference_date": "2026-10-26",
+    "glue_jobs": 3,
+    "workers_G1X_per_job": 2,
+    "minutes_per_job_assumed": [
+      2,
+      5
+    ],
+    "glue_dpu_hours_assumed": [
+      "0.2",
+      "0.5"
+    ],
+    "glue_usd_estimate": [
+      "0.13800000000",
+      "0.34500000000"
+    ],
+    "glue_15_minute_each_scenario_usd": "1.03500000000",
+    "athena_if_billed_1_to_3_decimal_GB_usd": [
+      "0.0090000000000",
+      "0.0270000000000"
+    ],
+    "three_standard_alarms_full_month_usd": "0.4050000000",
+    "planning_allowance_usd": [
+      "1",
+      "3"
+    ],
+    "limitation": "Estimated usage only; includes no measured job duration, credits/free tier, tax or exchange rate. Allowance is not a spend cap. Add actual S3/log/transfer/SNS/EventBridge use."
+  },
+  "resolved_read_errors": [
+    {
+      "service": "s3",
+      "operation": "ListServiceQuotas",
+      "region": "sa-east-1",
+      "code": "NoSuchResourceException",
+      "resolution": "S3 bucket quotas are global; querying their us-east-1 control endpoint only."
+    }
+  ],
+  "restrictions_observed": {
+    "resources_created": 0,
+    "apply_performed": false,
+    "destroy_performed": false,
+    "glue_jobs_started": 0,
+    "lambda_invocations": 0,
+    "athena_queries_started": 0,
+    "budgets_created_or_modified": 0,
+    "aws_global_configuration_modified": false,
+    "normal_sso_cache_updated": true,
+    "sensitive_artifacts_published": false
+  },
+  "readiness": "Ready for explicit approval of saved bootstrap plan only; lab plan/apply and paid execution remain unauthorised."
+}

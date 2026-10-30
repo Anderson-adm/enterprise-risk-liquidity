@@ -1,0 +1,52 @@
+{
+  "checked_at_utc": "2026-10-30T00:40:02.385800+00:00",
+  "account": "********8330",
+  "region": "sa-east-1",
+  "profile": "SSO data-dev",
+  "scope": "All Case 01 dev and bootstrap resources; unrelated pre-existing projects excluded.",
+  "original_managed_resources": 76,
+  "managed_resources_verified_absent": 76,
+  "unverified_or_remaining": [],
+  "project_tagged_resources_remaining": 0,
+  "extra_project_log_groups": [],
+  "three_buckets_deleted": true,
+  "budget_removed": true,
+  "states_preserved_privately": true,
+  "dev_state_final_managed_resources": 0,
+  "bootstrap_state_final_managed_resources": 0,
+  "other_projects_deleted": false,
+  "workloads_started": 0,
+  "cleanup_complete": true,
+  "dev_destroy": {
+    "deleted": 69,
+    "created": 0,
+    "updated": 0,
+    "errors": 0,
+    "plan_sha256": "089b019cdb3d146f668ce1f7443ae5d3c22a2808ce61fe03c5b1bba312efcfcb"
+  },
+  "bootstrap_destroy": {
+    "deleted": 7,
+    "created": 0,
+    "updated": 0,
+    "errors": 0,
+    "plan_sha256": "65411b05c036482e999e8b4a7880929148aec2b6eb9e86f5ca90f6b9cb5bd5be",
+    "source_prevent_destroy_guard_restored": true
+  },
+  "data_cleanup": {
+    "test_object_versions_deleted_before_dev_destroy": 25,
+    "state_versions_and_delete_markers_deleted": 14,
+    "object_versions_preserved_privately": 38,
+    "multipart_uploads_aborted": 0
+  },
+  "private_archives": {
+    "directory": "data/aws-teardown-2026-10-29",
+    "git_ignored_untracked": true,
+    "state_and_object_hashes_verified": true
+  },
+  "cost_limitations": [
+    "No Case 01 resources remain to generate ongoing resource charges.",
+    "Prior usage and deletion/read requests can still appear on the bill; no billing API was queried.",
+    "Unrelated pre-existing account resources were preserved; this is not an empty-account or account-wide zero-cost attestation."
+  ],
+  "further_aws_work_authorised": false
+}

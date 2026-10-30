@@ -1,0 +1,28 @@
+{
+  "real_failure_actions": [
+    {
+      "timestamp": "2026-10-29 21:12:36.342000-03:00",
+      "summary": "Successfully executed action arn:aws:sns:sa-east-1:********8330:erl-dev-alerts",
+      "action_state": "Succeeded",
+      "notification_resource": "arn:aws:sns:sa-east-1:********8330:erl-dev-alerts",
+      "error": null
+    }
+  ],
+  "states": [
+    {
+      "name": "erl-dev-ingest-external-xml-errors",
+      "state": "ALARM"
+    },
+    {
+      "name": "erl-dev-ingest-internal-xml-errors",
+      "state": "OK"
+    },
+    {
+      "name": "erl-dev-ingest-market-data-errors",
+      "state": "OK"
+    }
+  ],
+  "external_action_events": 1,
+  "delivery_to_human_verified": false,
+  "intentional_failure_test_performed": false
+}

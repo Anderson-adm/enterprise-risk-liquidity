@@ -1,0 +1,445 @@
+{
+  "checked_at_utc": "2026-10-29T23:42:24.297390+00:00",
+  "account": "********8330",
+  "region": "sa-east-1",
+  "profile": "data-dev",
+  "credential_method": "sso",
+  "authorised_plan_sha256": "910dcc94954f57d2edbfe8c2a38b3790dc8668b8c0766b3a4f7a046a0067c64f",
+  "apply": {
+    "completed_at_utc": "2026-10-29T23:41:36.800576+00:00",
+    "exit_code": 0,
+    "change_summaries": [
+      {
+        "add": 69,
+        "change": 0,
+        "import": 0,
+        "remove": 0,
+        "action_invocation": 0,
+        "action_fail": 0,
+        "operation": "apply"
+      }
+    ],
+    "completed_events": 69,
+    "error_diagnostics": 0,
+    "state_preserved": true,
+    "state_managed_resources": 69,
+    "active_lock_exists": false,
+    "plan_sha256": "910dcc94954f57d2edbfe8c2a38b3790dc8668b8c0766b3a4f7a046a0067c64f",
+    "bootstrap_state_unchanged": true
+  },
+  "state_resource_count": 69,
+  "verified_terraform_resources": 69,
+  "missing_authorised_addresses": [],
+  "checks": {
+    "athena": {
+      "workgroups": [
+        {
+          "name": "erl-dev",
+          "engine": "Athena engine version 3",
+          "enforced": true,
+          "scan_cutoff_bytes": 104857600,
+          "results_encrypted": true
+        }
+      ],
+      "processing_queries_started": 0,
+      "verified_terraform_resources": 1
+    },
+    "lambda": {
+      "functions": [
+        {
+          "name": "erl-dev-ingest-external-xml",
+          "state": "Active",
+          "runtime": "python3.12",
+          "memory_mb": 512,
+          "timeout_seconds": 60,
+          "code_and_layer_match": true
+        },
+        {
+          "name": "erl-dev-ingest-internal-xml",
+          "state": "Active",
+          "runtime": "python3.12",
+          "memory_mb": 512,
+          "timeout_seconds": 60,
+          "code_and_layer_match": true
+        },
+        {
+          "name": "erl-dev-ingest-market-data",
+          "state": "Active",
+          "runtime": "python3.12",
+          "memory_mb": 512,
+          "timeout_seconds": 60,
+          "code_and_layer_match": true
+        }
+      ],
+      "verified_terraform_resources": 3
+    },
+    "observability": {
+      "log_groups": [
+        {
+          "name": "/aws-glue/erl-dev/error",
+          "retention_days": 14
+        },
+        {
+          "name": "/aws-glue/erl-dev/output",
+          "retention_days": 14
+        },
+        {
+          "name": "/aws/lambda/erl-dev-ingest-external-xml",
+          "retention_days": 14
+        },
+        {
+          "name": "/aws/lambda/erl-dev-ingest-internal-xml",
+          "retention_days": 14
+        },
+        {
+          "name": "/aws/lambda/erl-dev-ingest-market-data",
+          "retention_days": 14
+        }
+      ],
+      "alarms": [
+        {
+          "name": "erl-dev-ingest-external-xml-errors",
+          "actions_enabled": true,
+          "state_at_read": "INSUFFICIENT_DATA"
+        },
+        {
+          "name": "erl-dev-ingest-internal-xml-errors",
+          "actions_enabled": true,
+          "state_at_read": "OK"
+        },
+        {
+          "name": "erl-dev-ingest-market-data-errors",
+          "actions_enabled": true,
+          "state_at_read": "OK"
+        }
+      ],
+      "event_rules": [
+        "erl-dev-glue-job-failed"
+      ],
+      "event_targets": [
+        {
+          "rule": "erl-dev-glue-job-failed",
+          "topic_matches": true
+        }
+      ],
+      "verified_terraform_resources": 10
+    },
+    "s3": {
+      "buckets": [
+        {
+          "address": "module.athena_results_bucket.aws_s3_bucket.this",
+          "bucket": "erl-dev-athena-results-********8330",
+          "public_access_block_4_of_4": true,
+          "versioning": "Enabled",
+          "encryption": "AES256",
+          "ownership": "BucketOwnerEnforced",
+          "tls_only": true,
+          "nonpublic_policy": true,
+          "noncurrent_retention_days": 1,
+          "prefix_expiration_days": {
+            "athena/": 7
+          }
+        },
+        {
+          "address": "module.data_bucket.aws_s3_bucket.this",
+          "bucket": "erl-dev-data-********8330",
+          "public_access_block_4_of_4": true,
+          "versioning": "Enabled",
+          "encryption": "AES256",
+          "ownership": "BucketOwnerEnforced",
+          "tls_only": true,
+          "nonpublic_policy": true,
+          "noncurrent_retention_days": 7,
+          "prefix_expiration_days": {
+            "landing/": 30,
+            "tmp/": 1
+          }
+        }
+      ],
+      "uploaded_objects": [
+        {
+          "address": "aws_s3_object.contract[\"bronze_contract.json\"]",
+          "key": "scripts/contracts/bronze_contract.json",
+          "sha256": "8f4cddd2b767b70e2e72037f935622d158bee0d82b64329e2eebbad6dacb1e3a",
+          "matches_local_source": true
+        },
+        {
+          "address": "aws_s3_object.contract[\"consumer_contract.json\"]",
+          "key": "scripts/contracts/consumer_contract.json",
+          "sha256": "34a63ed44e81f72dc5d6d61a9d6bc3cd37df58a574b5d799d142eba69361b305",
+          "matches_local_source": true
+        },
+        {
+          "address": "aws_s3_object.glue_script[\"db_ingest.py\"]",
+          "key": "scripts/glue/db_ingest.py",
+          "sha256": "1d5113ecc53d003c6e6fcfc738db1b477c0c9d9e32aad704c87a389ab00517c8",
+          "matches_local_source": true
+        },
+        {
+          "address": "aws_s3_object.glue_script[\"gold_load.py\"]",
+          "key": "scripts/glue/gold_load.py",
+          "sha256": "06168d0d7b7f4e20d19b7ed165b698f72ae9263f5911ee135e0acfa9f3eff6b5",
+          "matches_local_source": true
+        }
+      ],
+      "verified_terraform_resources": 18
+    },
+    "sns_budget": {
+      "topics": [
+        {
+          "name": "erl-dev-alerts",
+          "owner_confirmed": true
+        }
+      ],
+      "topic_policies": [
+        {
+          "policy_matches": true
+        }
+      ],
+      "email_subscriptions": [
+        {
+          "protocol": "email",
+          "recipient_matches_private_input": true,
+          "status": "PendingConfirmation",
+          "manual_confirmation_required": true
+        }
+      ],
+      "budgets": [
+        {
+          "name": "erl-dev-monthly",
+          "monthly_usd": 5,
+          "scope": "entire account",
+          "notifications": [
+            {
+              "type": "ACTUAL",
+              "threshold_percent": 80.0
+            },
+            {
+              "type": "FORECASTED",
+              "threshold_percent": 100.0
+            }
+          ],
+          "recipient_matches_private_input": true,
+          "spending_cap": false
+        }
+      ],
+      "verified_terraform_resources": 4
+    },
+    "iam": {
+      "roles": [
+        {
+          "name": "erl-dev-glue-db-ingest",
+          "trust_matches": true
+        },
+        {
+          "name": "erl-dev-glue-gold-load",
+          "trust_matches": true
+        },
+        {
+          "name": "erl-dev-ingest-external-xml",
+          "trust_matches": true
+        },
+        {
+          "name": "erl-dev-ingest-internal-xml",
+          "trust_matches": true
+        },
+        {
+          "name": "erl-dev-ingest-market-data",
+          "trust_matches": true
+        },
+        {
+          "name": "erl-dev-pipeline-runner",
+          "trust_matches": true
+        }
+      ],
+      "inline_policies": [
+        {
+          "address": "aws_iam_role_policy.glue_db_ingest",
+          "policy_matches": true
+        },
+        {
+          "address": "aws_iam_role_policy.glue_gold_load",
+          "policy_matches": true
+        },
+        {
+          "address": "aws_iam_role_policy.lambda[\"external_xml\"]",
+          "policy_matches": true
+        },
+        {
+          "address": "aws_iam_role_policy.lambda[\"internal_xml\"]",
+          "policy_matches": true
+        },
+        {
+          "address": "aws_iam_role_policy.lambda[\"market_data\"]",
+          "policy_matches": true
+        },
+        {
+          "address": "aws_iam_role_policy.runner",
+          "policy_matches": true
+        }
+      ],
+      "verified_terraform_resources": 12
+    },
+    "glue": {
+      "databases": [
+        "erl_dev_bronze",
+        "erl_dev_gold",
+        "erl_dev_silver"
+      ],
+      "tables": [
+        {
+          "database": "erl_dev_bronze",
+          "name": "exposure_compliance__concentration_limit",
+          "columns_and_serde_match": true
+        },
+        {
+          "database": "erl_dev_bronze",
+          "name": "exposure_compliance__instrument_registry",
+          "columns_and_serde_match": true
+        },
+        {
+          "database": "erl_dev_bronze",
+          "name": "exposure_compliance__stock_position",
+          "columns_and_serde_match": true
+        },
+        {
+          "database": "erl_dev_bronze",
+          "name": "external_xml__transfer_in_position",
+          "columns_and_serde_match": true
+        },
+        {
+          "database": "erl_dev_bronze",
+          "name": "fund_ops__fund",
+          "columns_and_serde_match": true
+        },
+        {
+          "database": "erl_dev_bronze",
+          "name": "fund_ops__portfolio",
+          "columns_and_serde_match": true
+        },
+        {
+          "database": "erl_dev_bronze",
+          "name": "fund_ops__source_identity_map",
+          "columns_and_serde_match": true
+        },
+        {
+          "database": "erl_dev_bronze",
+          "name": "internal_xml__portfolio_position",
+          "columns_and_serde_match": true
+        },
+        {
+          "database": "erl_dev_bronze",
+          "name": "legacy_finance__cash_balance",
+          "columns_and_serde_match": true
+        },
+        {
+          "database": "erl_dev_bronze",
+          "name": "legacy_finance__pending_redemption",
+          "columns_and_serde_match": true
+        },
+        {
+          "database": "erl_dev_bronze",
+          "name": "market_data__daily_price",
+          "columns_and_serde_match": true
+        },
+        {
+          "database": "erl_dev_bronze",
+          "name": "portfolio_risk__processed_position",
+          "columns_and_serde_match": true
+        },
+        {
+          "database": "erl_dev_bronze",
+          "name": "portfolio_risk__processing_batch",
+          "columns_and_serde_match": true
+        },
+        {
+          "database": "erl_dev_bronze",
+          "name": "ingestion_deliveries",
+          "columns_and_serde_match": true
+        }
+      ],
+      "jobs": [
+        {
+          "name": "erl-dev-db-gb",
+          "glue_version": "5.0",
+          "workers": 2,
+          "worker_type": "G.1X",
+          "timeout_minutes": 15,
+          "runs": 0
+        },
+        {
+          "name": "erl-dev-db-tb",
+          "glue_version": "5.0",
+          "workers": 2,
+          "worker_type": "G.1X",
+          "timeout_minutes": 15,
+          "runs": 0
+        },
+        {
+          "name": "erl-dev-gold-load",
+          "glue_version": "5.0",
+          "workers": 2,
+          "worker_type": "G.1X",
+          "timeout_minutes": 15,
+          "runs": 0
+        }
+      ],
+      "security_configurations": [
+        "erl-dev"
+      ],
+      "verified_terraform_resources": 21
+    }
+  },
+  "verification_failures": {},
+  "verification_complete": true,
+  "state_preservation": {
+    "remote_bucket": "erl-tfstate-********8330",
+    "remote_key": "case01/dev/terraform.tfstate",
+    "object_encryption": "AES256",
+    "private_snapshot": "data/aws-dev-apply-2026-10-29/dev.after-apply.tfstate",
+    "snapshot_sha256": "0794122b6198b5687ace214c6d280f554b020981bc910ec8513a6c389478bff9",
+    "active_lock_exists": false,
+    "bootstrap_local_state_unchanged": true,
+    "remote_version_id_preserved_privately": true,
+    "backend_use_lockfile": true,
+    "backend_encrypt": true,
+    "local_snapshot_windows_acls": [
+      {
+        "purpose": "dev.after-apply.tfstate",
+        "unexpected_allow_rules": 0,
+        "access_rules": 3
+      },
+      {
+        "purpose": "backend.hcl",
+        "unexpected_allow_rules": 0,
+        "access_rules": 3
+      },
+      {
+        "purpose": "dev.auto.tfvars",
+        "unexpected_allow_rules": 0,
+        "access_rules": 3
+      }
+    ],
+    "git_ignored_untracked": true,
+    "source_manifest_rechecked_after_apply": true
+  },
+  "restrictions_observed": {
+    "glue_jobs_started": 0,
+    "lambda_invocations": 0,
+    "athena_processing_queries": 0,
+    "airflow_runs": 0,
+    "destroy": false,
+    "resources_outside_saved_plan_changed": false,
+    "automatic_apply_retry": false,
+    "automatic_cleanup": false
+  },
+  "functional_validation": "not executed; date 2026-10-26 requires separate authorisation",
+  "source_commit": "f1e9fa5b20b8553372511e0847ef783e10e788e6",
+  "notes": [
+    "Provisioning configuration verified through reads; no functional pipeline or real alert-delivery validation was performed.",
+    "SNS subscription was PendingConfirmation at verification; the owner must confirm the AWS e-mail.",
+    "Budget is USD 5/month account-wide with actual >80% / forecast >100% notifications; it does not cap spending.",
+    "Three CloudWatch alarms and retained S3/log data may generate ongoing charges. No billing API or measured-cost claim.",
+    "Bootstrap and dev state remain separate; remote state history and the private snapshot are preserved."
+  ]
+}

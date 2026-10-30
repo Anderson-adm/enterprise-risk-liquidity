@@ -1,0 +1,298 @@
+{
+  "recorded_at_utc": "2026-10-30T00:18:30.151130+00:00",
+  "reference_date": "2026-10-26",
+  "run_id": "20261030T000957Z-93958f",
+  "status": "FAILED",
+  "pipeline_complete": false,
+  "stopped_at": "ingest",
+  "account": "********8330",
+  "region": "sa-east-1",
+  "credentials": "SSO data-dev -> temporary erl-dev-pipeline-runner role; no static/default credentials",
+  "steps": {
+    "validate": "SUCCEEDED",
+    "extract": "SUCCEEDED",
+    "collect": "SUCCEEDED",
+    "ingest": "FAILED",
+    "transform": "NOT_EXECUTED",
+    "gate": "NOT_EXECUTED",
+    "load": "NOT_EXECUTED",
+    "publish": "NOT_EXECUTED",
+    "report": "SUCCEEDED"
+  },
+  "preflight": {
+    "checked_at_utc": "2026-10-30T00:04:49.190707+00:00",
+    "account": "********8330",
+    "region": "sa-east-1",
+    "deployment_credential_method": "sso",
+    "runner_credential_method": "assume-role from approved SSO source",
+    "runner_account_matched": true,
+    "active_project_glue_jobs": 0,
+    "active_workgroup_queries": 0,
+    "previous_glue_runs": 0,
+    "previous_athena_queries": 0,
+    "sns_status": "Confirmed",
+    "manual_sns_confirmation_pending": false,
+    "global_aws_configuration_changed": false,
+    "paid_workloads_started": 0,
+    "reference_date": "2026-10-26"
+  },
+  "local_preparation": {
+    "prepared_at_utc": "2026-10-30T00:08:13.330544+00:00",
+    "loaded_reference_dates": [
+      "2026-10-26"
+    ],
+    "created_local_databases": [
+      "aws1_fund_ops",
+      "aws1_portfolio_risk",
+      "aws1_legacy_finance",
+      "aws1_exposure_compliance",
+      "aws1_consumer_reporting"
+    ],
+    "source_counts": {
+      "fund_ops": {
+        "fund": 4,
+        "portfolio": 8,
+        "source_identity_map": 34
+      },
+      "portfolio_risk": {
+        "processed_position": 21,
+        "processing_batch": 1
+      },
+      "legacy_finance": {
+        "tb_cart": 8,
+        "tb_resgate": 3,
+        "tb_saldo_caixa": 8
+      },
+      "exposure_compliance": {
+        "concentration_limit": 1,
+        "instrument_registry": 16,
+        "stock_position": 31
+      }
+    },
+    "files_by_source": {
+      "market_data": 1,
+      "internal_xml": 1,
+      "external_xml": 2
+    },
+    "no_intentional_failure_scenarios": true,
+    "unmapped_fixture_rows_excluded": 2,
+    "existing_databases_recreated": false,
+    "expected_local_run_status": "SUCCEEDED",
+    "expected_local_run_id": "20261030T000649Z-368238",
+    "expected_local_seconds": 84.057,
+    "expected_gold_rows": {
+      "gold_liquidity_summary": 8,
+      "gold_exposure_compliance": 8
+    },
+    "expected_rejected_rows": 0,
+    "dbt_query_retries": 0,
+    "dbt_fail_fast": true,
+    "paid_aws_processing_started": false
+  },
+  "failure": {
+    "component": "Lambda erl-dev-ingest-external-xml",
+    "error_type": "ArrowNotImplementedError",
+    "message": "Support for codec 'zstd' not built",
+    "source": "src/erl/ingestion/bronze.py:237, parquet_bytes -> pq.write_table(compression=\"zstd\")",
+    "runtime_path": "/opt/python/pyarrow/parquet/core.py",
+    "layer_arn": "arn:aws:lambda:sa-east-1:336392948345:layer:AWSSDKPandas-Python312:32",
+    "layer_pyarrow_version": "24.0.0",
+    "local_pyarrow_version": "26.0.0",
+    "local_zstd_available": true,
+    "confirmed_cause": "The deployed layer PyArrow build cannot write the Zstandard codec requested by the shared Bronze writer.",
+    "not_a_memory_limit_failure": true,
+    "scope": "Only external-xml was invoked; all three functions share this writer/layer and need a compatible release."
+  },
+  "executed_services": {
+    "S3": "Landing uploads and one raw external XML Bronze object",
+    "Lambda": {
+      "invocations": 1,
+      "functions": [
+        "erl-dev-ingest-external-xml"
+      ],
+      "metrics": {
+        "target": "erl-dev-ingest-external-xml",
+        "api_request_id": "7531cd78-178c-4336-890a-d8094ea13e3e",
+        "function_error": "Unhandled",
+        "function_request_id": "7531cd78-178c-4336-890a-d8094ea13e3e",
+        "duration_ms": "8623.34",
+        "billed_duration_ms": "9390",
+        "memory_mb": "512",
+        "max_memory_mb": "220",
+        "init_duration_ms": "765.86"
+      }
+    },
+    "CloudWatch": "Real Lambda logs and a real error alarm action to SNS observed",
+    "SNS": "Subscription confirmed; CloudWatch action to topic succeeded; human receipt unverified",
+    "Glue": {
+      "jobs_started": 0,
+      "job_run_ids": [],
+      "DPU_seconds": 0
+    },
+    "Athena": {
+      "queries_started": 0,
+      "query_ids": [],
+      "bytes_scanned": 0
+    },
+    "SQLServer": {
+      "engine": "SQL Server",
+      "isolated_database": "aws1_consumer_reporting",
+      "rpt_tables": [],
+      "products": {
+        "liquidity_summary": {
+          "present": false,
+          "rows": 0
+        },
+        "exposure_compliance": {
+          "present": false,
+          "rows": 0
+        }
+      },
+      "publication_log": []
+    }
+  },
+  "s3": {
+    "landing_objects": 24,
+    "raw_bronze_objects": 1,
+    "accepted_ingestion_manifests": 0,
+    "publication_objects": 0,
+    "run_object_bytes": 45083,
+    "objects_preserved": true,
+    "uncommitted_raw_object_is_not_an_accepted_bronze_delivery": true
+  },
+  "dbt_athena_quality": {
+    "executed": false,
+    "tests": null,
+    "gate": "NOT_EXECUTED"
+  },
+  "iceberg": {
+    "silver_tables": [],
+    "gold_tables": [],
+    "snapshots": [],
+    "reason": "Stopped before dbt/Athena."
+  },
+  "gold_products_created": [],
+  "local_expected_products": {
+    "gold_liquidity_summary": 8,
+    "gold_exposure_compliance": 8
+  },
+  "comparison_with_local": {
+    "completed": false,
+    "result": "NOT_AVAILABLE",
+    "reason": "Local reference passed, but no AWS Silver/Gold or publication was produced."
+  },
+  "consumption": {
+    "aws_pipeline_wall_seconds_until_stop": 89.845,
+    "lambda_duration_ms": "8623.34",
+    "lambda_billed_duration_ms": "9390",
+    "lambda_max_memory_mb": "220",
+    "lambda_memory_limit_mb": 512,
+    "glue_DPU_hours": 0,
+    "athena_bytes_scanned": 0,
+    "local_reference_seconds": 84.057
+  },
+  "cost": {
+    "currency": "USD",
+    "planning_allowance": [
+      "1",
+      "3"
+    ],
+    "billing_api_queried": false,
+    "measured_bill": null,
+    "observed_billing_inputs": "Lambda REPORT billed duration and memory; one invocation; no Glue runs or Athena query IDs; 25 persisted run objects.",
+    "lambda_compute_estimate_usd": "0.0000782501565",
+    "lambda_request_estimate_usd": "2.000E-7",
+    "lambda_total_estimate_usd": "0.0000784501565",
+    "glue_execution_estimate_usd": "0",
+    "athena_query_estimate_usd": "0",
+    "persisted_objects_minimum_puts": 25,
+    "s3_put_rate_usd_per_request": "0.0000070000",
+    "minimum_put_estimate_usd": "0.0001750000",
+    "lambda_plus_minimum_puts_partial_estimate_usd": "0.0002534501565",
+    "not_fully_metered": [
+      "All S3 LIST/GET/HEAD calls, storage/versions, log ingestion/storage, SNS delivery and existing alarms."
+    ],
+    "existing_three_alarms_full_month_reference_usd": "0.405",
+    "tax_free_tier_credits_fx_included": false,
+    "final_billed_total_claimed": false
+  },
+  "observability": {
+    "sns_status": "Confirmed",
+    "alarm_observation": {
+      "states": [
+        {
+          "name": "erl-dev-ingest-external-xml-errors",
+          "state": "ALARM"
+        },
+        {
+          "name": "erl-dev-ingest-internal-xml-errors",
+          "state": "OK"
+        },
+        {
+          "name": "erl-dev-ingest-market-data-errors",
+          "state": "OK"
+        }
+      ],
+      "external_action_events": 1,
+      "delivery_to_human_verified": false,
+      "intentional_failure_test_performed": false
+    },
+    "real_failure_action_history": [
+      {
+        "timestamp": "2026-10-29 21:12:36.342000-03:00",
+        "summary": "Successfully executed action arn:aws:sns:sa-east-1:********8330:erl-dev-alerts",
+        "action_state": "Succeeded",
+        "notification_resource": "arn:aws:sns:sa-east-1:********8330:erl-dev-alerts",
+        "error": null
+      }
+    ],
+    "intentional_failure_injected": false,
+    "human_email_receipt_verified": false
+  },
+  "restrictions_observed": {
+    "reference_dates_processed": [
+      "2026-10-26"
+    ],
+    "paid_pipeline_attempts": 1,
+    "lambda_invocations": 1,
+    "glue_jobs_started": 0,
+    "athena_queries_started": 0,
+    "additional_paid_retries": 0,
+    "dbt_query_retries_configured": 0,
+    "dbt_fail_fast": true,
+    "terraform_apply": false,
+    "terraform_destroy": false,
+    "aws_infrastructure_changed": false,
+    "deployed_code_changed": false,
+    "airflow_executed": false,
+    "intentional_failure_scenarios": false,
+    "cleanup_or_teardown": false,
+    "old_local_databases_recreated": false,
+    "global_aws_configuration_changed": false
+  },
+  "next_required_work": [
+    "Prepare a codec-compatible Lambda release: use a verified supported Parquet codec or bundle a PyArrow build with Zstandard support.",
+    "Review local changes and a new Terraform update plan for the Lambda deployment; obtain explicit authorisation before deployment.",
+    "After deployment approval, obtain separate authorisation for another single-date paid run using a NEW run id; preserve this failure evidence and uncommitted objects.",
+    "Validate Airflow and intentional alert scenarios only after the complete functional pipeline succeeds."
+  ],
+  "ready_for_airflow_and_alert_validation": false,
+  "reason_not_ready": "An essential ingestion component failed; no AWS Gold or SQL Server publication exists. CloudWatch -> SNS action was observed on the genuine failure, but this does not validate the whole pipeline or human alert receipt.",
+  "local_resource_samples": {
+    "vm_total_MiB": 7872,
+    "available_before_containers_MiB": 5689,
+    "available_with_both_containers_MiB": 4499,
+    "postgres_sample_MiB": 62,
+    "postgres_limit_MiB": 384,
+    "sqlserver_sample_MiB": 1010,
+    "sqlserver_limit_MiB": 2048,
+    "samples_are_not_peak_measurements": true,
+    "start_order": [
+      "postgres healthy",
+      "sqlserver healthy"
+    ],
+    "runtime_or_wsl_configuration_changed": false,
+    "containers_left_running": true
+  },
+  "private_reproduction_scripts_preserved": true
+}

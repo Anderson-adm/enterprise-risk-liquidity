@@ -1,5 +1,15 @@
 # Terraform
 
+**Current AWS status: fully decommissioned at the owner's request on 2026-10-29
+(America/Fortaleza).** All 69 dev + 7 bootstrap resources and all three buckets were deleted;
+direct service reads and project-tag inventory found no Case 01 resources remaining.
+State/object history is archived privately/local. The configuration below is retained for
+reproducibility, not evidence of running resources. [Teardown verification](../evidence/aws/teardown/verification.json).
+The owner later expanded cleanup to pre-existing data-dev resources: four more buckets, a
+Lambda, log group and application role were removed. [17-region account check](../evidence/aws/account-cleanup/verification.json)
+found no further billable resources in the services checked. AWS-managed/free access defaults
+remain; this is not an invoice/support-plan audit or a claim that the account is literally empty.
+
 ```
 infra/
   .tflint.hcl
@@ -72,6 +82,19 @@ Terraform never declares Silver/Gold tables, so `terraform plan` does not fight 
 
 Independent review evidence: [../evidence/review/final_terraform.txt](../evidence/review/final_terraform.txt),
 [TFLint](../evidence/review/final_tflint.txt), [Checkov](../evidence/review/final_checkov.txt).
+The separately authorised bootstrap saved plan was applied on AWS on 2026-10-29: 7 adds,
+0 changes, 0 destroys. [Direct AWS verification](../evidence/aws/bootstrap/summary.json) confirmed
+the bucket protections and lifecycle. Local bootstrap state and a private backup are preserved;
+The dev root now has an authorised real S3-backend init/validate/plan: 69 creates, 0 changes,
+0 destroys, including the supplied private alert recipient. [Saved plan inventory](../evidence/aws/dev-plan/plan_summary.json).
+The owner subsequently authorised that exact saved plan; apply completed with 69 creates,
+0 changes, 0 destroys and no errors/warnings. [Read-only provisioning verification](../evidence/aws/dev-apply/verification.json)
+covered all 69 resources. The separate bootstrap local state remains unchanged; the encrypted
+remote dev state and private snapshot are preserved. SNS is now Confirmed. A subsequent
+authorised single-date functional attempt failed on the first Lambda: the managed PyArrow
+layer lacks the Zstandard codec required by the writer. No Glue/Athena processing followed.
+The real failure caused a successful CloudWatch action to SNS; human delivery and complete
+pipeline behaviour remain unvalidated. No infrastructure/code changes or retries were made.
 The check runner now propagates format, TFLint and Checkov failures (previously masked by
 shell `&&`/`||` handling); regression tests inject nonzero exits for each tool.
 
@@ -110,28 +133,34 @@ Compatibility references: [SNS KMS publisher requirements](https://docs.aws.amaz
 
 ## Cost model (estimate — verify before apply)
 
-Prices vary by region and change over time; confirm with the AWS Pricing Calculator for
-`sa-east-1` before authorising an apply. Per full demo (3 reference dates):
+AWS Pricing `GetProducts` confirmed the following OnDemand first-tier rates for **South America
+(Sao Paulo), sa-east-1**, on 2026-10-29. Metadata was queried through the Pricing endpoint in
+us-east-1; no resources were deployed there. [Captured rates/SKUs](../evidence/aws/preflight/regional_prices.json).
 
-| Service | Usage per demo | Driver |
+| Service | Regional rate (USD) | First-date assumption / cost |
 |---|---|---|
-| Glue (Spark, G.1X × 2) | ~9 job runs × 2 DPU × assumed 2–5 min ≈ 0.6–1.5 DPU-hour; first date only: 0.2–0.5 DPU-hour | DPU-hour price of the region; actual startup/install/runtime unmeasured |
-| Athena | ~300 dbt queries × 10 MB minimum billing ≈ 3 GB scanned | per-TB scanned price (≈ cents) |
-| Lambda | ~15 invocations × < 2 s × 512 MB | free tier / fractions of a cent |
-| S3, CloudWatch Logs, SNS, EventBridge | MB of data, few requests | fractions of a cent |
-| Budgets | 1 budget | free (first budgets per account) |
+| Glue ETL | 0.69/DPU-hour | 3 jobs × 2 DPUs × 2–5 min = 0.2–0.5 DPU-hour: **0.138–0.345** |
+| Athena SQL | 9/TB scanned | If 1–3 decimal GB are billed: **0.009–0.027**; actual scans/query counts unmeasured |
+| CloudWatch standard alarms | 0.135/alarm metric-month | 3 retained for a full month: **0.405**, prorated by actual usage |
+| S3 Standard | 0.0405/GB-month | Depends on retained data/state versions and requests |
+| CloudWatch Logs | 0.90/GB ingested; 0.0408/GB-month stored | Depends on actual logs and retention |
+| CloudWatch custom metrics | 0.30/metric-month, first tier | Glue emits metrics while running; actual metric count/activity unmeasured |
+| Lambda x86 | 0.0000166667/GB-second; 0.20/million requests | Depends on actual invocations/duration |
 
-For the first date, reserve a provisional USD 1–3 including small retries/diagnostics; this is
-not a measured regional quote or spending cap. The [Glue pricing examples](https://aws.amazon.com/glue/pricing/)
-use USD 0.44/DPU-hour, implying USD 0.09–0.22 for the assumed first-date compute; confirm
-sa-east-1 rates before apply. The [Athena pricing examples](https://aws.amazon.com/athena/pricing/)
-use USD 5/TB; actual billed scans, requests and query counts still need measurement.
-Idle costs can also include CloudWatch alarms
-and retained logs, beyond S3 and the state bucket. There is no NAT, RDS, MWAA, EC2, ECS/EKS or
-always-on compute cluster. Confirm current monitoring/storage prices before authorising a run;
-see [CloudWatch pricing](https://aws.amazon.com/cloudwatch/pricing/).
-With `alert_email = null`, the budget has no notification recipients and SNS has no e-mail
-subscription; set and confirm a recipient when validating human alert delivery.
+The first functional date is **2026-10-26 only**. Reserve a provisional **USD 1–3** including
+small retries/diagnostics; this is not a spending cap. Three Glue jobs lasting 15 minutes each
+would cost USD 1.035 before retries and other services. Startup/dependency installation, SNS,
+EventBridge, S3 requests and transfers still require usage measurement. Taxes, exchange rates,
+credits and free tiers are excluded. No billing/Cost Explorer API was queried.
+Bootstrap alone creates S3 state storage/configuration: request/storage charges depend on usage,
+with no compute or customer-managed KMS key. There is no NAT, RDS, MWAA, EC2, ECS/EKS or
+always-on compute cluster. Later budget creation is a separately authorised lab action.
+The final private dev plan supplies an alert recipient, one SNS e-mail subscription, and budget
+notifications at >80% actual / >100% forecast. The budget is account-wide (no project filter),
+so unrelated account costs can trigger it. The applied SNS subscription is now Confirmed.
+Budget monitoring/notifications without actions have no budget-service fee according to
+[AWS Budgets pricing](https://aws.amazon.com/aws-cost-management/aws-budgets/pricing/);
+this plan declares no action-enabled budget or report subscription.
 
 ## Apply / destroy procedure
 

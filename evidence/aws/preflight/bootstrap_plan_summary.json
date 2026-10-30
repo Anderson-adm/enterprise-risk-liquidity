@@ -1,0 +1,79 @@
+{
+  "checked_at_utc": "2026-10-29T20:07:03.508641+00:00",
+  "scope": "bootstrap only",
+  "account": "********8330",
+  "region": "sa-east-1",
+  "profile": "data-dev",
+  "operations": [
+    {
+      "operation": "init",
+      "exit_code": 0
+    },
+    {
+      "operation": "validate",
+      "exit_code": 0
+    },
+    {
+      "operation": "plan",
+      "exit_code": 2
+    }
+  ],
+  "resource_changes": [
+    {
+      "address": "aws_s3_bucket.state",
+      "type": "aws_s3_bucket",
+      "actions": [
+        "create"
+      ]
+    },
+    {
+      "address": "aws_s3_bucket_lifecycle_configuration.state",
+      "type": "aws_s3_bucket_lifecycle_configuration",
+      "actions": [
+        "create"
+      ]
+    },
+    {
+      "address": "aws_s3_bucket_ownership_controls.state",
+      "type": "aws_s3_bucket_ownership_controls",
+      "actions": [
+        "create"
+      ]
+    },
+    {
+      "address": "aws_s3_bucket_policy.state",
+      "type": "aws_s3_bucket_policy",
+      "actions": [
+        "create"
+      ]
+    },
+    {
+      "address": "aws_s3_bucket_public_access_block.state",
+      "type": "aws_s3_bucket_public_access_block",
+      "actions": [
+        "create"
+      ]
+    },
+    {
+      "address": "aws_s3_bucket_server_side_encryption_configuration.state",
+      "type": "aws_s3_bucket_server_side_encryption_configuration",
+      "actions": [
+        "create"
+      ]
+    },
+    {
+      "address": "aws_s3_bucket_versioning.state",
+      "type": "aws_s3_bucket_versioning",
+      "actions": [
+        "create"
+      ]
+    }
+  ],
+  "to_add": 7,
+  "to_change": 0,
+  "to_destroy": 0,
+  "plan_sha256": "abae7580f58536ca813c5575298655bf39a374ef2ec3c89c3520853a888162c9",
+  "private_plan_path": "data/aws-preflight-2026-10-29/bootstrap.tfplan",
+  "applied": false,
+  "budget_changes": false
+}

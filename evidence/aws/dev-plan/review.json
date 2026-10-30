@@ -1,0 +1,258 @@
+{
+  "reviewed_at_utc": "2026-10-29T23:21:46.665272+00:00",
+  "source_commit": "f1e9fa5b20b8553372511e0847ef783e10e788e6",
+  "scope": "dev init/validate/plan only",
+  "account": "********8330",
+  "region": "sa-east-1",
+  "credential_method": "SSO data-dev",
+  "plan_sha256": "910dcc94954f57d2edbfe8c2a38b3790dc8668b8c0766b3a4f7a046a0067c64f",
+  "recommendation": "APROVAR",
+  "recommendation_scope": "Controlled synthetic lab infrastructure apply only, conditional on explicit owner approval of all 69 resources including budget and email subscription; no pipeline execution included.",
+  "blocking_findings": [],
+  "resources_by_service": {
+    "S3": {
+      "terraform_resources": 18,
+      "buckets": 2,
+      "bucket_configurations": 12,
+      "objects_glue_scripts_and_contracts": 4
+    },
+    "Glue": {
+      "terraform_resources": 21,
+      "databases": 3,
+      "business_bronze_tables": 13,
+      "ion_commit_control_tables": 1,
+      "jobs": 3,
+      "security_configurations": 1
+    },
+    "Lambda": {
+      "terraform_resources": 3,
+      "functions": 3
+    },
+    "IAM": {
+      "terraform_resources": 12,
+      "roles": 6,
+      "inline_policies": 6
+    },
+    "Athena": {
+      "terraform_resources": 1,
+      "workgroups": 1
+    },
+    "CloudWatch": {
+      "terraform_resources": 8,
+      "log_groups": 5,
+      "alarms": 3
+    },
+    "EventBridge": {
+      "terraform_resources": 2,
+      "rules": 1,
+      "targets": 1
+    },
+    "SNS": {
+      "terraform_resources": 3,
+      "topics": 1,
+      "topic_policies": 1,
+      "email_subscriptions": 1
+    },
+    "Budgets": {
+      "terraform_resources": 1,
+      "account_wide_monthly_budget_usd": 5,
+      "email_notifications": 2
+    }
+  },
+  "security_checks": {
+    "resource_count": 69,
+    "lambda_small_python312_layer_pinned": true,
+    "glue5_two_workers_15minute_no_job_retries": true,
+    "log_retention_days": 14,
+    "s3_protections": true,
+    "athena_v3_sse_s3_100MiB_scan_cutoff": true,
+    "runner_trust_single_current_sso_role": true,
+    "budget_account_wide_usd": 5,
+    "budget_actual_threshold_percent": 80,
+    "budget_forecast_threshold_percent": 100,
+    "sns_email_subscription": true,
+    "notification_email_redacted": true,
+    "automatic_shutdown_on_budget": false,
+    "bronze_business_tables": 13,
+    "ion_commit_control_tables": 1
+  },
+  "additional_read_checks": {
+    "checked_at_utc": "2026-10-29T23:16:20.569518+00:00",
+    "lakeformation_defaults": {
+      "CreateDatabaseDefaultPermissions": [
+        {
+          "Principal": {
+            "DataLakePrincipalIdentifier": "IAM_ALLOWED_PRINCIPALS"
+          },
+          "Permissions": [
+            "ALL"
+          ]
+        }
+      ],
+      "CreateTableDefaultPermissions": [
+        {
+          "Principal": {
+            "DataLakePrincipalIdentifier": "IAM_ALLOWED_PRINCIPALS"
+          },
+          "Permissions": [
+            "ALL"
+          ]
+        }
+      ]
+    },
+    "catalog_encryption": {
+      "encryption_at_rest_mode": "DISABLED",
+      "connection_password_encryption": false
+    },
+    "existing_budget": {
+      "exists": false
+    },
+    "cloudwatch_custom_metrics_price": [
+      {
+        "sku": "69U4T5WYC2VZMA9G",
+        "usd": "0.3000000000",
+        "unit": "Metrics",
+        "description": "$0.30 per metric-month for the first 10,000 metrics - South America (Sao Paulo)",
+        "effective_date": "2026-10-01T00:00:00Z"
+      }
+    ],
+    "project_inventory": {
+      "project_tagged_count": 1,
+      "only_bootstrap_state_bucket": true
+    }
+  },
+  "collision_check": {
+    "targets": 20,
+    "conflicts": 0,
+    "unverified": 0
+  },
+  "lambda_size_check": {
+    "layer_arn": "arn:aws:lambda:sa-east-1:336392948345:layer:AWSSDKPandas-Python312:32",
+    "downloaded_bytes": 60893984,
+    "layer_code_sha256_verified": true,
+    "layer_uncompressed_bytes": 198437963,
+    "function_uncompressed_bytes": 11773100,
+    "combined_uncompressed_bytes": 210211063,
+    "limit_bytes": 262144000,
+    "within_limit": true,
+    "download_only_not_executed": true
+  },
+  "iam_review": {
+    "runner_trust": "Exact current data-dev SSO role only; no other SSO principals configured.",
+    "inline_policy_count": 6,
+    "allowed_actions": "Explicit service actions with scoped buckets/prefixes, catalog resources, functions/jobs and SNS topic.",
+    "wildcard_resource_exception": "cloudwatch:PutMetricData Resource * constrained to namespace Glue.",
+    "glue_logging_scope": "/aws-glue/* within this account/region; broader than this lab prefix.",
+    "runtime_permissions_executed": false,
+    "effective_policy_limit": "Plan/source inspection and earlier simulations do not prove runtime access or actual alert delivery."
+  },
+  "cost_estimate": {
+    "quote_region": "sa-east-1",
+    "currency": "USD",
+    "reference_date": "2026-10-26",
+    "price_evidence": "../preflight/regional_prices.json",
+    "glue_rate_per_DPU_hour": "0.6900000000",
+    "glue_runs": 3,
+    "DPUs_per_job": 2,
+    "assumed_minutes_each": [
+      2,
+      5
+    ],
+    "glue_estimate_usd": [
+      "0.13800000000",
+      "0.34500000000"
+    ],
+    "glue_if_15_minutes_each_before_retries_usd": "1.03500000000",
+    "athena_rate_per_TB": "9.0000000000",
+    "athena_if_1_to_3_decimal_GB_billed_usd": [
+      "0.0090000000000",
+      "0.0270000000000"
+    ],
+    "cloudwatch_three_alarms_full_month_usd": "0.4050000000",
+    "cloudwatch_logs_ingest_per_GB": "0.9000000000",
+    "cloudwatch_custom_metric_per_month": "0.30",
+    "s3_standard_per_GB_month": "0.0405000000",
+    "allowance_including_small_diagnostics_and_retries_usd": [
+      "1",
+      "3"
+    ],
+    "spending_cap": false,
+    "billing_api_queried": false,
+    "measured_spend": null,
+    "usage_limitations": "Actual job startup/install/runtime, billed scans, metrics, request counts and transfers unmeasured. Include actual S3/log/SNS/EventBridge usage; no free tier, credits, taxes or FX assumed. Airflow can retry and increase cost.",
+    "budget_monitoring_service_fee": "No monitoring/notification charge for budgets without actions/reports per official pricing.",
+    "budget_pricing_source": "https://aws.amazon.com/aws-cost-management/aws-budgets/pricing/"
+  },
+  "persistent_costs": [
+    "Three CloudWatch alarms while retained, prorated by time.",
+    "S3 data/results/state versions and incomplete uploads until lifecycle or authorised cleanup; logs until expiry/deletion.",
+    "Glue custom metrics based on actual activity; logs, SNS/EventBridge and S3 requests/transfers according to use.",
+    "State bucket and remote dev state deliberately remain after lab teardown."
+  ],
+  "architecture": {
+    "aligned": true,
+    "seven_synthetic_sources": true,
+    "bronze_entities": 13,
+    "glue_gb_tb_patterns_and_gold_export": true,
+    "lambda_three_file_feeds": true,
+    "dbt_athena_iceberg": "Silver/Gold tables created by dbt at execution time, not by this Terraform plan.",
+    "local_dependencies": [
+      "PostgreSQL/SQL Server source containers",
+      "SQL Server consumer/publisher",
+      "Airflow orchestrator and dbt runtime"
+    ],
+    "not_provisioned": [
+      "RDS",
+      "EC2",
+      "NAT Gateway",
+      "MWAA",
+      "VPC endpoints",
+      "ECS/EKS",
+      "Lake Formation governance policies",
+      "Customer-managed KMS keys"
+    ],
+    "not_a_TB_benchmark": true
+  },
+  "residual_risks": [
+    "IAM/layer/package compatibility is checked statically; Glue dependency install, Ion SerDe, Athena Iceberg MERGE and actual alert delivery remain unexecuted.",
+    "SNS e-mail must be confirmed after any authorised apply before alert validation.",
+    "The USD 5 budget covers the entire account, includes unrelated costs and does not stop spending.",
+    "Temporary synthetic-lab security exceptions remain: SSE-S3, no cross-region replication/object-access audit, no Lambda VPC/code signing, SNS without CMK; Glue Catalog metadata encryption is currently disabled.",
+    "Two versioned lock objects and delete markers remain from normal planning locks; active lock is absent.",
+    "Bootstrap state/backup share one local disk."
+  ],
+  "teardown_review": {
+    "executed": false,
+    "sequence": [
+      "Preserve sanitised run reports/manifests/query outputs/logs and state snapshots before deletion.",
+      "Read-only teardown helper dry-run: verify both exact dev bucket names/tags and exact Silver/Gold database names; state bucket excluded.",
+      "Obtain separate cleanup approval; remove all versions/delete markers in the two lab buckets and dbt-owned tables; inspect incomplete multipart uploads and running work.",
+      "Generate/review dev destroy plan under separate authorisation, then obtain destroy approval.",
+      "Verify only shared state resources remain; preserve bootstrap local state and remote dev state/history."
+    ],
+    "bucket_force_destroy": false,
+    "state_bucket_in_dev_plan": false,
+    "state_bucket_prevent_destroy": true,
+    "helper_limit": "Incomplete uploads and unexpected resources require separate inventory/approved cleanup; no automatic state bucket deletion."
+  },
+  "private_artifacts": {
+    "binary_plan_git_ignored_untracked": true,
+    "backend_and_vars_git_ignored_untracked": true,
+    "windows_acls_restricted": true,
+    "source_manifest_preserved": true,
+    "email_published": false
+  },
+  "restrictions_observed": {
+    "apply": false,
+    "destroy": false,
+    "new_infrastructure_resources": 0,
+    "glue_jobs_started": 0,
+    "lambda_invocations": 0,
+    "athena_processing_queries": 0,
+    "budget_changes": false,
+    "global_aws_configuration_changes": false,
+    "state_migration": false,
+    "bootstrap_state_changed": false,
+    "allowed_transient_backend_locks": 2
+  }
+}

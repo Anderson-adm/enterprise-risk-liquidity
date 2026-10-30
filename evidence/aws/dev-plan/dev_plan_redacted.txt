@@ -1,0 +1,3085 @@
+
+Terraform used the selected providers to generate the following execution
+plan. Resource actions are indicated with the following symbols:
+  + create
+
+Terraform will perform the following actions:
+
+  # aws_athena_workgroup.this will be created
+  + resource "aws_athena_workgroup" "this" {
+      + arn           = (known after apply)
+      + description   = "Case 01 dbt + ad-hoc queries (engine v3, per-query scan limit)"
+      + force_destroy = true
+      + id            = (known after apply)
+      + name          = "erl-dev"
+      + region        = "sa-east-1"
+      + state         = "ENABLED"
+      + tags_all      = {
+          + "Environment" = "dev"
+          + "ManagedBy"   = "terraform"
+          + "Project"     = "enterprise-risk-liquidity"
+          + "Purpose"     = "case01-validation-lab"
+          + "Repository"  = "github.com/Anderson-adm/enterprise-risk-liquidity"
+        }
+
+      + configuration {
+          + bytes_scanned_cutoff_per_query          = 104857600
+          + enable_minimum_encryption_configuration = (known after apply)
+          + enforce_workgroup_configuration         = true
+          + publish_cloudwatch_metrics_enabled      = true
+          + requester_pays_enabled                  = false
+
+          + engine_version {
+              + effective_engine_version = (known after apply)
+              + selected_engine_version  = "Athena engine version 3"
+            }
+
+          + result_configuration {
+              + output_location = (known after apply)
+
+              + encryption_configuration {
+                  + encryption_option = "SSE_S3"
+                }
+            }
+        }
+    }
+
+  # aws_budgets_budget.monthly will be created
+  + resource "aws_budgets_budget" "monthly" {
+      + account_id        = (known after apply)
+      + arn               = (known after apply)
+      + budget_type       = "COST"
+      + id                = (known after apply)
+      + limit_amount      = "5.00"
+      + limit_unit        = "USD"
+      + name              = "erl-dev-monthly"
+      + name_prefix       = (known after apply)
+      + tags_all          = {
+          + "Environment" = "dev"
+          + "ManagedBy"   = "terraform"
+          + "Project"     = "enterprise-risk-liquidity"
+          + "Purpose"     = "case01-validation-lab"
+          + "Repository"  = "github.com/Anderson-adm/enterprise-risk-liquidity"
+        }
+      + time_period_end   = "2087-06-15_00:00"
+      + time_period_start = (known after apply)
+      + time_unit         = "MONTHLY"
+
+      + cost_filter (known after apply)
+
+      + cost_types (known after apply)
+
+      + notification {
+          + comparison_operator        = "GREATER_THAN"
+          + notification_type          = "ACTUAL"
+          + subscriber_email_addresses = [
+              + "<private-alert-email>",
+            ]
+          + subscriber_sns_topic_arns  = []
+          + threshold                  = 80
+          + threshold_type             = "PERCENTAGE"
+        }
+      + notification {
+          + comparison_operator        = "GREATER_THAN"
+          + notification_type          = "FORECASTED"
+          + subscriber_email_addresses = [
+              + "<private-alert-email>",
+            ]
+          + subscriber_sns_topic_arns  = []
+          + threshold                  = 100
+          + threshold_type             = "PERCENTAGE"
+        }
+    }
+
+  # aws_cloudwatch_event_rule.glue_failed will be created
+  + resource "aws_cloudwatch_event_rule" "glue_failed" {
+      + arn            = (known after apply)
+      + description    = "Case 01 Glue job ended in FAILED/TIMEOUT/ERROR"
+      + event_bus_name = "default"
+      + event_pattern  = jsonencode(
+            {
+              + detail      = {
+                  + jobName = [
+                      + "erl-dev-db-gb",
+                      + "erl-dev-db-tb",
+                      + "erl-dev-gold-load",
+                    ]
+                  + state   = [
+                      + "FAILED",
+                      + "TIMEOUT",
+                      + "ERROR",
+                    ]
+                }
+              + detail-type = [
+                  + "Glue Job State Change",
+                ]
+              + source      = [
+                  + "aws.glue",
+                ]
+            }
+        )
+      + force_destroy  = false
+      + id             = (known after apply)
+      + name           = "erl-dev-glue-job-failed"
+      + name_prefix    = (known after apply)
+      + region         = "sa-east-1"
+      + tags_all       = {
+          + "Environment" = "dev"
+          + "ManagedBy"   = "terraform"
+          + "Project"     = "enterprise-risk-liquidity"
+          + "Purpose"     = "case01-validation-lab"
+          + "Repository"  = "github.com/Anderson-adm/enterprise-risk-liquidity"
+        }
+    }
+
+  # aws_cloudwatch_event_target.glue_failed_sns will be created
+  + resource "aws_cloudwatch_event_target" "glue_failed_sns" {
+      + arn            = (known after apply)
+      + event_bus_name = "default"
+      + force_destroy  = false
+      + id             = (known after apply)
+      + region         = "sa-east-1"
+      + rule           = "erl-dev-glue-job-failed"
+      + target_id      = (known after apply)
+    }
+
+  # aws_cloudwatch_log_group.glue["error"] will be created
+  + resource "aws_cloudwatch_log_group" "glue" {
+      + arn                         = (known after apply)
+      + deletion_protection_enabled = (known after apply)
+      + id                          = (known after apply)
+      + log_group_class             = (known after apply)
+      + name                        = "/aws-glue/erl-dev/error"
+      + name_prefix                 = (known after apply)
+      + region                      = "sa-east-1"
+      + retention_in_days           = 14
+      + skip_destroy                = false
+      + tags_all                    = {
+          + "Environment" = "dev"
+          + "ManagedBy"   = "terraform"
+          + "Project"     = "enterprise-risk-liquidity"
+          + "Purpose"     = "case01-validation-lab"
+          + "Repository"  = "github.com/Anderson-adm/enterprise-risk-liquidity"
+        }
+    }
+
+  # aws_cloudwatch_log_group.glue["output"] will be created
+  + resource "aws_cloudwatch_log_group" "glue" {
+      + arn                         = (known after apply)
+      + deletion_protection_enabled = (known after apply)
+      + id                          = (known after apply)
+      + log_group_class             = (known after apply)
+      + name                        = "/aws-glue/erl-dev/output"
+      + name_prefix                 = (known after apply)
+      + region                      = "sa-east-1"
+      + retention_in_days           = 14
+      + skip_destroy                = false
+      + tags_all                    = {
+          + "Environment" = "dev"
+          + "ManagedBy"   = "terraform"
+          + "Project"     = "enterprise-risk-liquidity"
+          + "Purpose"     = "case01-validation-lab"
+          + "Repository"  = "github.com/Anderson-adm/enterprise-risk-liquidity"
+        }
+    }
+
+  # aws_cloudwatch_log_group.lambda["external_xml"] will be created
+  + resource "aws_cloudwatch_log_group" "lambda" {
+      + arn                         = (known after apply)
+      + deletion_protection_enabled = (known after apply)
+      + id                          = (known after apply)
+      + log_group_class             = (known after apply)
+      + name                        = "/aws/lambda/erl-dev-ingest-external-xml"
+      + name_prefix                 = (known after apply)
+      + region                      = "sa-east-1"
+      + retention_in_days           = 14
+      + skip_destroy                = false
+      + tags_all                    = {
+          + "Environment" = "dev"
+          + "ManagedBy"   = "terraform"
+          + "Project"     = "enterprise-risk-liquidity"
+          + "Purpose"     = "case01-validation-lab"
+          + "Repository"  = "github.com/Anderson-adm/enterprise-risk-liquidity"
+        }
+    }
+
+  # aws_cloudwatch_log_group.lambda["internal_xml"] will be created
+  + resource "aws_cloudwatch_log_group" "lambda" {
+      + arn                         = (known after apply)
+      + deletion_protection_enabled = (known after apply)
+      + id                          = (known after apply)
+      + log_group_class             = (known after apply)
+      + name                        = "/aws/lambda/erl-dev-ingest-internal-xml"
+      + name_prefix                 = (known after apply)
+      + region                      = "sa-east-1"
+      + retention_in_days           = 14
+      + skip_destroy                = false
+      + tags_all                    = {
+          + "Environment" = "dev"
+          + "ManagedBy"   = "terraform"
+          + "Project"     = "enterprise-risk-liquidity"
+          + "Purpose"     = "case01-validation-lab"
+          + "Repository"  = "github.com/Anderson-adm/enterprise-risk-liquidity"
+        }
+    }
+
+  # aws_cloudwatch_log_group.lambda["market_data"] will be created
+  + resource "aws_cloudwatch_log_group" "lambda" {
+      + arn                         = (known after apply)
+      + deletion_protection_enabled = (known after apply)
+      + id                          = (known after apply)
+      + log_group_class             = (known after apply)
+      + name                        = "/aws/lambda/erl-dev-ingest-market-data"
+      + name_prefix                 = (known after apply)
+      + region                      = "sa-east-1"
+      + retention_in_days           = 14
+      + skip_destroy                = false
+      + tags_all                    = {
+          + "Environment" = "dev"
+          + "ManagedBy"   = "terraform"
+          + "Project"     = "enterprise-risk-liquidity"
+          + "Purpose"     = "case01-validation-lab"
+          + "Repository"  = "github.com/Anderson-adm/enterprise-risk-liquidity"
+        }
+    }
+
+  # aws_cloudwatch_metric_alarm.lambda_errors["external_xml"] will be created
+  + resource "aws_cloudwatch_metric_alarm" "lambda_errors" {
+      + actions_enabled                       = true
+      + alarm_actions                         = (known after apply)
+      + alarm_description                     = "Ingestion Lambda external_xml raised an error"
+      + alarm_name                            = "erl-dev-ingest-external-xml-errors"
+      + arn                                   = (known after apply)
+      + comparison_operator                   = "GreaterThanThreshold"
+      + dimensions                            = {
+          + "FunctionName" = "erl-dev-ingest-external-xml"
+        }
+      + evaluate_low_sample_count_percentiles = (known after apply)
+      + evaluation_periods                    = 1
+      + id                                    = (known after apply)
+      + metric_name                           = "Errors"
+      + namespace                             = "AWS/Lambda"
+      + period                                = 300
+      + region                                = "sa-east-1"
+      + statistic                             = "Sum"
+      + tags_all                              = {
+          + "Environment" = "dev"
+          + "ManagedBy"   = "terraform"
+          + "Project"     = "enterprise-risk-liquidity"
+          + "Purpose"     = "case01-validation-lab"
+          + "Repository"  = "github.com/Anderson-adm/enterprise-risk-liquidity"
+        }
+      + threshold                             = 0
+      + treat_missing_data                    = "notBreaching"
+    }
+
+  # aws_cloudwatch_metric_alarm.lambda_errors["internal_xml"] will be created
+  + resource "aws_cloudwatch_metric_alarm" "lambda_errors" {
+      + actions_enabled                       = true
+      + alarm_actions                         = (known after apply)
+      + alarm_description                     = "Ingestion Lambda internal_xml raised an error"
+      + alarm_name                            = "erl-dev-ingest-internal-xml-errors"
+      + arn                                   = (known after apply)
+      + comparison_operator                   = "GreaterThanThreshold"
+      + dimensions                            = {
+          + "FunctionName" = "erl-dev-ingest-internal-xml"
+        }
+      + evaluate_low_sample_count_percentiles = (known after apply)
+      + evaluation_periods                    = 1
+      + id                                    = (known after apply)
+      + metric_name                           = "Errors"
+      + namespace                             = "AWS/Lambda"
+      + period                                = 300
+      + region                                = "sa-east-1"
+      + statistic                             = "Sum"
+      + tags_all                              = {
+          + "Environment" = "dev"
+          + "ManagedBy"   = "terraform"
+          + "Project"     = "enterprise-risk-liquidity"
+          + "Purpose"     = "case01-validation-lab"
+          + "Repository"  = "github.com/Anderson-adm/enterprise-risk-liquidity"
+        }
+      + threshold                             = 0
+      + treat_missing_data                    = "notBreaching"
+    }
+
+  # aws_cloudwatch_metric_alarm.lambda_errors["market_data"] will be created
+  + resource "aws_cloudwatch_metric_alarm" "lambda_errors" {
+      + actions_enabled                       = true
+      + alarm_actions                         = (known after apply)
+      + alarm_description                     = "Ingestion Lambda market_data raised an error"
+      + alarm_name                            = "erl-dev-ingest-market-data-errors"
+      + arn                                   = (known after apply)
+      + comparison_operator                   = "GreaterThanThreshold"
+      + dimensions                            = {
+          + "FunctionName" = "erl-dev-ingest-market-data"
+        }
+      + evaluate_low_sample_count_percentiles = (known after apply)
+      + evaluation_periods                    = 1
+      + id                                    = (known after apply)
+      + metric_name                           = "Errors"
+      + namespace                             = "AWS/Lambda"
+      + period                                = 300
+      + region                                = "sa-east-1"
+      + statistic                             = "Sum"
+      + tags_all                              = {
+          + "Environment" = "dev"
+          + "ManagedBy"   = "terraform"
+          + "Project"     = "enterprise-risk-liquidity"
+          + "Purpose"     = "case01-validation-lab"
+          + "Repository"  = "github.com/Anderson-adm/enterprise-risk-liquidity"
+        }
+      + threshold                             = 0
+      + treat_missing_data                    = "notBreaching"
+    }
+
+  # aws_glue_catalog_database.layer["bronze"] will be created
+  + resource "aws_glue_catalog_database" "layer" {
+      + arn          = (known after apply)
+      + catalog_id   = (known after apply)
+      + description  = "Case 01 bronze layer"
+      + id           = (known after apply)
+      + location_uri = (known after apply)
+      + name         = "erl_dev_bronze"
+      + region       = "sa-east-1"
+      + tags_all     = {
+          + "Environment" = "dev"
+          + "ManagedBy"   = "terraform"
+          + "Project"     = "enterprise-risk-liquidity"
+          + "Purpose"     = "case01-validation-lab"
+          + "Repository"  = "github.com/Anderson-adm/enterprise-risk-liquidity"
+        }
+
+      + create_table_default_permission (known after apply)
+    }
+
+  # aws_glue_catalog_database.layer["gold"] will be created
+  + resource "aws_glue_catalog_database" "layer" {
+      + arn          = (known after apply)
+      + catalog_id   = (known after apply)
+      + description  = "Case 01 gold layer"
+      + id           = (known after apply)
+      + location_uri = (known after apply)
+      + name         = "erl_dev_gold"
+      + region       = "sa-east-1"
+      + tags_all     = {
+          + "Environment" = "dev"
+          + "ManagedBy"   = "terraform"
+          + "Project"     = "enterprise-risk-liquidity"
+          + "Purpose"     = "case01-validation-lab"
+          + "Repository"  = "github.com/Anderson-adm/enterprise-risk-liquidity"
+        }
+
+      + create_table_default_permission (known after apply)
+    }
+
+  # aws_glue_catalog_database.layer["silver"] will be created
+  + resource "aws_glue_catalog_database" "layer" {
+      + arn          = (known after apply)
+      + catalog_id   = (known after apply)
+      + description  = "Case 01 silver layer"
+      + id           = (known after apply)
+      + location_uri = (known after apply)
+      + name         = "erl_dev_silver"
+      + region       = "sa-east-1"
+      + tags_all     = {
+          + "Environment" = "dev"
+          + "ManagedBy"   = "terraform"
+          + "Project"     = "enterprise-risk-liquidity"
+          + "Purpose"     = "case01-validation-lab"
+          + "Repository"  = "github.com/Anderson-adm/enterprise-risk-liquidity"
+        }
+
+      + create_table_default_permission (known after apply)
+    }
+
+  # aws_glue_catalog_table.bronze["exposure_compliance__concentration_limit"] will be created
+  + resource "aws_glue_catalog_table" "bronze" {
+      + arn           = (known after apply)
+      + catalog_id    = (known after apply)
+      + database_name = "erl_dev_bronze"
+      + description   = "Bronze exposure_compliance.concentration_limit (append-only, values as received)"
+      + id            = (known after apply)
+      + name          = "exposure_compliance__concentration_limit"
+      + parameters    = (known after apply)
+      + region        = "sa-east-1"
+      + table_type    = "EXTERNAL_TABLE"
+
+      + partition_index (known after apply)
+
+      + partition_keys {
+          + name = "bronze_reference_date"
+          + type = "string"
+        }
+
+      + storage_descriptor {
+          + additional_locations = (known after apply)
+          + bucket_columns       = (known after apply)
+          + input_format         = "org.apache.hadoop.hive.ql.io.parquet.MapredParquetInputFormat"
+          + location             = (known after apply)
+          + output_format        = "org.apache.hadoop.hive.ql.io.parquet.MapredParquetOutputFormat"
+          + parameters           = (known after apply)
+
+          + columns {
+              + name       = "rule_id"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "rule_scope"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "limit_pct"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "excluded_issuer_type"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "valid_from"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "valid_to"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "meta_source_system"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "meta_entity"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "meta_run_id"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "meta_ingested_at"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "meta_component"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "meta_source_object"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "meta_source_sha256"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "meta_snapshot_key"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "meta_row_number"
+              + parameters = (known after apply)
+              + type       = "bigint"
+            }
+          + columns {
+              + name       = "meta_row_hash"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+
+          + ser_de_info {
+              + parameters            = (known after apply)
+              + serialization_library = "org.apache.hadoop.hive.ql.io.parquet.serde.ParquetHiveSerDe"
+            }
+        }
+
+      + view_definition (known after apply)
+    }
+
+  # aws_glue_catalog_table.bronze["exposure_compliance__instrument_registry"] will be created
+  + resource "aws_glue_catalog_table" "bronze" {
+      + arn           = (known after apply)
+      + catalog_id    = (known after apply)
+      + database_name = "erl_dev_bronze"
+      + description   = "Bronze exposure_compliance.instrument_registry (append-only, values as received)"
+      + id            = (known after apply)
+      + name          = "exposure_compliance__instrument_registry"
+      + parameters    = (known after apply)
+      + region        = "sa-east-1"
+      + table_type    = "EXTERNAL_TABLE"
+
+      + partition_index (known after apply)
+
+      + partition_keys {
+          + name = "bronze_reference_date"
+          + type = "string"
+        }
+
+      + storage_descriptor {
+          + additional_locations = (known after apply)
+          + bucket_columns       = (known after apply)
+          + input_format         = "org.apache.hadoop.hive.ql.io.parquet.MapredParquetInputFormat"
+          + location             = (known after apply)
+          + output_format        = "org.apache.hadoop.hive.ql.io.parquet.MapredParquetOutputFormat"
+          + parameters           = (known after apply)
+
+          + columns {
+              + name       = "instrument_code"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "instrument_name"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "instrument_type"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "issuer_code"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "issuer_name"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "issuer_type"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "meta_source_system"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "meta_entity"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "meta_run_id"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "meta_ingested_at"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "meta_component"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "meta_source_object"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "meta_source_sha256"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "meta_snapshot_key"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "meta_row_number"
+              + parameters = (known after apply)
+              + type       = "bigint"
+            }
+          + columns {
+              + name       = "meta_row_hash"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+
+          + ser_de_info {
+              + parameters            = (known after apply)
+              + serialization_library = "org.apache.hadoop.hive.ql.io.parquet.serde.ParquetHiveSerDe"
+            }
+        }
+
+      + view_definition (known after apply)
+    }
+
+  # aws_glue_catalog_table.bronze["exposure_compliance__stock_position"] will be created
+  + resource "aws_glue_catalog_table" "bronze" {
+      + arn           = (known after apply)
+      + catalog_id    = (known after apply)
+      + database_name = "erl_dev_bronze"
+      + description   = "Bronze exposure_compliance.stock_position (append-only, values as received)"
+      + id            = (known after apply)
+      + name          = "exposure_compliance__stock_position"
+      + parameters    = (known after apply)
+      + region        = "sa-east-1"
+      + table_type    = "EXTERNAL_TABLE"
+
+      + partition_index (known after apply)
+
+      + partition_keys {
+          + name = "bronze_reference_date"
+          + type = "string"
+        }
+
+      + storage_descriptor {
+          + additional_locations = (known after apply)
+          + bucket_columns       = (known after apply)
+          + input_format         = "org.apache.hadoop.hive.ql.io.parquet.MapredParquetInputFormat"
+          + location             = (known after apply)
+          + output_format        = "org.apache.hadoop.hive.ql.io.parquet.MapredParquetOutputFormat"
+          + parameters           = (known after apply)
+
+          + columns {
+              + name       = "stock_id"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "fund_ref"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "instrument_code"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "position_date"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "quantity"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "book_value"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "meta_source_system"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "meta_entity"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "meta_run_id"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "meta_ingested_at"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "meta_component"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "meta_source_object"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "meta_source_sha256"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "meta_snapshot_key"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "meta_row_number"
+              + parameters = (known after apply)
+              + type       = "bigint"
+            }
+          + columns {
+              + name       = "meta_row_hash"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+
+          + ser_de_info {
+              + parameters            = (known after apply)
+              + serialization_library = "org.apache.hadoop.hive.ql.io.parquet.serde.ParquetHiveSerDe"
+            }
+        }
+
+      + view_definition (known after apply)
+    }
+
+  # aws_glue_catalog_table.bronze["external_xml__transfer_in_position"] will be created
+  + resource "aws_glue_catalog_table" "bronze" {
+      + arn           = (known after apply)
+      + catalog_id    = (known after apply)
+      + database_name = "erl_dev_bronze"
+      + description   = "Bronze external_xml.transfer_in_position (append-only, values as received)"
+      + id            = (known after apply)
+      + name          = "external_xml__transfer_in_position"
+      + parameters    = (known after apply)
+      + region        = "sa-east-1"
+      + table_type    = "EXTERNAL_TABLE"
+
+      + partition_index (known after apply)
+
+      + partition_keys {
+          + name = "bronze_reference_date"
+          + type = "string"
+        }
+
+      + storage_descriptor {
+          + additional_locations = (known after apply)
+          + bucket_columns       = (known after apply)
+          + input_format         = "org.apache.hadoop.hive.ql.io.parquet.MapredParquetInputFormat"
+          + location             = (known after apply)
+          + output_format        = "org.apache.hadoop.hive.ql.io.parquet.MapredParquetOutputFormat"
+          + parameters           = (known after apply)
+
+          + columns {
+              + name       = "administrator_code"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "external_fund_id"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "as_of"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "asset_code"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "qty"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "price"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "ccy"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "meta_source_system"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "meta_entity"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "meta_run_id"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "meta_ingested_at"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "meta_component"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "meta_source_object"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "meta_source_sha256"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "meta_snapshot_key"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "meta_row_number"
+              + parameters = (known after apply)
+              + type       = "bigint"
+            }
+          + columns {
+              + name       = "meta_row_hash"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+
+          + ser_de_info {
+              + parameters            = (known after apply)
+              + serialization_library = "org.apache.hadoop.hive.ql.io.parquet.serde.ParquetHiveSerDe"
+            }
+        }
+
+      + view_definition (known after apply)
+    }
+
+  # aws_glue_catalog_table.bronze["fund_ops__fund"] will be created
+  + resource "aws_glue_catalog_table" "bronze" {
+      + arn           = (known after apply)
+      + catalog_id    = (known after apply)
+      + database_name = "erl_dev_bronze"
+      + description   = "Bronze fund_ops.fund (append-only, values as received)"
+      + id            = (known after apply)
+      + name          = "fund_ops__fund"
+      + parameters    = (known after apply)
+      + region        = "sa-east-1"
+      + table_type    = "EXTERNAL_TABLE"
+
+      + partition_index (known after apply)
+
+      + partition_keys {
+          + name = "bronze_reference_date"
+          + type = "string"
+        }
+
+      + storage_descriptor {
+          + additional_locations = (known after apply)
+          + bucket_columns       = (known after apply)
+          + input_format         = "org.apache.hadoop.hive.ql.io.parquet.MapredParquetInputFormat"
+          + location             = (known after apply)
+          + output_format        = "org.apache.hadoop.hive.ql.io.parquet.MapredParquetOutputFormat"
+          + parameters           = (known after apply)
+
+          + columns {
+              + name       = "fund_id"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "fund_name"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "fund_type"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "base_currency"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "inception_date"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "status"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "meta_source_system"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "meta_entity"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "meta_run_id"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "meta_ingested_at"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "meta_component"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "meta_source_object"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "meta_source_sha256"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "meta_snapshot_key"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "meta_row_number"
+              + parameters = (known after apply)
+              + type       = "bigint"
+            }
+          + columns {
+              + name       = "meta_row_hash"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+
+          + ser_de_info {
+              + parameters            = (known after apply)
+              + serialization_library = "org.apache.hadoop.hive.ql.io.parquet.serde.ParquetHiveSerDe"
+            }
+        }
+
+      + view_definition (known after apply)
+    }
+
+  # aws_glue_catalog_table.bronze["fund_ops__portfolio"] will be created
+  + resource "aws_glue_catalog_table" "bronze" {
+      + arn           = (known after apply)
+      + catalog_id    = (known after apply)
+      + database_name = "erl_dev_bronze"
+      + description   = "Bronze fund_ops.portfolio (append-only, values as received)"
+      + id            = (known after apply)
+      + name          = "fund_ops__portfolio"
+      + parameters    = (known after apply)
+      + region        = "sa-east-1"
+      + table_type    = "EXTERNAL_TABLE"
+
+      + partition_index (known after apply)
+
+      + partition_keys {
+          + name = "bronze_reference_date"
+          + type = "string"
+        }
+
+      + storage_descriptor {
+          + additional_locations = (known after apply)
+          + bucket_columns       = (known after apply)
+          + input_format         = "org.apache.hadoop.hive.ql.io.parquet.MapredParquetInputFormat"
+          + location             = (known after apply)
+          + output_format        = "org.apache.hadoop.hive.ql.io.parquet.MapredParquetOutputFormat"
+          + parameters           = (known after apply)
+
+          + columns {
+              + name       = "portfolio_id"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "fund_id"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "portfolio_name"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "position_source_system"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "status"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "opened_on"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "meta_source_system"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "meta_entity"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "meta_run_id"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "meta_ingested_at"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "meta_component"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "meta_source_object"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "meta_source_sha256"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "meta_snapshot_key"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "meta_row_number"
+              + parameters = (known after apply)
+              + type       = "bigint"
+            }
+          + columns {
+              + name       = "meta_row_hash"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+
+          + ser_de_info {
+              + parameters            = (known after apply)
+              + serialization_library = "org.apache.hadoop.hive.ql.io.parquet.serde.ParquetHiveSerDe"
+            }
+        }
+
+      + view_definition (known after apply)
+    }
+
+  # aws_glue_catalog_table.bronze["fund_ops__source_identity_map"] will be created
+  + resource "aws_glue_catalog_table" "bronze" {
+      + arn           = (known after apply)
+      + catalog_id    = (known after apply)
+      + database_name = "erl_dev_bronze"
+      + description   = "Bronze fund_ops.source_identity_map (append-only, values as received)"
+      + id            = (known after apply)
+      + name          = "fund_ops__source_identity_map"
+      + parameters    = (known after apply)
+      + region        = "sa-east-1"
+      + table_type    = "EXTERNAL_TABLE"
+
+      + partition_index (known after apply)
+
+      + partition_keys {
+          + name = "bronze_reference_date"
+          + type = "string"
+        }
+
+      + storage_descriptor {
+          + additional_locations = (known after apply)
+          + bucket_columns       = (known after apply)
+          + input_format         = "org.apache.hadoop.hive.ql.io.parquet.MapredParquetInputFormat"
+          + location             = (known after apply)
+          + output_format        = "org.apache.hadoop.hive.ql.io.parquet.MapredParquetOutputFormat"
+          + parameters           = (known after apply)
+
+          + columns {
+              + name       = "source_system"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "external_identifier"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "portfolio_id"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "valid_from"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "valid_to"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "meta_source_system"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "meta_entity"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "meta_run_id"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "meta_ingested_at"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "meta_component"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "meta_source_object"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "meta_source_sha256"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "meta_snapshot_key"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "meta_row_number"
+              + parameters = (known after apply)
+              + type       = "bigint"
+            }
+          + columns {
+              + name       = "meta_row_hash"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+
+          + ser_de_info {
+              + parameters            = (known after apply)
+              + serialization_library = "org.apache.hadoop.hive.ql.io.parquet.serde.ParquetHiveSerDe"
+            }
+        }
+
+      + view_definition (known after apply)
+    }
+
+  # aws_glue_catalog_table.bronze["internal_xml__portfolio_position"] will be created
+  + resource "aws_glue_catalog_table" "bronze" {
+      + arn           = (known after apply)
+      + catalog_id    = (known after apply)
+      + database_name = "erl_dev_bronze"
+      + description   = "Bronze internal_xml.portfolio_position (append-only, values as received)"
+      + id            = (known after apply)
+      + name          = "internal_xml__portfolio_position"
+      + parameters    = (known after apply)
+      + region        = "sa-east-1"
+      + table_type    = "EXTERNAL_TABLE"
+
+      + partition_index (known after apply)
+
+      + partition_keys {
+          + name = "bronze_reference_date"
+          + type = "string"
+        }
+
+      + storage_descriptor {
+          + additional_locations = (known after apply)
+          + bucket_columns       = (known after apply)
+          + input_format         = "org.apache.hadoop.hive.ql.io.parquet.MapredParquetInputFormat"
+          + location             = (known after apply)
+          + output_format        = "org.apache.hadoop.hive.ql.io.parquet.MapredParquetOutputFormat"
+          + parameters           = (known after apply)
+
+          + columns {
+              + name       = "portfolio_code"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "reference_date"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "generated_at"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "instrument_code"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "quantity"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "market_value"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "currency"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "meta_source_system"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "meta_entity"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "meta_run_id"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "meta_ingested_at"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "meta_component"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "meta_source_object"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "meta_source_sha256"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "meta_snapshot_key"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "meta_row_number"
+              + parameters = (known after apply)
+              + type       = "bigint"
+            }
+          + columns {
+              + name       = "meta_row_hash"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+
+          + ser_de_info {
+              + parameters            = (known after apply)
+              + serialization_library = "org.apache.hadoop.hive.ql.io.parquet.serde.ParquetHiveSerDe"
+            }
+        }
+
+      + view_definition (known after apply)
+    }
+
+  # aws_glue_catalog_table.bronze["legacy_finance__cash_balance"] will be created
+  + resource "aws_glue_catalog_table" "bronze" {
+      + arn           = (known after apply)
+      + catalog_id    = (known after apply)
+      + database_name = "erl_dev_bronze"
+      + description   = "Bronze legacy_finance.cash_balance (append-only, values as received)"
+      + id            = (known after apply)
+      + name          = "legacy_finance__cash_balance"
+      + parameters    = (known after apply)
+      + region        = "sa-east-1"
+      + table_type    = "EXTERNAL_TABLE"
+
+      + partition_index (known after apply)
+
+      + partition_keys {
+          + name = "bronze_reference_date"
+          + type = "string"
+        }
+
+      + storage_descriptor {
+          + additional_locations = (known after apply)
+          + bucket_columns       = (known after apply)
+          + input_format         = "org.apache.hadoop.hive.ql.io.parquet.MapredParquetInputFormat"
+          + location             = (known after apply)
+          + output_format        = "org.apache.hadoop.hive.ql.io.parquet.MapredParquetOutputFormat"
+          + parameters           = (known after apply)
+
+          + columns {
+              + name       = "cod_cart"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "dt_ref"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "vl_saldo"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "cd_moeda"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "meta_source_system"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "meta_entity"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "meta_run_id"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "meta_ingested_at"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "meta_component"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "meta_source_object"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "meta_source_sha256"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "meta_snapshot_key"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "meta_row_number"
+              + parameters = (known after apply)
+              + type       = "bigint"
+            }
+          + columns {
+              + name       = "meta_row_hash"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+
+          + ser_de_info {
+              + parameters            = (known after apply)
+              + serialization_library = "org.apache.hadoop.hive.ql.io.parquet.serde.ParquetHiveSerDe"
+            }
+        }
+
+      + view_definition (known after apply)
+    }
+
+  # aws_glue_catalog_table.bronze["legacy_finance__pending_redemption"] will be created
+  + resource "aws_glue_catalog_table" "bronze" {
+      + arn           = (known after apply)
+      + catalog_id    = (known after apply)
+      + database_name = "erl_dev_bronze"
+      + description   = "Bronze legacy_finance.pending_redemption (append-only, values as received)"
+      + id            = (known after apply)
+      + name          = "legacy_finance__pending_redemption"
+      + parameters    = (known after apply)
+      + region        = "sa-east-1"
+      + table_type    = "EXTERNAL_TABLE"
+
+      + partition_index (known after apply)
+
+      + partition_keys {
+          + name = "bronze_reference_date"
+          + type = "string"
+        }
+
+      + storage_descriptor {
+          + additional_locations = (known after apply)
+          + bucket_columns       = (known after apply)
+          + input_format         = "org.apache.hadoop.hive.ql.io.parquet.MapredParquetInputFormat"
+          + location             = (known after apply)
+          + output_format        = "org.apache.hadoop.hive.ql.io.parquet.MapredParquetOutputFormat"
+          + parameters           = (known after apply)
+
+          + columns {
+              + name       = "id_resgate"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "cod_cart"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "dt_pedido"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "dt_cotizacao"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "vl_resgate"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "st_resgate"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "meta_source_system"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "meta_entity"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "meta_run_id"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "meta_ingested_at"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "meta_component"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "meta_source_object"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "meta_source_sha256"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "meta_snapshot_key"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "meta_row_number"
+              + parameters = (known after apply)
+              + type       = "bigint"
+            }
+          + columns {
+              + name       = "meta_row_hash"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+
+          + ser_de_info {
+              + parameters            = (known after apply)
+              + serialization_library = "org.apache.hadoop.hive.ql.io.parquet.serde.ParquetHiveSerDe"
+            }
+        }
+
+      + view_definition (known after apply)
+    }
+
+  # aws_glue_catalog_table.bronze["market_data__daily_price"] will be created
+  + resource "aws_glue_catalog_table" "bronze" {
+      + arn           = (known after apply)
+      + catalog_id    = (known after apply)
+      + database_name = "erl_dev_bronze"
+      + description   = "Bronze market_data.daily_price (append-only, values as received)"
+      + id            = (known after apply)
+      + name          = "market_data__daily_price"
+      + parameters    = (known after apply)
+      + region        = "sa-east-1"
+      + table_type    = "EXTERNAL_TABLE"
+
+      + partition_index (known after apply)
+
+      + partition_keys {
+          + name = "bronze_reference_date"
+          + type = "string"
+        }
+
+      + storage_descriptor {
+          + additional_locations = (known after apply)
+          + bucket_columns       = (known after apply)
+          + input_format         = "org.apache.hadoop.hive.ql.io.parquet.MapredParquetInputFormat"
+          + location             = (known after apply)
+          + output_format        = "org.apache.hadoop.hive.ql.io.parquet.MapredParquetOutputFormat"
+          + parameters           = (known after apply)
+
+          + columns {
+              + name       = "reference_date"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "instrument_code"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "instrument_type"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "close_price"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "avg_daily_volume"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "currency"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "meta_source_system"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "meta_entity"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "meta_run_id"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "meta_ingested_at"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "meta_component"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "meta_source_object"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "meta_source_sha256"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "meta_snapshot_key"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "meta_row_number"
+              + parameters = (known after apply)
+              + type       = "bigint"
+            }
+          + columns {
+              + name       = "meta_row_hash"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+
+          + ser_de_info {
+              + parameters            = (known after apply)
+              + serialization_library = "org.apache.hadoop.hive.ql.io.parquet.serde.ParquetHiveSerDe"
+            }
+        }
+
+      + view_definition (known after apply)
+    }
+
+  # aws_glue_catalog_table.bronze["portfolio_risk__processed_position"] will be created
+  + resource "aws_glue_catalog_table" "bronze" {
+      + arn           = (known after apply)
+      + catalog_id    = (known after apply)
+      + database_name = "erl_dev_bronze"
+      + description   = "Bronze portfolio_risk.processed_position (append-only, values as received)"
+      + id            = (known after apply)
+      + name          = "portfolio_risk__processed_position"
+      + parameters    = (known after apply)
+      + region        = "sa-east-1"
+      + table_type    = "EXTERNAL_TABLE"
+
+      + partition_index (known after apply)
+
+      + partition_keys {
+          + name = "bronze_reference_date"
+          + type = "string"
+        }
+
+      + storage_descriptor {
+          + additional_locations = (known after apply)
+          + bucket_columns       = (known after apply)
+          + input_format         = "org.apache.hadoop.hive.ql.io.parquet.MapredParquetInputFormat"
+          + location             = (known after apply)
+          + output_format        = "org.apache.hadoop.hive.ql.io.parquet.MapredParquetOutputFormat"
+          + parameters           = (known after apply)
+
+          + columns {
+              + name       = "position_id"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "portfolio_code"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "instrument_code"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "reference_date"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "quantity"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "market_value"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "currency"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "processing_status"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "processing_version"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "processed_at"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "meta_source_system"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "meta_entity"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "meta_run_id"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "meta_ingested_at"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "meta_component"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "meta_source_object"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "meta_source_sha256"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "meta_snapshot_key"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "meta_row_number"
+              + parameters = (known after apply)
+              + type       = "bigint"
+            }
+          + columns {
+              + name       = "meta_row_hash"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+
+          + ser_de_info {
+              + parameters            = (known after apply)
+              + serialization_library = "org.apache.hadoop.hive.ql.io.parquet.serde.ParquetHiveSerDe"
+            }
+        }
+
+      + view_definition (known after apply)
+    }
+
+  # aws_glue_catalog_table.bronze["portfolio_risk__processing_batch"] will be created
+  + resource "aws_glue_catalog_table" "bronze" {
+      + arn           = (known after apply)
+      + catalog_id    = (known after apply)
+      + database_name = "erl_dev_bronze"
+      + description   = "Bronze portfolio_risk.processing_batch (append-only, values as received)"
+      + id            = (known after apply)
+      + name          = "portfolio_risk__processing_batch"
+      + parameters    = (known after apply)
+      + region        = "sa-east-1"
+      + table_type    = "EXTERNAL_TABLE"
+
+      + partition_index (known after apply)
+
+      + partition_keys {
+          + name = "bronze_reference_date"
+          + type = "string"
+        }
+
+      + storage_descriptor {
+          + additional_locations = (known after apply)
+          + bucket_columns       = (known after apply)
+          + input_format         = "org.apache.hadoop.hive.ql.io.parquet.MapredParquetInputFormat"
+          + location             = (known after apply)
+          + output_format        = "org.apache.hadoop.hive.ql.io.parquet.MapredParquetOutputFormat"
+          + parameters           = (known after apply)
+
+          + columns {
+              + name       = "batch_id"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "reference_date"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "status"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "started_at"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "finished_at"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "meta_source_system"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "meta_entity"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "meta_run_id"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "meta_ingested_at"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "meta_component"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "meta_source_object"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "meta_source_sha256"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "meta_snapshot_key"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "meta_row_number"
+              + parameters = (known after apply)
+              + type       = "bigint"
+            }
+          + columns {
+              + name       = "meta_row_hash"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+
+          + ser_de_info {
+              + parameters            = (known after apply)
+              + serialization_library = "org.apache.hadoop.hive.ql.io.parquet.serde.ParquetHiveSerDe"
+            }
+        }
+
+      + view_definition (known after apply)
+    }
+
+  # aws_glue_catalog_table.ingestion_deliveries will be created
+  + resource "aws_glue_catalog_table" "ingestion_deliveries" {
+      + arn           = (known after apply)
+      + catalog_id    = (known after apply)
+      + database_name = "erl_dev_bronze"
+      + id            = (known after apply)
+      + name          = "ingestion_deliveries"
+      + parameters    = {
+          + "EXTERNAL"       = "TRUE"
+          + "classification" = "json"
+        }
+      + region        = "sa-east-1"
+      + table_type    = "EXTERNAL_TABLE"
+
+      + partition_index (known after apply)
+
+      + storage_descriptor {
+          + additional_locations = (known after apply)
+          + bucket_columns       = (known after apply)
+          + input_format         = "org.apache.hadoop.mapred.TextInputFormat"
+          + location             = (known after apply)
+          + output_format        = "org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat"
+          + parameters           = (known after apply)
+
+          + columns {
+              + name       = "source_system"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "entity"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "run_id"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "input_object"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+          + columns {
+              + name       = "status"
+              + parameters = (known after apply)
+              + type       = "string"
+            }
+
+          + ser_de_info {
+              + parameters            = (known after apply)
+              + serialization_library = "com.amazon.ionhiveserde.IonHiveSerDe"
+            }
+        }
+
+      + view_definition (known after apply)
+    }
+
+  # aws_glue_job.this["db-gb"] will be created
+  + resource "aws_glue_job" "this" {
+      + arn                    = (known after apply)
+      + default_arguments      = (known after apply)
+      + description            = "Case 01 db-gb"
+      + glue_version           = "5.0"
+      + id                     = (known after apply)
+      + job_mode               = (known after apply)
+      + max_capacity           = (known after apply)
+      + max_retries            = 0
+      + name                   = "erl-dev-db-gb"
+      + number_of_workers      = 2
+      + region                 = "sa-east-1"
+      + role_arn               = (known after apply)
+      + security_configuration = "erl-dev"
+      + tags_all               = {
+          + "Environment" = "dev"
+          + "ManagedBy"   = "terraform"
+          + "Project"     = "enterprise-risk-liquidity"
+          + "Purpose"     = "case01-validation-lab"
+          + "Repository"  = "github.com/Anderson-adm/enterprise-risk-liquidity"
+        }
+      + timeout                = 15
+      + worker_type            = "G.1X"
+
+      + command {
+          + name            = "glueetl"
+          + python_version  = "3"
+          + runtime         = (known after apply)
+          + script_location = (known after apply)
+        }
+
+      + execution_property {
+          + max_concurrent_runs = 1
+        }
+
+      + notification_property (known after apply)
+    }
+
+  # aws_glue_job.this["db-tb"] will be created
+  + resource "aws_glue_job" "this" {
+      + arn                    = (known after apply)
+      + default_arguments      = (known after apply)
+      + description            = "Case 01 db-tb"
+      + glue_version           = "5.0"
+      + id                     = (known after apply)
+      + job_mode               = (known after apply)
+      + max_capacity           = (known after apply)
+      + max_retries            = 0
+      + name                   = "erl-dev-db-tb"
+      + number_of_workers      = 2
+      + region                 = "sa-east-1"
+      + role_arn               = (known after apply)
+      + security_configuration = "erl-dev"
+      + tags_all               = {
+          + "Environment" = "dev"
+          + "ManagedBy"   = "terraform"
+          + "Project"     = "enterprise-risk-liquidity"
+          + "Purpose"     = "case01-validation-lab"
+          + "Repository"  = "github.com/Anderson-adm/enterprise-risk-liquidity"
+        }
+      + timeout                = 15
+      + worker_type            = "G.1X"
+
+      + command {
+          + name            = "glueetl"
+          + python_version  = "3"
+          + runtime         = (known after apply)
+          + script_location = (known after apply)
+        }
+
+      + execution_property {
+          + max_concurrent_runs = 1
+        }
+
+      + notification_property (known after apply)
+    }
+
+  # aws_glue_job.this["gold-load"] will be created
+  + resource "aws_glue_job" "this" {
+      + arn                    = (known after apply)
+      + default_arguments      = (known after apply)
+      + description            = "Case 01 gold-load"
+      + glue_version           = "5.0"
+      + id                     = (known after apply)
+      + job_mode               = (known after apply)
+      + max_capacity           = (known after apply)
+      + max_retries            = 0
+      + name                   = "erl-dev-gold-load"
+      + number_of_workers      = 2
+      + region                 = "sa-east-1"
+      + role_arn               = (known after apply)
+      + security_configuration = "erl-dev"
+      + tags_all               = {
+          + "Environment" = "dev"
+          + "ManagedBy"   = "terraform"
+          + "Project"     = "enterprise-risk-liquidity"
+          + "Purpose"     = "case01-validation-lab"
+          + "Repository"  = "github.com/Anderson-adm/enterprise-risk-liquidity"
+        }
+      + timeout                = 15
+      + worker_type            = "G.1X"
+
+      + command {
+          + name            = "glueetl"
+          + python_version  = "3"
+          + runtime         = (known after apply)
+          + script_location = (known after apply)
+        }
+
+      + execution_property {
+          + max_concurrent_runs = 1
+        }
+
+      + notification_property (known after apply)
+    }
+
+  # aws_glue_security_configuration.this will be created
+  + resource "aws_glue_security_configuration" "this" {
+      + id     = (known after apply)
+      + name   = "erl-dev"
+      + region = "sa-east-1"
+
+      + encryption_configuration {
+          + cloudwatch_encryption {
+              + cloudwatch_encryption_mode = "DISABLED"
+            }
+          + job_bookmarks_encryption {
+              + job_bookmarks_encryption_mode = "DISABLED"
+            }
+          + s3_encryption {
+              + s3_encryption_mode = "SSE-S3"
+            }
+        }
+    }
+
+  # aws_iam_role.glue_db_ingest will be created
+  + resource "aws_iam_role" "glue_db_ingest" {
+      + arn                   = (known after apply)
+      + assume_role_policy    = jsonencode(
+            {
+              + Statement = [
+                  + {
+                      + Action    = "sts:AssumeRole"
+                      + Effect    = "Allow"
+                      + Principal = {
+                          + Service = "glue.amazonaws.com"
+                        }
+                    },
+                ]
+              + Version   = "2012-10-17"
+            }
+        )
+      + create_date           = (known after apply)
+      + force_detach_policies = false
+      + id                    = (known after apply)
+      + managed_policy_arns   = (known after apply)
+      + max_session_duration  = 3600
+      + name                  = "erl-dev-glue-db-ingest"
+      + name_prefix           = (known after apply)
+      + path                  = "/"
+      + tags_all              = {
+          + "Environment" = "dev"
+          + "ManagedBy"   = "terraform"
+          + "Project"     = "enterprise-risk-liquidity"
+          + "Purpose"     = "case01-validation-lab"
+          + "Repository"  = "github.com/Anderson-adm/enterprise-risk-liquidity"
+        }
+      + unique_id             = (known after apply)
+
+      + inline_policy (known after apply)
+    }
+
+  # aws_iam_role.glue_gold_load will be created
+  + resource "aws_iam_role" "glue_gold_load" {
+      + arn                   = (known after apply)
+      + assume_role_policy    = jsonencode(
+            {
+              + Statement = [
+                  + {
+                      + Action    = "sts:AssumeRole"
+                      + Effect    = "Allow"
+                      + Principal = {
+                          + Service = "glue.amazonaws.com"
+                        }
+                    },
+                ]
+              + Version   = "2012-10-17"
+            }
+        )
+      + create_date           = (known after apply)
+      + force_detach_policies = false
+      + id                    = (known after apply)
+      + managed_policy_arns   = (known after apply)
+      + max_session_duration  = 3600
+      + name                  = "erl-dev-glue-gold-load"
+      + name_prefix           = (known after apply)
+      + path                  = "/"
+      + tags_all              = {
+          + "Environment" = "dev"
+          + "ManagedBy"   = "terraform"
+          + "Project"     = "enterprise-risk-liquidity"
+          + "Purpose"     = "case01-validation-lab"
+          + "Repository"  = "github.com/Anderson-adm/enterprise-risk-liquidity"
+        }
+      + unique_id             = (known after apply)
+
+      + inline_policy (known after apply)
+    }
+
+  # aws_iam_role.lambda["external_xml"] will be created
+  + resource "aws_iam_role" "lambda" {
+      + arn                   = (known after apply)
+      + assume_role_policy    = jsonencode(
+            {
+              + Statement = [
+                  + {
+                      + Action    = "sts:AssumeRole"
+                      + Effect    = "Allow"
+                      + Principal = {
+                          + Service = "lambda.amazonaws.com"
+                        }
+                    },
+                ]
+              + Version   = "2012-10-17"
+            }
+        )
+      + create_date           = (known after apply)
+      + force_detach_policies = false
+      + id                    = (known after apply)
+      + managed_policy_arns   = (known after apply)
+      + max_session_duration  = 3600
+      + name                  = "erl-dev-ingest-external-xml"
+      + name_prefix           = (known after apply)
+      + path                  = "/"
+      + tags_all              = {
+          + "Environment" = "dev"
+          + "ManagedBy"   = "terraform"
+          + "Project"     = "enterprise-risk-liquidity"
+          + "Purpose"     = "case01-validation-lab"
+          + "Repository"  = "github.com/Anderson-adm/enterprise-risk-liquidity"
+        }
+      + unique_id             = (known after apply)
+
+      + inline_policy (known after apply)
+    }
+
+  # aws_iam_role.lambda["internal_xml"] will be created
+  + resource "aws_iam_role" "lambda" {
+      + arn                   = (known after apply)
+      + assume_role_policy    = jsonencode(
+            {
+              + Statement = [
+                  + {
+                      + Action    = "sts:AssumeRole"
+                      + Effect    = "Allow"
+                      + Principal = {
+                          + Service = "lambda.amazonaws.com"
+                        }
+                    },
+                ]
+              + Version   = "2012-10-17"
+            }
+        )
+      + create_date           = (known after apply)
+      + force_detach_policies = false
+      + id                    = (known after apply)
+      + managed_policy_arns   = (known after apply)
+      + max_session_duration  = 3600
+      + name                  = "erl-dev-ingest-internal-xml"
+      + name_prefix           = (known after apply)
+      + path                  = "/"
+      + tags_all              = {
+          + "Environment" = "dev"
+          + "ManagedBy"   = "terraform"
+          + "Project"     = "enterprise-risk-liquidity"
+          + "Purpose"     = "case01-validation-lab"
+          + "Repository"  = "github.com/Anderson-adm/enterprise-risk-liquidity"
+        }
+      + unique_id             = (known after apply)
+
+      + inline_policy (known after apply)
+    }
+
+  # aws_iam_role.lambda["market_data"] will be created
+  + resource "aws_iam_role" "lambda" {
+      + arn                   = (known after apply)
+      + assume_role_policy    = jsonencode(
+            {
+              + Statement = [
+                  + {
+                      + Action    = "sts:AssumeRole"
+                      + Effect    = "Allow"
+                      + Principal = {
+                          + Service = "lambda.amazonaws.com"
+                        }
+                    },
+                ]
+              + Version   = "2012-10-17"
+            }
+        )
+      + create_date           = (known after apply)
+      + force_detach_policies = false
+      + id                    = (known after apply)
+      + managed_policy_arns   = (known after apply)
+      + max_session_duration  = 3600
+      + name                  = "erl-dev-ingest-market-data"
+      + name_prefix           = (known after apply)
+      + path                  = "/"
+      + tags_all              = {
+          + "Environment" = "dev"
+          + "ManagedBy"   = "terraform"
+          + "Project"     = "enterprise-risk-liquidity"
+          + "Purpose"     = "case01-validation-lab"
+          + "Repository"  = "github.com/Anderson-adm/enterprise-risk-liquidity"
+        }
+      + unique_id             = (known after apply)
+
+      + inline_policy (known after apply)
+    }
+
+  # aws_iam_role.runner will be created
+  + resource "aws_iam_role" "runner" {
+      + arn                   = (known after apply)
+      + assume_role_policy    = jsonencode(
+            {
+              + Statement = [
+                  + {
+                      + Action    = "sts:AssumeRole"
+                      + Condition = {
+                          + ArnLike = {
+                              + "aws:PrincipalArn" = [
+                                  + "<current-data-dev-sso-role>",
+                                ]
+                            }
+                        }
+                      + Effect    = "Allow"
+                      + Principal = {
+                          + AWS = "arn:aws:iam::********8330:root"
+                        }
+                    },
+                ]
+              + Version   = "2012-10-17"
+            }
+        )
+      + create_date           = (known after apply)
+      + force_detach_policies = false
+      + id                    = (known after apply)
+      + managed_policy_arns   = (known after apply)
+      + max_session_duration  = 3600
+      + name                  = "erl-dev-pipeline-runner"
+      + name_prefix           = (known after apply)
+      + path                  = "/"
+      + tags_all              = {
+          + "Environment" = "dev"
+          + "ManagedBy"   = "terraform"
+          + "Project"     = "enterprise-risk-liquidity"
+          + "Purpose"     = "case01-validation-lab"
+          + "Repository"  = "github.com/Anderson-adm/enterprise-risk-liquidity"
+        }
+      + unique_id             = (known after apply)
+
+      + inline_policy (known after apply)
+    }
+
+  # aws_iam_role_policy.glue_db_ingest will be created
+  + resource "aws_iam_role_policy" "glue_db_ingest" {
+      + id          = (known after apply)
+      + name        = "db-ingest"
+      + name_prefix = (known after apply)
+      + policy      = (known after apply)
+      + role        = (known after apply)
+    }
+
+  # aws_iam_role_policy.glue_gold_load will be created
+  + resource "aws_iam_role_policy" "glue_gold_load" {
+      + id          = (known after apply)
+      + name        = "gold-load"
+      + name_prefix = (known after apply)
+      + policy      = (known after apply)
+      + role        = (known after apply)
+    }
+
+  # aws_iam_role_policy.lambda["external_xml"] will be created
+  + resource "aws_iam_role_policy" "lambda" {
+      + id          = (known after apply)
+      + name        = "ingest-external_xml"
+      + name_prefix = (known after apply)
+      + policy      = (known after apply)
+      + role        = (known after apply)
+    }
+
+  # aws_iam_role_policy.lambda["internal_xml"] will be created
+  + resource "aws_iam_role_policy" "lambda" {
+      + id          = (known after apply)
+      + name        = "ingest-internal_xml"
+      + name_prefix = (known after apply)
+      + policy      = (known after apply)
+      + role        = (known after apply)
+    }
+
+  # aws_iam_role_policy.lambda["market_data"] will be created
+  + resource "aws_iam_role_policy" "lambda" {
+      + id          = (known after apply)
+      + name        = "ingest-market_data"
+      + name_prefix = (known after apply)
+      + policy      = (known after apply)
+      + role        = (known after apply)
+    }
+
+  # aws_iam_role_policy.runner will be created
+  + resource "aws_iam_role_policy" "runner" {
+      + id          = (known after apply)
+      + name        = "pipeline-runner"
+      + name_prefix = (known after apply)
+      + policy      = (known after apply)
+      + role        = (known after apply)
+    }
+
+  # aws_lambda_function.ingest["external_xml"] will be created
+  + resource "aws_lambda_function" "ingest" {
+      + architectures                  = [
+          + "x86_64",
+        ]
+      + arn                            = (known after apply)
+      + code_sha256                    = (known after apply)
+      + description                    = "Validate and append external_xml deliveries to Bronze"
+      + filename                       = "<repo>/data/aws-dev-plan-2026-10-29/lambda.zip"
+      + function_name                  = "erl-dev-ingest-external-xml"
+      + handler                        = "erl.aws.lambda_handlers.external_xml_handler"
+      + id                             = (known after apply)
+      + invoke_arn                     = (known after apply)
+      + last_modified                  = (known after apply)
+      + layers                         = [
+          + "arn:aws:lambda:sa-east-1:336392948345:layer:AWSSDKPandas-Python312:32",
+        ]
+      + memory_size                    = 512
+      + package_type                   = "Zip"
+      + publish                        = false
+      + qualified_arn                  = (known after apply)
+      + qualified_invoke_arn           = (known after apply)
+      + region                         = "sa-east-1"
+      + reserved_concurrent_executions = -1
+      + response_streaming_invoke_arn  = (known after apply)
+      + role                           = (known after apply)
+      + runtime                        = "python3.12"
+      + signing_job_arn                = (known after apply)
+      + signing_profile_version_arn    = (known after apply)
+      + skip_destroy                   = false
+      + source_code_hash               = "nDo9IZwpfMqnlEh3BgyLN72ScFuJCgIG7DCMtYqOnT8="
+      + source_code_size               = (known after apply)
+      + tags_all                       = {
+          + "Environment" = "dev"
+          + "ManagedBy"   = "terraform"
+          + "Project"     = "enterprise-risk-liquidity"
+          + "Purpose"     = "case01-validation-lab"
+          + "Repository"  = "github.com/Anderson-adm/enterprise-risk-liquidity"
+        }
+      + timeout                        = 60
+      + version                        = (known after apply)
+
+      + environment {
+          + variables = (known after apply)
+        }
+
+      + ephemeral_storage (known after apply)
+
+      + logging_config {
+          + log_format = "Text"
+          + log_group  = "/aws/lambda/erl-dev-ingest-external-xml"
+        }
+
+      + tracing_config {
+          + mode = "PassThrough"
+        }
+    }
+
+  # aws_lambda_function.ingest["internal_xml"] will be created
+  + resource "aws_lambda_function" "ingest" {
+      + architectures                  = [
+          + "x86_64",
+        ]
+      + arn                            = (known after apply)
+      + code_sha256                    = (known after apply)
+      + description                    = "Validate and append internal_xml deliveries to Bronze"
+      + filename                       = "<repo>/data/aws-dev-plan-2026-10-29/lambda.zip"
+      + function_name                  = "erl-dev-ingest-internal-xml"
+      + handler                        = "erl.aws.lambda_handlers.internal_xml_handler"
+      + id                             = (known after apply)
+      + invoke_arn                     = (known after apply)
+      + last_modified                  = (known after apply)
+      + layers                         = [
+          + "arn:aws:lambda:sa-east-1:336392948345:layer:AWSSDKPandas-Python312:32",
+        ]
+      + memory_size                    = 512
+      + package_type                   = "Zip"
+      + publish                        = false
+      + qualified_arn                  = (known after apply)
+      + qualified_invoke_arn           = (known after apply)
+      + region                         = "sa-east-1"
+      + reserved_concurrent_executions = -1
+      + response_streaming_invoke_arn  = (known after apply)
+      + role                           = (known after apply)
+      + runtime                        = "python3.12"
+      + signing_job_arn                = (known after apply)
+      + signing_profile_version_arn    = (known after apply)
+      + skip_destroy                   = false
+      + source_code_hash               = "nDo9IZwpfMqnlEh3BgyLN72ScFuJCgIG7DCMtYqOnT8="
+      + source_code_size               = (known after apply)
+      + tags_all                       = {
+          + "Environment" = "dev"
+          + "ManagedBy"   = "terraform"
+          + "Project"     = "enterprise-risk-liquidity"
+          + "Purpose"     = "case01-validation-lab"
+          + "Repository"  = "github.com/Anderson-adm/enterprise-risk-liquidity"
+        }
+      + timeout                        = 60
+      + version                        = (known after apply)
+
+      + environment {
+          + variables = (known after apply)
+        }
+
+      + ephemeral_storage (known after apply)
+
+      + logging_config {
+          + log_format = "Text"
+          + log_group  = "/aws/lambda/erl-dev-ingest-internal-xml"
+        }
+
+      + tracing_config {
+          + mode = "PassThrough"
+        }
+    }
+
+  # aws_lambda_function.ingest["market_data"] will be created
+  + resource "aws_lambda_function" "ingest" {
+      + architectures                  = [
+          + "x86_64",
+        ]
+      + arn                            = (known after apply)
+      + code_sha256                    = (known after apply)
+      + description                    = "Validate and append market_data deliveries to Bronze"
+      + filename                       = "<repo>/data/aws-dev-plan-2026-10-29/lambda.zip"
+      + function_name                  = "erl-dev-ingest-market-data"
+      + handler                        = "erl.aws.lambda_handlers.market_data_handler"
+      + id                             = (known after apply)
+      + invoke_arn                     = (known after apply)
+      + last_modified                  = (known after apply)
+      + layers                         = [
+          + "arn:aws:lambda:sa-east-1:336392948345:layer:AWSSDKPandas-Python312:32",
+        ]
+      + memory_size                    = 512
+      + package_type                   = "Zip"
+      + publish                        = false
+      + qualified_arn                  = (known after apply)
+      + qualified_invoke_arn           = (known after apply)
+      + region                         = "sa-east-1"
+      + reserved_concurrent_executions = -1
+      + response_streaming_invoke_arn  = (known after apply)
+      + role                           = (known after apply)
+      + runtime                        = "python3.12"
+      + signing_job_arn                = (known after apply)
+      + signing_profile_version_arn    = (known after apply)
+      + skip_destroy                   = false
+      + source_code_hash               = "nDo9IZwpfMqnlEh3BgyLN72ScFuJCgIG7DCMtYqOnT8="
+      + source_code_size               = (known after apply)
+      + tags_all                       = {
+          + "Environment" = "dev"
+          + "ManagedBy"   = "terraform"
+          + "Project"     = "enterprise-risk-liquidity"
+          + "Purpose"     = "case01-validation-lab"
+          + "Repository"  = "github.com/Anderson-adm/enterprise-risk-liquidity"
+        }
+      + timeout                        = 60
+      + version                        = (known after apply)
+
+      + environment {
+          + variables = (known after apply)
+        }
+
+      + ephemeral_storage (known after apply)
+
+      + logging_config {
+          + log_format = "Text"
+          + log_group  = "/aws/lambda/erl-dev-ingest-market-data"
+        }
+
+      + tracing_config {
+          + mode = "PassThrough"
+        }
+    }
+
+  # aws_s3_object.contract["bronze_contract.json"] will be created
+  + resource "aws_s3_object" "contract" {
+      + acl                    = (known after apply)
+      + arn                    = (known after apply)
+      + bucket                 = (known after apply)
+      + bucket_key_enabled     = (known after apply)
+      + checksum_crc32         = (known after apply)
+      + checksum_crc32c        = (known after apply)
+      + checksum_crc64nvme     = (known after apply)
+      + checksum_sha1          = (known after apply)
+      + checksum_sha256        = (known after apply)
+      + content_type           = (known after apply)
+      + etag                   = "5bf64ef886f19ad263849719e980c68a"
+      + force_destroy          = false
+      + id                     = (known after apply)
+      + key                    = "scripts/contracts/bronze_contract.json"
+      + kms_key_id             = (known after apply)
+      + region                 = "sa-east-1"
+      + server_side_encryption = (known after apply)
+      + source                 = "./../../../src/erl/contracts/bronze_contract.json"
+      + storage_class          = (known after apply)
+      + tags_all               = {
+          + "Environment" = "dev"
+          + "ManagedBy"   = "terraform"
+          + "Project"     = "enterprise-risk-liquidity"
+          + "Purpose"     = "case01-validation-lab"
+          + "Repository"  = "github.com/Anderson-adm/enterprise-risk-liquidity"
+        }
+      + version_id             = (known after apply)
+    }
+
+  # aws_s3_object.contract["consumer_contract.json"] will be created
+  + resource "aws_s3_object" "contract" {
+      + acl                    = (known after apply)
+      + arn                    = (known after apply)
+      + bucket                 = (known after apply)
+      + bucket_key_enabled     = (known after apply)
+      + checksum_crc32         = (known after apply)
+      + checksum_crc32c        = (known after apply)
+      + checksum_crc64nvme     = (known after apply)
+      + checksum_sha1          = (known after apply)
+      + checksum_sha256        = (known after apply)
+      + content_type           = (known after apply)
+      + etag                   = "a8e49ca6168a539355d516cf2a646c45"
+      + force_destroy          = false
+      + id                     = (known after apply)
+      + key                    = "scripts/contracts/consumer_contract.json"
+      + kms_key_id             = (known after apply)
+      + region                 = "sa-east-1"
+      + server_side_encryption = (known after apply)
+      + source                 = "./../../../src/erl/contracts/consumer_contract.json"
+      + storage_class          = (known after apply)
+      + tags_all               = {
+          + "Environment" = "dev"
+          + "ManagedBy"   = "terraform"
+          + "Project"     = "enterprise-risk-liquidity"
+          + "Purpose"     = "case01-validation-lab"
+          + "Repository"  = "github.com/Anderson-adm/enterprise-risk-liquidity"
+        }
+      + version_id             = (known after apply)
+    }
+
+  # aws_s3_object.glue_script["db_ingest.py"] will be created
+  + resource "aws_s3_object" "glue_script" {
+      + acl                    = (known after apply)
+      + arn                    = (known after apply)
+      + bucket                 = (known after apply)
+      + bucket_key_enabled     = (known after apply)
+      + checksum_crc32         = (known after apply)
+      + checksum_crc32c        = (known after apply)
+      + checksum_crc64nvme     = (known after apply)
+      + checksum_sha1          = (known after apply)
+      + checksum_sha256        = (known after apply)
+      + content_type           = (known after apply)
+      + etag                   = "7dd858b38539fe2c9ad0421dfe03e277"
+      + force_destroy          = false
+      + id                     = (known after apply)
+      + key                    = "scripts/glue/db_ingest.py"
+      + kms_key_id             = (known after apply)
+      + region                 = "sa-east-1"
+      + server_side_encryption = (known after apply)
+      + source                 = "./../../../glue/jobs/db_ingest.py"
+      + storage_class          = (known after apply)
+      + tags_all               = {
+          + "Environment" = "dev"
+          + "ManagedBy"   = "terraform"
+          + "Project"     = "enterprise-risk-liquidity"
+          + "Purpose"     = "case01-validation-lab"
+          + "Repository"  = "github.com/Anderson-adm/enterprise-risk-liquidity"
+        }
+      + version_id             = (known after apply)
+    }
+
+  # aws_s3_object.glue_script["gold_load.py"] will be created
+  + resource "aws_s3_object" "glue_script" {
+      + acl                    = (known after apply)
+      + arn                    = (known after apply)
+      + bucket                 = (known after apply)
+      + bucket_key_enabled     = (known after apply)
+      + checksum_crc32         = (known after apply)
+      + checksum_crc32c        = (known after apply)
+      + checksum_crc64nvme     = (known after apply)
+      + checksum_sha1          = (known after apply)
+      + checksum_sha256        = (known after apply)
+      + content_type           = (known after apply)
+      + etag                   = "1c36c2e16781ca611ce1511c328933e6"
+      + force_destroy          = false
+      + id                     = (known after apply)
+      + key                    = "scripts/glue/gold_load.py"
+      + kms_key_id             = (known after apply)
+      + region                 = "sa-east-1"
+      + server_side_encryption = (known after apply)
+      + source                 = "./../../../glue/jobs/gold_load.py"
+      + storage_class          = (known after apply)
+      + tags_all               = {
+          + "Environment" = "dev"
+          + "ManagedBy"   = "terraform"
+          + "Project"     = "enterprise-risk-liquidity"
+          + "Purpose"     = "case01-validation-lab"
+          + "Repository"  = "github.com/Anderson-adm/enterprise-risk-liquidity"
+        }
+      + version_id             = (known after apply)
+    }
+
+  # aws_sns_topic.alerts will be created
+  + resource "aws_sns_topic" "alerts" {
+      + arn                         = (known after apply)
+      + beginning_archive_time      = (known after apply)
+      + content_based_deduplication = false
+      + fifo_throughput_scope       = (known after apply)
+      + fifo_topic                  = false
+      + id                          = (known after apply)
+      + maximum_message_size        = (known after apply)
+      + name                        = "erl-dev-alerts"
+      + name_prefix                 = (known after apply)
+      + owner                       = (known after apply)
+      + policy                      = (known after apply)
+      + region                      = "sa-east-1"
+      + signature_version           = (known after apply)
+      + tags_all                    = {
+          + "Environment" = "dev"
+          + "ManagedBy"   = "terraform"
+          + "Project"     = "enterprise-risk-liquidity"
+          + "Purpose"     = "case01-validation-lab"
+          + "Repository"  = "github.com/Anderson-adm/enterprise-risk-liquidity"
+        }
+      + tracing_config              = (known after apply)
+    }
+
+  # aws_sns_topic_policy.alerts will be created
+  + resource "aws_sns_topic_policy" "alerts" {
+      + arn    = (known after apply)
+      + id     = (known after apply)
+      + owner  = (known after apply)
+      + policy = (known after apply)
+      + region = "sa-east-1"
+    }
+
+  # aws_sns_topic_subscription.email[0] will be created
+  + resource "aws_sns_topic_subscription" "email" {
+      + arn                             = (known after apply)
+      + confirmation_timeout_in_minutes = 1
+      + confirmation_was_authenticated  = (known after apply)
+      + endpoint                        = "<private-alert-email>"
+      + endpoint_auto_confirms          = false
+      + filter_policy_scope             = (known after apply)
+      + id                              = (known after apply)
+      + owner_id                        = (known after apply)
+      + pending_confirmation            = (known after apply)
+      + protocol                        = "email"
+      + raw_message_delivery            = false
+      + region                          = "sa-east-1"
+      + topic_arn                       = (known after apply)
+    }
+
+  # module.athena_results_bucket.aws_s3_bucket.this will be created
+  + resource "aws_s3_bucket" "this" {
+      + acceleration_status         = (known after apply)
+      + acl                         = (known after apply)
+      + arn                         = (known after apply)
+      + bucket                      = "erl-dev-athena-results-********8330"
+      + bucket_domain_name          = (known after apply)
+      + bucket_namespace            = (known after apply)
+      + bucket_prefix               = (known after apply)
+      + bucket_region               = (known after apply)
+      + bucket_regional_domain_name = (known after apply)
+      + force_destroy               = false
+      + hosted_zone_id              = (known after apply)
+      + id                          = (known after apply)
+      + object_lock_enabled         = (known after apply)
+      + policy                      = (known after apply)
+      + region                      = "sa-east-1"
+      + request_payer               = (known after apply)
+      + tags_all                    = {
+          + "Environment" = "dev"
+          + "ManagedBy"   = "terraform"
+          + "Project"     = "enterprise-risk-liquidity"
+          + "Purpose"     = "case01-validation-lab"
+          + "Repository"  = "github.com/Anderson-adm/enterprise-risk-liquidity"
+        }
+      + website_domain              = (known after apply)
+      + website_endpoint            = (known after apply)
+
+      + cors_rule (known after apply)
+
+      + grant (known after apply)
+
+      + lifecycle_rule (known after apply)
+
+      + logging (known after apply)
+
+      + object_lock_configuration (known after apply)
+
+      + replication_configuration (known after apply)
+
+      + server_side_encryption_configuration (known after apply)
+
+      + versioning (known after apply)
+
+      + website (known after apply)
+    }
+
+  # module.athena_results_bucket.aws_s3_bucket_lifecycle_configuration.this will be created
+  + resource "aws_s3_bucket_lifecycle_configuration" "this" {
+      + bucket                                 = (known after apply)
+      + expected_bucket_owner                  = (known after apply)
+      + id                                     = (known after apply)
+      + region                                 = "sa-east-1"
+      + transition_default_minimum_object_size = "all_storage_classes_128K"
+
+      + rule {
+          + id     = "noncurrent-versions"
+          + status = "Enabled"
+            # (1 unchanged attribute hidden)
+
+          + abort_incomplete_multipart_upload {
+              + days_after_initiation = 1
+            }
+
+          + filter {
+                # (1 unchanged attribute hidden)
+            }
+
+          + noncurrent_version_expiration {
+              + noncurrent_days = 1
+            }
+        }
+      + rule {
+          + id     = "expire-athena"
+          + status = "Enabled"
+            # (1 unchanged attribute hidden)
+
+          + expiration {
+              + days                         = 7
+              + expired_object_delete_marker = false
+            }
+
+          + filter {
+              + prefix = "athena/"
+            }
+        }
+    }
+
+  # module.athena_results_bucket.aws_s3_bucket_ownership_controls.this will be created
+  + resource "aws_s3_bucket_ownership_controls" "this" {
+      + bucket = (known after apply)
+      + id     = (known after apply)
+      + region = "sa-east-1"
+
+      + rule {
+          + object_ownership = "BucketOwnerEnforced"
+        }
+    }
+
+  # module.athena_results_bucket.aws_s3_bucket_policy.this will be created
+  + resource "aws_s3_bucket_policy" "this" {
+      + bucket = (known after apply)
+      + id     = (known after apply)
+      + policy = (known after apply)
+      + region = "sa-east-1"
+    }
+
+  # module.athena_results_bucket.aws_s3_bucket_public_access_block.this will be created
+  + resource "aws_s3_bucket_public_access_block" "this" {
+      + block_public_acls       = true
+      + block_public_policy     = true
+      + bucket                  = (known after apply)
+      + id                      = (known after apply)
+      + ignore_public_acls      = true
+      + region                  = "sa-east-1"
+      + restrict_public_buckets = true
+    }
+
+  # module.athena_results_bucket.aws_s3_bucket_server_side_encryption_configuration.this will be created
+  + resource "aws_s3_bucket_server_side_encryption_configuration" "this" {
+      + bucket = (known after apply)
+      + id     = (known after apply)
+      + region = "sa-east-1"
+
+      + rule {
+          + blocked_encryption_types = (known after apply)
+          + bucket_key_enabled       = (known after apply)
+
+          + apply_server_side_encryption_by_default {
+              + kms_master_key_id = (known after apply)
+              + sse_algorithm     = "AES256"
+            }
+        }
+    }
+
+  # module.athena_results_bucket.aws_s3_bucket_versioning.this will be created
+  + resource "aws_s3_bucket_versioning" "this" {
+      + bucket = (known after apply)
+      + id     = (known after apply)
+      + region = "sa-east-1"
+
+      + versioning_configuration {
+          + mfa_delete = (known after apply)
+          + status     = "Enabled"
+        }
+    }
+
+  # module.data_bucket.aws_s3_bucket.this will be created
+  + resource "aws_s3_bucket" "this" {
+      + acceleration_status         = (known after apply)
+      + acl                         = (known after apply)
+      + arn                         = (known after apply)
+      + bucket                      = "erl-dev-data-********8330"
+      + bucket_domain_name          = (known after apply)
+      + bucket_namespace            = (known after apply)
+      + bucket_prefix               = (known after apply)
+      + bucket_region               = (known after apply)
+      + bucket_regional_domain_name = (known after apply)
+      + force_destroy               = false
+      + hosted_zone_id              = (known after apply)
+      + id                          = (known after apply)
+      + object_lock_enabled         = (known after apply)
+      + policy                      = (known after apply)
+      + region                      = "sa-east-1"
+      + request_payer               = (known after apply)
+      + tags_all                    = {
+          + "Environment" = "dev"
+          + "ManagedBy"   = "terraform"
+          + "Project"     = "enterprise-risk-liquidity"
+          + "Purpose"     = "case01-validation-lab"
+          + "Repository"  = "github.com/Anderson-adm/enterprise-risk-liquidity"
+        }
+      + website_domain              = (known after apply)
+      + website_endpoint            = (known after apply)
+
+      + cors_rule (known after apply)
+
+      + grant (known after apply)
+
+      + lifecycle_rule (known after apply)
+
+      + logging (known after apply)
+
+      + object_lock_configuration (known after apply)
+
+      + replication_configuration (known after apply)
+
+      + server_side_encryption_configuration (known after apply)
+
+      + versioning (known after apply)
+
+      + website (known after apply)
+    }
+
+  # module.data_bucket.aws_s3_bucket_lifecycle_configuration.this will be created
+  + resource "aws_s3_bucket_lifecycle_configuration" "this" {
+      + bucket                                 = (known after apply)
+      + expected_bucket_owner                  = (known after apply)
+      + id                                     = (known after apply)
+      + region                                 = "sa-east-1"
+      + transition_default_minimum_object_size = "all_storage_classes_128K"
+
+      + rule {
+          + id     = "noncurrent-versions"
+          + status = "Enabled"
+            # (1 unchanged attribute hidden)
+
+          + abort_incomplete_multipart_upload {
+              + days_after_initiation = 1
+            }
+
+          + filter {
+                # (1 unchanged attribute hidden)
+            }
+
+          + noncurrent_version_expiration {
+              + noncurrent_days = 7
+            }
+        }
+      + rule {
+          + id     = "expire-landing"
+          + status = "Enabled"
+            # (1 unchanged attribute hidden)
+
+          + expiration {
+              + days                         = 30
+              + expired_object_delete_marker = false
+            }
+
+          + filter {
+              + prefix = "landing/"
+            }
+        }
+      + rule {
+          + id     = "expire-tmp"
+          + status = "Enabled"
+            # (1 unchanged attribute hidden)
+
+          + expiration {
+              + days                         = 1
+              + expired_object_delete_marker = false
+            }
+
+          + filter {
+              + prefix = "tmp/"
+            }
+        }
+    }
+
+  # module.data_bucket.aws_s3_bucket_ownership_controls.this will be created
+  + resource "aws_s3_bucket_ownership_controls" "this" {
+      + bucket = (known after apply)
+      + id     = (known after apply)
+      + region = "sa-east-1"
+
+      + rule {
+          + object_ownership = "BucketOwnerEnforced"
+        }
+    }
+
+  # module.data_bucket.aws_s3_bucket_policy.this will be created
+  + resource "aws_s3_bucket_policy" "this" {
+      + bucket = (known after apply)
+      + id     = (known after apply)
+      + policy = (known after apply)
+      + region = "sa-east-1"
+    }
+
+  # module.data_bucket.aws_s3_bucket_public_access_block.this will be created
+  + resource "aws_s3_bucket_public_access_block" "this" {
+      + block_public_acls       = true
+      + block_public_policy     = true
+      + bucket                  = (known after apply)
+      + id                      = (known after apply)
+      + ignore_public_acls      = true
+      + region                  = "sa-east-1"
+      + restrict_public_buckets = true
+    }
+
+  # module.data_bucket.aws_s3_bucket_server_side_encryption_configuration.this will be created
+  + resource "aws_s3_bucket_server_side_encryption_configuration" "this" {
+      + bucket = (known after apply)
+      + id     = (known after apply)
+      + region = "sa-east-1"
+
+      + rule {
+          + blocked_encryption_types = (known after apply)
+          + bucket_key_enabled       = (known after apply)
+
+          + apply_server_side_encryption_by_default {
+              + kms_master_key_id = (known after apply)
+              + sse_algorithm     = "AES256"
+            }
+        }
+    }
+
+  # module.data_bucket.aws_s3_bucket_versioning.this will be created
+  + resource "aws_s3_bucket_versioning" "this" {
+      + bucket = (known after apply)
+      + id     = (known after apply)
+      + region = "sa-east-1"
+
+      + versioning_configuration {
+          + mfa_delete = (known after apply)
+          + status     = "Enabled"
+        }
+    }
+
+Plan: 69 to add, 0 to change, 0 to destroy.
+
+Changes to Outputs:
+  + alerts_topic_arn  = (known after apply)
+  + athena_results_s3 = (known after apply)
+  + athena_workgroup  = "erl-dev"
+  + data_bucket       = (known after apply)
+  + glue_databases    = {
+      + bronze = "erl_dev_bronze"
+      + gold   = "erl_dev_gold"
+      + silver = "erl_dev_silver"
+    }
+  + glue_jobs         = {
+      + db-gb     = "erl-dev-db-gb"
+      + db-tb     = "erl-dev-db-tb"
+      + gold-load = "erl-dev-gold-load"
+    }
+  + lakehouse_s3      = (known after apply)
+  + lambda_functions  = {
+      + external_xml = "erl-dev-ingest-external-xml"
+      + internal_xml = "erl-dev-ingest-internal-xml"
+      + market_data  = "erl-dev-ingest-market-data"
+    }
+  + runner_role_arn   = (known after apply)

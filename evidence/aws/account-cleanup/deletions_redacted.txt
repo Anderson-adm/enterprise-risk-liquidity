@@ -1,0 +1,6 @@
+Pre-existing resources removed from data-dev:
+4 S3 buckets; all 27 object versions/delete markers
+1 Lambda function
+1 CloudWatch log group
+1 application IAM role and its associated permissions
+No running workloads were started.

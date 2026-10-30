@@ -1,0 +1,102 @@
+[
+  {
+    "key": "landing/db/exposure_compliance/concentration_limit/reference_date=2026-10-26/20261030T000957Z-93958f.json",
+    "bytes": 684
+  },
+  {
+    "key": "landing/db/exposure_compliance/concentration_limit/reference_date=2026-10-26/20261030T000957Z-93958f.parquet",
+    "bytes": 2780
+  },
+  {
+    "key": "landing/db/exposure_compliance/instrument_registry/reference_date=2026-10-26/20261030T000957Z-93958f.json",
+    "bytes": 707
+  },
+  {
+    "key": "landing/db/exposure_compliance/instrument_registry/reference_date=2026-10-26/20261030T000957Z-93958f.parquet",
+    "bytes": 3917
+  },
+  {
+    "key": "landing/db/exposure_compliance/stock_position/reference_date=2026-10-26/20261030T000957Z-93958f.json",
+    "bytes": 694
+  },
+  {
+    "key": "landing/db/exposure_compliance/stock_position/reference_date=2026-10-26/20261030T000957Z-93958f.parquet",
+    "bytes": 4520
+  },
+  {
+    "key": "landing/db/fund_ops/fund/reference_date=2026-10-26/20261030T000957Z-93958f.json",
+    "bytes": 611
+  },
+  {
+    "key": "landing/db/fund_ops/fund/reference_date=2026-10-26/20261030T000957Z-93958f.parquet",
+    "bytes": 3079
+  },
+  {
+    "key": "landing/db/fund_ops/portfolio/reference_date=2026-10-26/20261030T000957Z-93958f.json",
+    "bytes": 643
+  },
+  {
+    "key": "landing/db/fund_ops/portfolio/reference_date=2026-10-26/20261030T000957Z-93958f.parquet",
+    "bytes": 3288
+  },
+  {
+    "key": "landing/db/fund_ops/source_identity_map/reference_date=2026-10-26/20261030T000957Z-93958f.json",
+    "bytes": 686
+  },
+  {
+    "key": "landing/db/fund_ops/source_identity_map/reference_date=2026-10-26/20261030T000957Z-93958f.parquet",
+    "bytes": 4084
+  },
+  {
+    "key": "landing/db/legacy_finance/cash_balance/reference_date=2026-10-26/20261030T000957Z-93958f.json",
+    "bytes": 636
+  },
+  {
+    "key": "landing/db/legacy_finance/cash_balance/reference_date=2026-10-26/20261030T000957Z-93958f.parquet",
+    "bytes": 2561
+  },
+  {
+    "key": "landing/db/legacy_finance/pending_redemption/reference_date=2026-10-26/20261030T000957Z-93958f.json",
+    "bytes": 714
+  },
+  {
+    "key": "landing/db/legacy_finance/pending_redemption/reference_date=2026-10-26/20261030T000957Z-93958f.parquet",
+    "bytes": 2859
+  },
+  {
+    "key": "landing/db/portfolio_risk/processed_position/reference_date=2026-10-26/20261030T000957Z-93958f.json",
+    "bytes": 774
+  },
+  {
+    "key": "landing/db/portfolio_risk/processed_position/reference_date=2026-10-26/20261030T000957Z-93958f.parquet",
+    "bytes": 5225
+  },
+  {
+    "key": "landing/db/portfolio_risk/processing_batch/reference_date=2026-10-26/20261030T000957Z-93958f.json",
+    "bytes": 674
+  },
+  {
+    "key": "landing/db/portfolio_risk/processing_batch/reference_date=2026-10-26/20261030T000957Z-93958f.parquet",
+    "bytes": 2596
+  },
+  {
+    "key": "landing/files/external_xml/delivery_date=2026-10-26/20261030T000957Z-93958f/transfer_in_ADM77_EXT77-0001_20261026.xml",
+    "bytes": 573
+  },
+  {
+    "key": "landing/files/external_xml/delivery_date=2026-10-26/20261030T000957Z-93958f/transfer_in_ADM77_EXT77-0002_20261026.xml",
+    "bytes": 414
+  },
+  {
+    "key": "landing/files/internal_xml/delivery_date=2026-10-26/20261030T000957Z-93958f/statement_PRT-0006_20261026.xml",
+    "bytes": 887
+  },
+  {
+    "key": "landing/files/market_data/delivery_date=2026-10-26/20261030T000957Z-93958f/market_data_20261026.csv",
+    "bytes": 904
+  },
+  {
+    "key": "bronze/raw/external_xml/bronze_reference_date=2026-10-26/20261030T000957Z-93958f/transfer_in_ADM77_EXT77-0001_20261026.xml",
+    "bytes": 573
+  }
+]

@@ -1,0 +1,3 @@
+Terraform has been successfully initialized!
+Success! The configuration is valid.
+Plan: 69 to add, 0 to change, 0 to destroy.

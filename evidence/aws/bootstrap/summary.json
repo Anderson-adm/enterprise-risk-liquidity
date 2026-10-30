@@ -1,0 +1,98 @@
+{
+  "started_at_utc": "2026-10-29T21:04:48.026822+00:00",
+  "completed_at_utc": "2026-10-29T21:06:26.085304+00:00",
+  "scope": "saved bootstrap plan only",
+  "account": "********8330",
+  "profile": "data-dev",
+  "credential_method": "sso",
+  "region": "sa-east-1",
+  "identity_matches_pinned_expected_account": true,
+  "plan_sha256": "abae7580f58536ca813c5575298655bf39a374ef2ec3c89c3520853a888162c9",
+  "apply": {
+    "exit_code": 0,
+    "added": 7,
+    "changed": 0,
+    "destroyed": 0,
+    "new_plan_generated": false
+  },
+  "verified_resource_addresses": [
+    "aws_s3_bucket.state",
+    "aws_s3_bucket_lifecycle_configuration.state",
+    "aws_s3_bucket_ownership_controls.state",
+    "aws_s3_bucket_policy.state",
+    "aws_s3_bucket_public_access_block.state",
+    "aws_s3_bucket_server_side_encryption_configuration.state",
+    "aws_s3_bucket_versioning.state"
+  ],
+  "bucket": {
+    "name": "erl-tfstate-********8330",
+    "region": "sa-east-1",
+    "expected_owner_confirmed": true,
+    "public_access_block": {
+      "BlockPublicAcls": true,
+      "IgnorePublicAcls": true,
+      "BlockPublicPolicy": true,
+      "RestrictPublicBuckets": true
+    },
+    "public_policy": false,
+    "versioning": "Enabled",
+    "encryption": "AES256 (SSE-S3)",
+    "ownership": "BucketOwnerEnforced",
+    "tls_only_policy_confirmed": true,
+    "tags_confirmed": true,
+    "empty_including_versions_and_delete_markers": true
+  },
+  "lifecycle": {
+    "current_object_expiration": false,
+    "current_state_and_live_lock_expiration": false,
+    "noncurrent_versions_retained_days": 90,
+    "abort_incomplete_multipart_upload_days": 1
+  },
+  "state_preservation": {
+    "state_path": "infra/bootstrap/terraform.tfstate",
+    "backup_path": "data/aws-preflight-2026-10-29/bootstrap.initial.tfstate",
+    "sha256": "c471d32009c19688944261fb852fd03e23cf7f40dcc5bf394e69a1ee707d19b7",
+    "backed_up_at_utc": "2026-10-29T21:06:23.334102+00:00",
+    "git_ignored": true,
+    "published": false,
+    "remote_copy_created": false,
+    "windows_file_acls": [
+      {
+        "purpose": "canonical-local-state",
+        "unexpected_allow_rules": 0,
+        "access_rules": 3
+      },
+      {
+        "purpose": "private-backup",
+        "unexpected_allow_rules": 0,
+        "access_rules": 3
+      }
+    ],
+    "hashes_match": true,
+    "local_verification_at_utc": "2026-10-29T21:07:46.719242+00:00"
+  },
+  "cost": {
+    "billing_api_queried": false,
+    "measured_cost_usd": null,
+    "regional_s3_standard_usd_per_gb_month": "0.0405",
+    "storage_objects_present": 0,
+    "possible_charges": "S3 configuration/read requests according to billing; no compute, customer-managed KMS key or paid pipeline execution."
+  },
+  "restrictions_observed": {
+    "dev_environment_provisioned": false,
+    "glue_jobs_started": 0,
+    "lambda_invocations": 0,
+    "athena_queries_started": 0,
+    "budget_changes": false,
+    "destroy_performed": false,
+    "global_aws_configuration_modified": false
+  },
+  "residual_risks": [
+    "Bootstrap state and backup are local on the same physical disk; no independent off-device backup created.",
+    "Noncurrent object versions expire after 90 days; this is a recovery window, not indefinite retention.",
+    "SSE-S3 with no cross-region replication or object-access auditing remains the documented synthetic-lab exception.",
+    "Dev deployment and pipeline behaviour remain unvalidated on AWS."
+  ],
+  "next_step": "Separate authorisation to prepare dev backend/init/plan; then review its plan and budget creation before any dev apply. First functional date remains 2026-10-26.",
+  "source_commit": "f1e9fa5b20b8553372511e0847ef783e10e788e6"
+}

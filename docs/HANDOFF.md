@@ -1,6 +1,6 @@
 # HANDOFF
 
-_Last update: 2026-10-29 by Codex, review closure and AWS preparation. Review fixes are in
+_Last update: 2026-10-30 (America/Fortaleza) by Codex, documentation/evidence publication and AI handoff prompt. Review fixes are in
 `5fe19db`; documentation and review evidence accompany publication to `main`, authorised by
 the owner. Current remote validation: [GitHub Actions](https://github.com/Anderson-adm/enterprise-risk-liquidity/actions/workflows/ci.yml).
 The review baseline was `13f9820`; `evidence/review/verification.json` preserves that tested
@@ -8,13 +8,54 @@ snapshot, before the publication-only documentation updates._
 
 ## State
 
+**AWS Case 01 is fully decommissioned.** At the owner's explicit request, Terraform removed
+all **69 dev + 7 bootstrap resources**, including all three S3 buckets, object versions,
+CloudWatch logs/alarms and the budget. Direct reads verified all 76 resources absent, no
+project-tagged resources and no extra project log groups. States, object/state history and
+execution evidence are preserved privately/local; no secret/state/plan was committed.
+The bootstrap `prevent_destroy` source guard was temporarily disabled for this expressly
+authorised removal and restored afterwards. The owner then explicitly expanded deletion to
+the account's pre-existing projects: four more S3 buckets and all 27 versions/delete markers,
+one Lambda, its log group and application IAM role were removed. A 17-enabled-region/global
+inventory found no further billable resources in the checked services, active Marketplace
+agreements, Savings Plans or reserved-service commitments. S3 buckets, Lambda functions,
+logs, alarms and tagged resources are now absent across the checked regions.
+AWS-managed `alias/aws/lambda` (not customer-deletable, no key-storage charge), seven free
+access/service IAM roles and free default service metadata remain. Support plan/invoice were
+not independently audited; disabled regions were not enabled. No zero-invoice claim is made.
+Local repositories, databases/volumes and other AWS accounts were untouched.
+No further AWS processing or reprovisioning is authorised.
+The 2026-10-30 repository update changes documentation/evidence only; it does not fix the
+codec/generator defects or make a new AWS call. A copyable discussion prompt is in
+[PROJECT_CONTEXT_PROMPT.md](PROJECT_CONTEXT_PROMPT.md).
+Evidence: [full teardown verification](../evidence/aws/teardown/verification.json).
+Expanded account scope: [account cleanup](../evidence/aws/account-cleanup/verification.json).
+
+The following provisioning and failed-execution details are historical; those AWS resources
+no longer exist. Local code and evidence remain available for offline work.
+
 Milestones 1–3 are implemented and validated locally, now also on **real PostgreSQL 17 and SQL
-Server 2022 containers**. Milestone 4 (AWS) has **not** started: no Terraform apply/destroy, no AWS
-resource, no AWS call was made or is authorised.
+Server 2022 containers**. Milestone 4 has completed its authorised **AWS preflight and
+bootstrap apply** (7 creates) and the separately authorised **dev apply** (69 creates,
+0 changes, 0 destroys). All 69 dev resources were verified through AWS reads. The first
+authorised functional attempt for **2026-10-26 failed during ingestion**: one external-XML
+Lambda raised `ArrowNotImplementedError: Support for codec 'zstd' not built`.
+The run stopped without retry; no Glue job, Athena query, Gold or SQL Server publication ran.
+Run: `20261030T000957Z-93958f` (run-id timestamp is UTC; reference date remains 2026-10-26).
+Account `********8330` matched the secure expected-account configuration through SSO; region
+`sa-east-1`. Bootstrap/dev states were separate and have now been archived locally after teardown.
+SNS e-mail is **Confirmed**. The real Lambda error triggered its CloudWatch alarm and an SNS
+action with `Succeeded` status; receipt by the human recipient was not independently verified.
+Evidence: [bootstrap verification](../evidence/aws/bootstrap/summary.json),
+[dev provisioning](../evidence/aws/dev-apply/verification.json),
+[first functional attempt](../evidence/aws/functional/2026-10-26/summary.json),
+[dev plan](../evidence/aws/dev-plan/plan_summary.json),
+[preflight summary](../evidence/aws/preflight/summary.json),
+[redacted plan](../evidence/aws/preflight/bootstrap_plan_redacted.txt).
 
 Independent review conclusion: **SIM COM RESSALVAS** for starting a controlled, explicitly
-authorised Milestone 4 validation. The repaired implementation passes local checks; AWS
-execution remains unverified. Full findings, before/after regressions and operational limits:
+authorised Milestone 4 validation. Local checks pass, but the complete AWS pipeline remains
+unvalidated after the Lambda codec failure. Full findings and operational limits:
 [INDEPENDENT_REVIEW.md](INDEPENDENT_REVIEW.md), [../evidence/review/](../evidence/review/).
 Final Python results: 72 fast tests + 10 dbt end-to-end tests (82 local), and 24 real-database
 integration tests. The suite now collects 106 cases; 27 cases were added during the review.
@@ -26,10 +67,11 @@ integration tests. The suite now collects 106 cases; 27 cases were added during 
 | dbt Silver/Gold (DuckDB), quality gate, rejected records | validated locally |
 | Publication package + transactional/idempotent publisher | validated on a SQL Server 2022 container (incl. 4 concurrent publishers) and on SQLite |
 | Airflow DAG (local 3.3.2) | independently validated on real PostgreSQL + SQL Server: success, quality failure, blocked load/publish, failure alert and preserved consumer; isolated `review_*` databases and SQLite metadata under `/tmp` |
-| Lambda handlers + package | tested with moto; not run on AWS |
+| Lambda handlers + package | external XML invoked once on AWS and failed on missing Zstandard codec in managed layer; other two functions not invoked; no retry |
 | Glue jobs (db_ingest GB/TB, gold_load) | written; **not executed** |
-| Terraform bootstrap + dev + module | fmt/validate/TFLint pass, 13 mocked tests pass, Checkov 148 passed / 0 failed / 36 skipped; **never applied** |
-| CI (GitHub Actions) | fixes and evidence published to main; closing response records the confirmed commit/run and the three job results |
+| Terraform bootstrap | applied/verified, then all 7 resources destroyed under full-teardown authorisation; private state history preserved |
+| Terraform dev + module | applied/verified, then all 69 resources destroyed; private state/object archives preserved |
+| CI (GitHub Actions) | `f1e9fa5b20b8553372511e0847ef783e10e788e6`, run [40939982435](https://github.com/Anderson-adm/enterprise-risk-liquidity/actions/runs/40939982435): python, integration and terraform successful |
 
 ## Independent review corrections (Codex, 2026-10-29)
 
@@ -152,6 +194,17 @@ publications for one date.
 
 ## Known issues / limitations
 
+* **AWS ingestion blocked:** the managed `AWSSDKPandas-Python312:32` layer's PyArrow 24.0.0
+  build cannot write the Zstandard codec required by `src/erl/ingestion/bronze.py:237`.
+  CloudWatch request id: `7531cd78-178c-4336-890a-d8094ea13e3e`; duration 8,623.34 ms,
+  billed 9,390 ms, max memory 220/512 MiB. Local PyArrow 26.0.0 supports Zstandard.
+  All three functions share this writer/layer. A compatible release, new deployment plan and
+  explicit authorisation are needed before another paid attempt. No code/deployment fix was made.
+* `erl generate --dates <one-date>` aliases its D2 fixtures onto D1. This run instead loaded
+  only the canonical D1 slice into five **new** `aws1_*` databases, excluding two deliberate
+  unmapped fixture rows: four valid files, no other processing date or failure scenario.
+  Existing databases were not recreated. The same sources produced a passed local reference:
+  eight rows per Gold product, a passed gate and zero rejects.
 * Athena/Iceberg execution is unverified; offline Athena parse passes, but Glue Spark execution,
   Ion manifest reads, dependency installation, IAM and actual alert delivery still need AWS evidence.
   Athena decimal division operands now receive sufficient scale before division; this change is
@@ -161,8 +214,8 @@ publications for one date.
 * Readers of `rpt.*` on SQL Server use READ COMMITTED without RCSI, so a report query may wait for
   a running publication (consistent, but blocking). Enabling `READ_COMMITTED_SNAPSHOT` on the
   consumer database would let readers see the previous version without waiting — not done.
-* AWS SSO tokens were expired at the earlier preflight; their status was not rechecked during
-  the independent review. The default profile is now refused by project runtime/provider settings.
+* SSO login and expected-account identity were confirmed during the authorised AWS preflight.
+  Sessions expire; recheck before apply. The default profile is refused by runtime/provider settings.
 * The earlier Windows GitHub CLI token was invalid; publication uses the existing Git Credential
   Manager through Windows Git, without changing credentials.
 * One pipeline at a time, including manual CLI invocations; sources must remain stable during
@@ -175,18 +228,42 @@ publications for one date.
   Integration tests passed before shutdown; volumes were preserved. No Docker/WSL configuration
   was changed; see `evidence/review/container_shutdown_diagnostics.txt`.
 
-## AWS resources
+## AWS resource history (all Case 01 resources now removed)
 
-No resources were created by this review. The earlier implementation reports no AWS resources
-created; AWS inventory and account costs were not independently queried because AWS APIs were
-not authorised. No AWS cost measurement is claimed.
+The authorised preflight found no Case 01 resources by tag or expected names. The subsequent
+authorised bootstrap created `erl-tfstate-********8330` and its six configurations;
+unrelated account resources were untouched. Public-access block, ownership, encryption,
+versioning, TLS policy and lifecycle were read back successfully. Current objects/active locks
+do not expire; noncurrent versions are retained for 90 days. Bootstrap state and a matching
+private backup are local and git-ignored, with verified restricted Windows file ACLs; both
+copies share one physical disk. The bucket held the separate dev state/lock history until the
+owner explicitly requested full teardown, including bootstrap; all versions were archived
+locally before the bucket was deleted.
+All 85 sampled IAM action simulations were allowed; dev creation succeeded, while runtime
+permissions remain unproven. Quotas fit the small serial run, but do not reserve capacity.
+Regional Pricing metadata was read; no billing/Cost Explorer query or measured-cost claim was made.
+The authorised dev apply then created exactly 69 resources, including the budget and e-mail
+subscription, with zero alterations/deletions. Direct reads verified every planned resource;
+apply emitted no errors or warnings. The subsequent authorised functional attempt invoked one
+Lambda and stopped on the codec failure; no Glue jobs or Athena processing queries ran.
+The dev backend is encrypted and uses native lock files under `case01/dev/terraform.tfstate`;
+no state migration or overwrite occurred. Historical lock versions remain after normal unlock;
+the active lock is absent. The private final plan configures the supplied alert recipient and
+narrows runner trust to the current SSO role. The applied budget is USD 5/month for the whole account,
+with 80% actual/100% forecast notifications; it is not an enforced spending limit.
+The failed run left 24 Landing objects and one raw XML Bronze object, with no accepted ingestion
+manifest. They are preserved, uncommitted; no Silver/Gold tables, snapshots or publication objects
+were created. The isolated SQL Server consumer has neither product nor publication log.
+Observed inputs imply USD 0.00007845 for Lambda and USD 0.000175 for at least 25 PUTs: a partial
+estimate excluding unmetered reads/logs/SNS/storage and existing alarms, not an invoice.
+Pipeline wall time to stop: 89.845 s. No billing API was queried.
 
 ## Next concrete step
 
-1. Obtain approval for `aws sso login --profile data-dev` and read-only account/region,
-   permission/quota and inventory checks. Local configuration passed; no SSO login or AWS API
-   was executed during preparation.
-2. Follow docs/AWS_VALIDATION.md: bootstrap saved plan → approval → bootstrap apply → lab
-   backend/plan → approval → lab apply → separately approved single-date paid validation.
-3. Preserve sanitised evidence locally before authorised teardown; retain the state bucket.
-   Preliminary first-date allowance: USD 1–3, subject to sa-east-1 pricing and actual job duration.
+1. Keep the private archives and sanitised evidence. Do not reuse consumed plans or attempt
+   to access the removed S3 backend. No further AWS action is authorised by the teardown.
+2. If the owner later resumes the case, fix the documented codec/generator issues locally first;
+   a fresh bootstrap/dev deployment and functional run need separate authorisation.
+3. The later expanded account cleanup also removed the pre-existing application/storage.
+   Retain the private archives. Historical usage can still be billed; check the billing/support
+   plan separately if an invoice-level assurance is needed. No literal empty-account claim is made.

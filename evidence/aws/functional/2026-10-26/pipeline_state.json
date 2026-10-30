@@ -1,0 +1,67 @@
+{
+  "run_id": "20261030T000957Z-93958f",
+  "steps": {
+    "validate": {
+      "status": "SUCCEEDED",
+      "elapsed_time": 9.486,
+      "aws_account": "********8330",
+      "aws_region": "sa-east-1"
+    },
+    "extract": {
+      "status": "SUCCEEDED",
+      "elapsed_time": 22.028,
+      "records_read": {
+        "fund_ops": {
+          "fund": 4,
+          "portfolio": 8,
+          "source_identity_map": 34
+        },
+        "portfolio_risk": {
+          "processing_batch": 1,
+          "processed_position": 21
+        },
+        "legacy_finance": {
+          "cash_balance": 8,
+          "pending_redemption": 2
+        },
+        "exposure_compliance": {
+          "instrument_registry": 16,
+          "stock_position": 31,
+          "concentration_limit": 1
+        }
+      }
+    },
+    "collect": {
+      "status": "SUCCEEDED",
+      "elapsed_time": 19.144,
+      "files": {
+        "market_data": [
+          "market_data_20261026.csv"
+        ],
+        "internal_xml": [
+          "statement_PRT-0006_20261026.xml"
+        ],
+        "external_xml": [
+          "transfer_in_ADM77_EXT77-0001_20261026.xml",
+          "transfer_in_ADM77_EXT77-0002_20261026.xml"
+        ]
+      }
+    },
+    "ingest": {
+      "status": "FAILED",
+      "error_type": "infrastructure",
+      "error": "InfrastructureError: Lambda erl-dev-ingest-external-xml failed for landing/files/external_xml/delivery_date=2026-10-26/20261030T000957Z-93958f/transfer_in_ADM77_EXT77-0001_20261026.xml: {'errorMessage': \"Support for codec 'zstd' not built\", 'errorType': 'ArrowNotImplementedError', 'requestId': '7531cd78-178c-4336-890a-d8094ea13e3e', 'stackTrace': ['  File \"/var/task/erl/aws/lambda_handlers.py\", line 60, in external_xml_handler\\n    return _handle(\"external_xml\", event, context)\\n', '  File \"/var/task/erl/aws/lambda_handlers.py\", line 39, in _handle\\n    manifest = files.ingest_file(\\n', '  File \"/var/task/erl/ingestion/files.py\", line 268, in ingest_file\\n    store.put(key, bronze.parquet_bytes(table))\\n', '  File \"/var/task/erl/ingestion/bronze.py\", line 237, in parquet_bytes\\n    pq.write_table(table, buf, compression=\"zstd\")\\n', '  File \"/opt/python/pyarrow/parquet/core.py\", line 2050, in write_table\\n    writer.write_table(table, row_group_size=row_group_size)\\n', '  File \"/opt/python/pyarrow/parquet/core.py\", line 1213, in write_table\\n    self.writer.write_table(table, row_group_size=row_group_size)\\n', '  File \"pyarrow/_parquet.pyx\", line 2453, in pyarrow._parquet.ParquetWriter.write_table\\n', '  File \"pyarrow/error.pxi\", line 92, in pyarrow.lib.check_status\\n']}",
+      "elapsed_time": 39.097
+    },
+    "report": {
+      "status": "SUCCEEDED",
+      "elapsed_time": 0.007,
+      "report": "<repo>/data/aws-functional-2026-10-29/aws/runs/20261030T000957Z-93958f/run_report.json"
+    }
+  },
+  "reference_date": "2026-10-26",
+  "mode": "aws",
+  "status": "FAILED",
+  "overall_elapsed_seconds": 89.845,
+  "failed_step": "ingest"
+}

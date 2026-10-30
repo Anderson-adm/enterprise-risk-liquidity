@@ -1,0 +1,16 @@
+{
+  "engine": "SQL Server",
+  "isolated_database": "aws1_consumer_reporting",
+  "rpt_tables": [],
+  "products": {
+    "liquidity_summary": {
+      "present": false,
+      "rows": 0
+    },
+    "exposure_compliance": {
+      "present": false,
+      "rows": 0
+    }
+  },
+  "publication_log": []
+}

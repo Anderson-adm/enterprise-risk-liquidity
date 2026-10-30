@@ -1,0 +1,25 @@
+aws_s3_bucket.state: Creating...
+aws_s3_bucket.state: Creation complete after 3s [id=erl-tfstate-********8330]
+aws_s3_bucket_versioning.state: Creating...
+aws_s3_bucket_server_side_encryption_configuration.state: Creating...
+aws_s3_bucket_ownership_controls.state: Creating...
+aws_s3_bucket_public_access_block.state: Creating...
+aws_s3_bucket_public_access_block.state: Creation complete after 0s [id=erl-tfstate-********8330]
+aws_s3_bucket_policy.state: Creating...
+aws_s3_bucket_ownership_controls.state: Creation complete after 0s [id=erl-tfstate-********8330]
+aws_s3_bucket_server_side_encryption_configuration.state: Creation complete after 0s [id=erl-tfstate-********8330]
+aws_s3_bucket_policy.state: Creation complete after 1s [id=erl-tfstate-********8330]
+aws_s3_bucket_versioning.state: Creation complete after 1s [id=erl-tfstate-********8330]
+aws_s3_bucket_lifecycle_configuration.state: Creating...
+aws_s3_bucket_lifecycle_configuration.state: Still creating... [00m10s elapsed]
+aws_s3_bucket_lifecycle_configuration.state: Still creating... [00m20s elapsed]
+aws_s3_bucket_lifecycle_configuration.state: Still creating... [00m30s elapsed]
+aws_s3_bucket_lifecycle_configuration.state: Still creating... [00m40s elapsed]
+aws_s3_bucket_lifecycle_configuration.state: Still creating... [00m50s elapsed]
+aws_s3_bucket_lifecycle_configuration.state: Creation complete after 57s [id=erl-tfstate-********8330]
+
+Apply complete! Resources: 7 added, 0 changed, 0 destroyed.
+
+Outputs:
+
+state_bucket = "erl-tfstate-********8330"

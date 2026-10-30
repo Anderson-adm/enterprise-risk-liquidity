@@ -1,0 +1,22 @@
+Log group: /aws/lambda/erl-dev-ingest-external-xml
+INIT_START Runtime Version: python:3.12.mainlinev2.v81	Runtime Version ARN: arn:aws:lambda:sa-east-1::runtime:c4f12692bc26771dc4c7d61f4ebed11236e838b78ffdc4596c3f0aa4ba48c75d
+START RequestId: 7531cd78-178c-4336-890a-d8094ea13e3e Version: $LATEST
+{"ts": "2026-10-30T00:11:19.952+00:00", "level": "INFO", "logger": "botocore.credentials", "event": "Found credentials in environment variables."}
+[ERROR] ArrowNotImplementedError: Support for codec 'zstd' not built
+Traceback (most recent call last):
+  File "/var/task/erl/aws/lambda_handlers.py", line 60, in external_xml_handler
+    return _handle("external_xml", event, context)
+  File "/var/task/erl/aws/lambda_handlers.py", line 39, in _handle
+    manifest = files.ingest_file(
+  File "/var/task/erl/ingestion/files.py", line 268, in ingest_file
+    store.put(key, bronze.parquet_bytes(table))
+  File "/var/task/erl/ingestion/bronze.py", line 237, in parquet_bytes
+    pq.write_table(table, buf, compression="zstd")
+  File "/opt/python/pyarrow/parquet/core.py", line 2050, in write_table
+    writer.write_table(table, row_group_size=row_group_size)
+  File "/opt/python/pyarrow/parquet/core.py", line 1213, in write_table
+    self.writer.write_table(table, row_group_size=row_group_size)
+  File "pyarrow/_parquet.pyx", line 2453, in pyarrow._parquet.ParquetWriter.write_table
+  File "pyarrow/error.pxi", line 92, in pyarrow.lib.check_status
+END RequestId: 7531cd78-178c-4336-890a-d8094ea13e3e
+REPORT RequestId: 7531cd78-178c-4336-890a-d8094ea13e3e	Duration: 8623.34 ms	Billed Duration: 9390 ms	Memory Size: 512 MB	Max Memory Used: 220 MB	Init Duration: 765.86 ms

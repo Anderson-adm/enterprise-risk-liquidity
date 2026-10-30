@@ -6,8 +6,13 @@ products and published, transactionally and idempotently, to a SQL Server report
 All data, codes, limits and rules are **synthetic**; nothing comes from any real company.
 
 > Status labels used throughout: **Validated locally** · **Validated on AWS** ·
-> **Implemented, not validated** · **Planned**. Nothing in this repository has been validated
-> on AWS yet.
+> **Implemented, not validated** · **Planned**. **AWS provisioning and teardown were validated.**
+> The first functional run failed in Lambda on a missing Zstandard codec; the complete AWS
+> pipeline is **not validated**. All Case 01 AWS resources were subsequently deleted.
+
+Current record: [handoff](docs/HANDOFF.md), [failed AWS run](evidence/aws/functional/2026-10-26/summary.json),
+[teardown](evidence/aws/teardown/verification.json), [expanded account cleanup](evidence/aws/account-cleanup/verification.json).
+Copyable project context for another AI discussion: [PROJECT_CONTEXT_PROMPT.md](docs/PROJECT_CONTEXT_PROMPT.md).
 
 ## 1. Business problem
 
@@ -62,14 +67,14 @@ flowchart LR
 | 7 sources | SQLAlchemy schemas for 4 DBs + CSV + 2 XML/XSD formats, deterministic generator | Validated locally on PostgreSQL 17 + SQL Server 2022 containers and on SQLite stand-ins |
 | Extraction | parameterised SQL, streamed in chunks, landing snapshot + manifest | Validated locally on PostgreSQL, SQL Server (incl. legacy views) and SQLite; identical content hashes across engines |
 | Bronze | run-scoped keys, conditional writes, checksums, duplicate detection, quarantine | Validated locally (filesystem) and with moto (S3 API mock) |
-| Lambdas (CSV / XML ingestion) | `erl.aws.lambda_handlers` → same code as local ingestion | Handler logic validated with moto; **AWS execution not validated** |
+| Lambdas (CSV / XML ingestion) | `erl.aws.lambda_handlers` → same code as local ingestion | moto passes; one external-XML AWS invocation **failed** on missing Zstandard codec; other two functions not invoked |
 | Glue jobs db-gb / db-tb / gold-load | PySpark (Glue 5.0) scripts in `glue/jobs` | **Implemented, not validated** (no Spark/AWS run) |
 | Silver / Gold | dbt, portable SQL, DuckDB locally; Athena + Iceberg target configured | Validated locally on DuckDB; **Athena/Iceberg not validated** |
 | Quality gate | dbt tests on write-audit-publish candidates + gate step | Validated locally |
 | Publication | staging, in-DB checks, single transaction, content-hash idempotency, publication lock, publication log | Validated locally on a SQL Server 2022 container (incl. concurrent publishers) and on SQLite |
 | Airflow | local Airflow 3.3.2, one task per step, retries, alerts, failure watcher | Validated locally on PostgreSQL + SQL Server (`airflow dags test`, success and quality-failure runs) |
-| CloudWatch / SNS | log groups, Lambda error alarms, Glue failure EventBridge rule, DAG failure → SNS | **Implemented, not validated** (locally the alert is a structured log line) |
-| Terraform | bootstrap + dev root module + 1 module | fmt/validate/TFLint/Checkov/`terraform test` (mocked) pass; **never applied** |
+| CloudWatch / SNS | log groups, Lambda error alarms, Glue failure EventBridge rule, DAG failure → SNS | Real Lambda error logs and successful alarm action to SNS observed; human receipt and other alert paths not verified |
+| Terraform | bootstrap + dev root module + 1 module | local checks pass; 7 bootstrap + 69 dev resources applied/verified, then fully destroyed at the owner's request |
 | CI | GitHub Actions (Python, dbt on DuckDB, PostgreSQL + SQL Server integration, Terraform checks), actions pinned by SHA | Green on GitHub |
 
 Why a publication package between Gold and SQL Server: AWS must not connect to a local
@@ -99,6 +104,10 @@ cp .env.example .env          # defaults: ERL_MODE=local, ERL_SOURCE_BACKEND=sql
 uv run erl generate           # 4 source databases + inbox files for 2026-10-26..28
 ```
 
+Known generator issue: passing only one date aliases the D2 demonstration fixtures onto D1.
+The controlled AWS attempt used an isolated canonical D1 slice instead; see
+[HANDOFF](docs/HANDOFF.md#known-issues--limitations). This defect remains unfixed.
+
 ## 8. Run the pipeline
 
 ```bash
@@ -117,7 +126,7 @@ Exit codes: 0 ok, 2 configuration, 3 infrastructure/source unavailable, 4 contra
 ```bash
 uv run ruff check src tests airflow glue scripts
 uv run pytest -m "not dbt and not integration"   # unit/contract/moto tests (~1 min)
-uv run pytest -m "dbt and not integration"       # 9 end-to-end scenarios with dbt (~4 min)
+uv run pytest -m "dbt and not integration"       # 10 end-to-end regression cases with dbt
 # real PostgreSQL + SQL Server (docker/compose.yaml running, .env with local passwords):
 set -a; . ./.env; set +a; ERL_IT_CONTAINERS=1 uv run pytest -m integration   # ~1.5 min
 cd infra && terraform -chdir=environments/dev test   # mocked provider, plan only
@@ -175,13 +184,24 @@ Procedure, authorisation points, evidence list and teardown: [docs/AWS_VALIDATIO
 Terraform design, ownership, security controls, Checkov exceptions and cost model:
 [docs/TERRAFORM.md](docs/TERRAFORM.md). Apply and destroy are never run by scripts.
 
+The cloud lab has been removed; the saved plans are consumed and the remote state bucket no
+longer exists. No AWS redeployment or processing is currently authorised. Future use needs
+an explicit new decision, codec/dependency correction and fresh reviewed plans.
+
 ## 14. Limitations
 
 * PostgreSQL and SQL Server run as local containers (Docker Desktop/WSL2), not as managed or
   enterprise instances; SQLite stand-ins remain available when no container runtime exists.
-* Athena/Iceberg, Glue, Lambda on AWS, CloudWatch and SNS have not been executed. dbt SQL is
-  written in the DuckDB/Trino common subset with engine differences isolated in
-  `dbt/macros/platform.sql`, but Athena compilation/execution is unverified.
+* The sole paid functional AWS attempt stopped on the first external-XML Lambda:
+  `ArrowNotImplementedError: Support for codec 'zstd' not built`. The managed
+  `AWSSDKPandas-Python312:32` layer has PyArrow 24.0.0 without the required codec;
+  local PyArrow 26.0.0 supports it. Package size/import compatibility did not establish
+  codec support. No correction or new deployment was made.
+* Glue, dbt/Athena and Iceberg were not executed on AWS; no AWS Gold product or SQL Server
+  publication resulted. The local reference passed with eight rows per Gold product.
+* Account cleanup covered 17 enabled regions and global services. Free access/service
+  identities, default metadata and an AWS-managed KMS key remain. Support plan/invoice
+  were not independently audited; no literal empty-account or zero-invoice claim is made.
 * Gold now deletes vanished keys in the same MERGE that upserts the audited snapshot. The
   removal scenario passes on DuckDB; the Athena/Iceberg execution remains unvalidated.
 * Keep one pipeline active at a time (including manual CLI runs), and keep source data stable
@@ -208,6 +228,9 @@ Kept separate per engine:
 | Test runs | [tests/pytest_default.txt](evidence/tests/pytest_default.txt) | [tests/pytest_integration_containers.txt](evidence/tests/pytest_integration_containers.txt) |
 
 Terraform checks: [evidence/terraform/checks.txt](evidence/terraform/checks.txt).
+AWS lifecycle evidence (sanitised): [evidence/aws/](evidence/aws/). This records successful
+provisioning, the failed functional attempt, real logs/metrics and complete authorised teardown;
+binary plans, states, credentials and raw inventories remain private and outside Git.
 
 Project working agreements for humans and coding agents: [AGENTS.md](AGENTS.md).
 Handoff state: [docs/HANDOFF.md](docs/HANDOFF.md).
