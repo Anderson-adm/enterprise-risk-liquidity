@@ -122,7 +122,7 @@ run "iam_policies_have_no_service_wildcards" {
   assert {
     condition = alltrue([for p in concat(
       [for r in aws_iam_role_policy.lambda : r.policy],
-      [aws_iam_role_policy.glue_db_ingest.policy, aws_iam_role_policy.glue_gold_load.policy, aws_iam_role_policy.runner.policy],
+      [aws_iam_role_policy.glue_db_ingest.policy, aws_iam_role_policy.glue_gold_export.policy, aws_iam_role_policy.runner.policy],
       ) : alltrue([for s in jsondecode(p).Statement :
         !contains(s.Action, "s3:*") && !contains(s.Action, "glue:*") && !contains(s.Action, "*") &&
         (!contains(s.Resource, "*") || (
@@ -201,6 +201,15 @@ run "rejects_too_small_athena_cutoff" {
 run "artifacts_come_from_the_dedicated_bucket" {
   command = plan
   assert {
+    condition = (
+      toset(keys(aws_glue_job.this)) == toset(["extract-liquidez", "extract-enquadramento", "export-risk-analytics"]) &&
+      aws_glue_job.this["extract-liquidez"].default_arguments["--volume_profile"] == "gb" &&
+      aws_glue_job.this["extract-enquadramento"].default_arguments["--volume_profile"] == "tb" &&
+      alltrue([for unit, job in aws_glue_job.this : job.name == "erl-dev-${unit}"])
+    )
+    error_message = "Owner-selected Glue names must preserve the existing volume profiles and explicit deployment names."
+  }
+  assert {
     condition = length(aws_s3_object.lambda_package) == 3 && alltrue([for key, f in aws_lambda_function.ingest :
       try(length(f.layers), 0) == 0 && f.handler == "handler.handler" &&
       f.s3_key == "case01/lambda/${local.file_sources[key].unit}/function.zip" &&
@@ -221,10 +230,10 @@ run "artifacts_come_from_the_dedicated_bucket" {
   }
   assert {
     condition = (
-      strcontains(aws_iam_role_policy.glue_db_ingest.policy, "/case01/glue/db-gb/*") &&
-      strcontains(aws_iam_role_policy.glue_db_ingest.policy, "/case01/glue/db-tb/*") &&
-      strcontains(aws_iam_role_policy.glue_gold_load.policy, "/case01/glue/gold-load/*") &&
-      !strcontains(aws_iam_role_policy.glue_gold_load.policy, "/case01/glue/db-gb/*")
+      strcontains(aws_iam_role_policy.glue_db_ingest.policy, "/case01/glue/extract-liquidez/*") &&
+      strcontains(aws_iam_role_policy.glue_db_ingest.policy, "/case01/glue/extract-enquadramento/*") &&
+      strcontains(aws_iam_role_policy.glue_gold_export.policy, "/case01/glue/export-risk-analytics/*") &&
+      !strcontains(aws_iam_role_policy.glue_gold_export.policy, "/case01/glue/extract-liquidez/*")
     )
     error_message = "Runtime code access must match the unit's owned artifact prefixes."
   }
@@ -241,7 +250,7 @@ run "rejects_short_artifact_recovery_window" {
 run "rejects_oversized_glue_jobs" {
   command = plan
   variables {
-    glue_workers = { db_gb = 2, db_tb = 10, gold_load = 2 }
+    glue_workers = { extract-liquidez = 2, extract-enquadramento = 10, export-risk-analytics = 2 }
   }
   expect_failures = [var.glue_workers]
 }
@@ -251,5 +260,5 @@ run "rejects_artifacts_differing_from_manifest" {
   variables {
     artifacts_dir = "tests/fixtures/corrupt-dist"
   }
-  expect_failures = [aws_s3_object.glue["db-gb/job.py"]]
+  expect_failures = [aws_s3_object.glue["extract-liquidez/job.py"]]
 }

@@ -1,4 +1,4 @@
-"""Glue 5.0 gold-load: Iceberg Gold -> committed publication package.
+"""Glue 5.0 export-risk-analytics: Iceberg Gold -> committed publication package.
 
 Own Spark implementation in spark/unit_spark.py; pinned integrity implementation in this
 unit's lib.zip. Unit-local SDK requirements. Implemented; no real Spark/Glue execution claimed.

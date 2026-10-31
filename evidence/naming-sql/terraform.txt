@@ -1,0 +1,87 @@
+Offline clean temporary copy. Local filesystem provider mirror only; no backend or credentials.
+$ terraform fmt -recursive
+$ terraform fmt -check -recursive
+$ terraform init -backend=false -input=false -lockfile=readonly
+Initializing provider plugins...
+- Reusing previous version of hashicorp/aws from the dependency lock file
+- Installing hashicorp/aws v6.71.0...
+- Installed hashicorp/aws v6.71.0 (unauthenticated)
+
+Terraform has been successfully initialized!
+
+You may now begin working with Terraform. Try running "terraform plan" to see
+any changes that are required for your infrastructure. All Terraform commands
+should now work.
+
+If you ever set or change modules or backend configuration for Terraform,
+rerun this command to reinitialize your working directory. If you forget, other
+commands will detect it and remind you to do so if necessary.
+$ terraform validate -no-color
+Success! The configuration is valid.
+
+$ terraform test -no-color
+tests/secure_bucket.tftest.hcl... in progress
+  run "secure_defaults"... pass
+  run "prefix_retention_rules"... pass
+  run "invalid_bucket_name_is_rejected"... pass
+tests/secure_bucket.tftest.hcl... tearing down
+tests/secure_bucket.tftest.hcl... pass
+
+Success! 3 passed, 0 failed.
+$ terraform init -backend=false -input=false -lockfile=readonly
+Initializing provider plugins...
+- Reusing previous version of hashicorp/aws from the dependency lock file
+- Using hashicorp/aws v6.71.0 from the shared cache directory
+
+Terraform has been successfully initialized!
+
+You may now begin working with Terraform. Try running "terraform plan" to see
+any changes that are required for your infrastructure. All Terraform commands
+should now work.
+
+If you ever set or change modules or backend configuration for Terraform,
+rerun this command to reinitialize your working directory. If you forget, other
+commands will detect it and remind you to do so if necessary.
+$ terraform validate -no-color
+Success! The configuration is valid.
+
+$ terraform init -backend=false -input=false -lockfile=readonly
+Initializing modules...
+- artifacts_bucket in ../../modules/secure_bucket
+- data_bucket in ../../modules/secure_bucket
+- athena_results_bucket in ../../modules/secure_bucket
+
+Initializing provider plugins...
+- Reusing previous version of hashicorp/aws from the dependency lock file
+- Using hashicorp/aws v6.71.0 from the shared cache directory
+
+Terraform has been successfully initialized!
+
+You may now begin working with Terraform. Try running "terraform plan" to see
+any changes that are required for your infrastructure. All Terraform commands
+should now work.
+
+If you ever set or change modules or backend configuration for Terraform,
+rerun this command to reinitialize your working directory. If you forget, other
+commands will detect it and remind you to do so if necessary.
+$ terraform validate -no-color
+Success! The configuration is valid.
+
+$ terraform test -no-color
+tests/dev.tftest.hcl... in progress
+  run "secure_and_cost_controlled_defaults"... pass
+  run "iam_policies_have_no_service_wildcards"... pass
+  run "alert_email_enables_subscription_and_budget_notifications"... pass
+  run "rejects_prod_environment"... pass
+  run "rejects_default_profile"... pass
+  run "rejects_other_regions"... pass
+  run "rejects_malformed_account_id"... pass
+  run "rejects_too_small_athena_cutoff"... pass
+  run "artifacts_come_from_the_dedicated_bucket"... pass
+  run "rejects_short_artifact_recovery_window"... pass
+  run "rejects_oversized_glue_jobs"... pass
+  run "rejects_artifacts_differing_from_manifest"... pass
+tests/dev.tftest.hcl... tearing down
+tests/dev.tftest.hcl... pass
+
+Success! 12 passed, 0 failed.

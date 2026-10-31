@@ -8,13 +8,17 @@ requirement.
 
 | # | Source (`source_system`) | Technology (local stand-in) | Entities extracted | Ingestion component (AWS design) |
 |---|---|---|---|---|
-| 1 | `fund_ops` – operational fund database | PostgreSQL db `fund_ops` | `fund`, `portfolio`, `source_identity_map` | Glue job *Volume em GB* (`db-gb`) |
-| 2 | `portfolio_risk` – portfolio risk database | PostgreSQL db `portfolio_risk` | `processed_position`, `processing_batch` | Glue job *Volume em GB* |
-| 3 | `legacy_finance` – legacy financial views | SQL Server db `legacy_finance` (views `vw_saldo_caixa`, `vw_resgate_pendente`) | `cash_balance`, `pending_redemption` | Glue job *Volume em TB* (`db-tb`) |
-| 4 | `exposure_compliance` – exposure & compliance | SQL Server db `exposure_compliance` | `instrument_registry`, `stock_position`, `concentration_limit` | Glue job *Volume em TB* (stock) / *GB* |
+| 1 | `fund_ops` – operational fund database | PostgreSQL db `fund_ops` | `fund`, `portfolio`, `source_identity_map` | `extract-liquidez` (GB profile) |
+| 2 | `portfolio_risk` – portfolio risk database | PostgreSQL db `portfolio_risk` | `processed_position`, `processing_batch` | `extract-liquidez` (GB profile) |
+| 3 | `legacy_finance` – legacy financial views | SQL Server db `legacy_finance` (views `vw_saldo_caixa`, `vw_resgate_pendente`) | `cash_balance`, `pending_redemption` | `extract-enquadramento` (TB profile) |
+| 4 | `exposure_compliance` – exposure & compliance | SQL Server db `exposure_compliance` | `instrument_registry`, `stock_position`, `concentration_limit` | `extract-enquadramento` (stock / TB) / `extract-liquidez` (registers / GB) |
 | 5 | `market_data` – daily external load | CSV `market_data_YYYYMMDD.csv` (`;`, decimal comma) | `daily_price` | Lambda *B3 diária* |
 | 6 | `internal_xml` – internal portfolio XML | XML + XSD `internal_portfolio_statement.xsd` | `portfolio_position` | Lambda *XML internos* |
 | 7 | `external_xml` – transfer-in XML | namespaced XML + XSD `transfer_in_portfolio.xsd` | `transfer_in_position` | Lambda *XML externos* |
+
+The Glue names were selected by the owner. They retain the previous GB/TB routing above and
+do not define exclusive liquidity/compliance domains; no entity mapping changed. Both ingest
+landing snapshots, while local runner SQL extracts the source databases.
 
 When no container runtime is available the four databases run on SQLite files with the same
 SQLAlchemy table definitions and the same extraction SQL (`ERL_SOURCE_BACKEND=sqlite`). This is
@@ -50,7 +54,7 @@ rejected as `NOT_SOURCE_OF_RECORD`.
 | Quarantine | `quarantine/<source>/bronze_reference_date=D/<run_id>/` | rejected file + `.rejection.json` | same writer |
 | Silver | dbt (`silver` schema / Glue db) | typed, deduplicated, identity-resolved entities + `silver_rejected_records` | dbt |
 | Gold | dbt (`gold` schema / Glue db) | `gold_liquidity_summary`, `gold_exposure_compliance` (+ audited `*_candidate`) | dbt |
-| Publication package | `publish/reference_date=D/<run_id>/` | Parquet per product + `manifest.json` (written last) | Load step / Glue `gold-load` |
+| Publication package | `publish/reference_date=D/<run_id>/` | Parquet per product + `manifest.json` (written last) | Load step / Glue `export-risk-analytics` |
 | Consumer | SQL Server `consumer_reporting` (`rpt.*`) | published products + `rpt.publication_log` | publisher |
 
 Bronze metadata columns: `meta_source_system`, `meta_entity`, `meta_run_id`,

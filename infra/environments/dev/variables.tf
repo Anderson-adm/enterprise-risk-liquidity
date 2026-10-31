@@ -103,9 +103,9 @@ variable "lambda_reserved_concurrency" {
 }
 
 variable "glue_workers" {
-  description = "Workers per Glue job run by ingestion pattern (G.1X). 2 is the minimum for Spark jobs."
+  description = "Workers per named Glue execution unit (G.1X). 2 is the minimum for Spark jobs."
   type        = map(number)
-  default     = { db_gb = 2, db_tb = 2, gold_load = 2 }
+  default     = { extract-liquidez = 2, extract-enquadramento = 2, export-risk-analytics = 2 }
 
   validation {
     condition     = alltrue([for n in values(var.glue_workers) : n >= 2 && n <= 4])

@@ -1,0 +1,35 @@
+[
+  {
+    "unit": "glue/extract-liquidez",
+    "command": [
+      "python",
+      "scripts/build/build_artifacts.py",
+      "--unit",
+      "glue/extract-liquidez"
+    ],
+    "artifacts_reproduced": 2,
+    "other_unit_files_untouched": true
+  },
+  {
+    "unit": "glue/extract-enquadramento",
+    "command": [
+      "python",
+      "scripts/build/build_artifacts.py",
+      "--unit",
+      "glue/extract-enquadramento"
+    ],
+    "artifacts_reproduced": 2,
+    "other_unit_files_untouched": true
+  },
+  {
+    "unit": "glue/export-risk-analytics",
+    "command": [
+      "python",
+      "scripts/build/build_artifacts.py",
+      "--unit",
+      "glue/export-risk-analytics"
+    ],
+    "artifacts_reproduced": 2,
+    "other_unit_files_untouched": true
+  }
+]

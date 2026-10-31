@@ -1,0 +1,56 @@
+[
+  {
+    "unit": "apps/hybrid-runner",
+    "interfaces_and_lifecycle_present": true,
+    "shared_contracts_resolve": true,
+    "volume_profile": null
+  },
+  {
+    "unit": "apps/publisher",
+    "interfaces_and_lifecycle_present": true,
+    "shared_contracts_resolve": true,
+    "volume_profile": null
+  },
+  {
+    "unit": "apps/source-generator",
+    "interfaces_and_lifecycle_present": true,
+    "shared_contracts_resolve": true,
+    "volume_profile": null
+  },
+  {
+    "unit": "glue/export-risk-analytics",
+    "interfaces_and_lifecycle_present": true,
+    "shared_contracts_resolve": true,
+    "volume_profile": null
+  },
+  {
+    "unit": "glue/extract-enquadramento",
+    "interfaces_and_lifecycle_present": true,
+    "shared_contracts_resolve": true,
+    "volume_profile": "tb"
+  },
+  {
+    "unit": "glue/extract-liquidez",
+    "interfaces_and_lifecycle_present": true,
+    "shared_contracts_resolve": true,
+    "volume_profile": "gb"
+  },
+  {
+    "unit": "lambda/external-xml",
+    "interfaces_and_lifecycle_present": true,
+    "shared_contracts_resolve": true,
+    "volume_profile": null
+  },
+  {
+    "unit": "lambda/internal-xml",
+    "interfaces_and_lifecycle_present": true,
+    "shared_contracts_resolve": true,
+    "volume_profile": null
+  },
+  {
+    "unit": "lambda/market-data",
+    "interfaces_and_lifecycle_present": true,
+    "shared_contracts_resolve": true,
+    "volume_profile": null
+  }
+]

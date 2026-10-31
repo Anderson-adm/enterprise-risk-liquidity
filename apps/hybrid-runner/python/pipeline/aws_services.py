@@ -3,9 +3,9 @@
 Sources stay local. The pipeline uploads landing objects to S3 (via ``S3Store``), then:
 
 * invokes the ingestion Lambdas (market data, internal XML, external XML) once per file;
-* starts the Glue ``db_ingest`` jobs (GB / TB patterns) for the database snapshots;
+* starts ``extract-liquidez`` / ``extract-enquadramento`` (GB / TB profiles) for database snapshots;
 * runs dbt on Athena (Iceberg Silver/Gold) — see ``pipeline.step_transform``;
-* starts the Glue ``gold_load`` job, which writes the publication package to S3;
+* starts the Glue ``export-risk-analytics`` job, which writes the publication package to S3;
 * the local publisher then loads SQL Server from that package (AWS never connects to localhost).
 
 Sessions come from ``connect.aws`` (explicit SSO/runner profile, sa-east-1 only).
@@ -36,7 +36,7 @@ LAMBDA_FOR_SOURCE = {
     "internal_xml": "ingest-internal-xml",
     "external_xml": "ingest-external-xml",
 }
-GLUE_FOR_PATTERN = {"glue_db_gb": "db-gb", "glue_db_tb": "db-tb"}
+GLUE_FOR_PATTERN = {"glue_db_gb": "extract-liquidez", "glue_db_tb": "extract-enquadramento"}
 GLUE_POLL_SECONDS = 15
 GLUE_TIMEOUT_SECONDS = 20 * 60
 
@@ -120,9 +120,9 @@ def _wait_glue(glue, job: str, job_run_id: str, run_id: str) -> None:
     raise InfrastructureError(f"Glue job {job} run {job_run_id} did not finish in {GLUE_TIMEOUT_SECONDS}s")
 
 
-def run_gold_load(settings: Settings, ref: date, run_id: str, gate: dict) -> str:
+def run_gold_export(settings: Settings, ref: date, run_id: str, gate: dict) -> str:
     glue = settings.aws_session().client("glue")
-    job = f"{settings.name_prefix}-gold-load"
+    job = f"{settings.name_prefix}-export-risk-analytics"
     run = glue.start_job_run(
         JobName=job,
         Arguments={

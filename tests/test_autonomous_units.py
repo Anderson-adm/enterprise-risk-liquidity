@@ -148,7 +148,7 @@ def test_exclusive_changes_addition_and_removal_do_not_propagate(tmp_path):
     }
     # The runner is a declared consumer of this public parser; other cloud units are independent.
     second = changed
-    for unit in ("db-gb", "db-tb", "gold-load"):
+    for unit in ("extract-liquidez", "extract-enquadramento", "export-risk-analytics"):
         for filename in ("spark/unit_spark.py", "job.py", "requirements.txt"):
             source = project / "glue" / unit / filename
             source.write_text(source.read_text() + "\n# Exclusive owner change.\n")
@@ -166,14 +166,14 @@ def test_exclusive_changes_addition_and_removal_do_not_propagate(tmp_path):
         changed_owner = hashes()
         assert {key for key in second if second[key] != changed_owner[key]} == {unit, "apps/hybrid-runner"}
         second = changed_owner
-    shutil.copytree(project / "glue/db-gb", project / "glue/additional-job")
+    shutil.copytree(project / "glue/extract-liquidez", project / "glue/additional-job")
     spec = project / "glue/additional-job/unit.json"
     data = json.loads(spec.read_text())
     data["id"] = "additional-job"
     spec.write_text(json.dumps(data))
     added = hashes()
     assert all(added[key] == second[key] for key in second)
-    for unit in ("db-gb", "db-tb", "gold-load"):
+    for unit in ("extract-liquidez", "extract-enquadramento", "export-risk-analytics"):
         shutil.rmtree(project / "glue" / unit)
         remaining = hashes()
         assert all(remaining[key] == added[key] for key in remaining)
@@ -187,7 +187,7 @@ def test_exclusive_changes_addition_and_removal_do_not_propagate(tmp_path):
             assert {n: a["sha256"] for n, a in result["artifacts"].items()} == added[key]
 
 
-@pytest.mark.parametrize("unit", ["db-gb", "db-tb", "gold-load"])
+@pytest.mark.parametrize("unit", ["extract-liquidez", "extract-enquadramento", "export-risk-analytics"])
 def test_glue_packages_do_not_include_local_or_native_python_dependencies(tmp_path, unit):
     result = build.build_unit(ROOT / "glue" / unit, tmp_path, {}, ROOT)
     assert set(result["artifacts"]) == {"job.py", "lib.zip"}
@@ -199,7 +199,7 @@ def test_glue_packages_do_not_include_local_or_native_python_dependencies(tmp_pa
         assert metadata["s3_key"] == f"case01/glue/{unit}/{metadata['sha256']}/{name}"
 
 
-@pytest.mark.parametrize("unit", ["db-gb", "db-tb"])
+@pytest.mark.parametrize("unit", ["extract-liquidez", "extract-enquadramento"])
 @pytest.mark.parametrize("outcome", ["success", "write_failure", "copy_failure", "checksum_failure"])
 def test_bronze_unit_flow_commits_only_complete_outputs(tmp_path, monkeypatch, unit, outcome):
     """Exercise each real job's control flow, stubbing only Spark processing (not a Spark test).
@@ -280,9 +280,10 @@ def test_bronze_unit_flow_commits_only_complete_outputs(tmp_path, monkeypatch, u
         ),
     )
     job = load_entrypoint(f"glue/{unit}/job.py")
+    volume_profile = json.loads((ROOT / "glue" / unit / "unit.json").read_text())["volume_profile"]
 
     def invoke():
-        return job.ingest(None, store, key + ".json", "conformance", unit.removeprefix("db-"))
+        return job.ingest(None, store, key + ".json", "conformance", volume_profile)
 
     if outcome == "success":
         accepted = invoke()

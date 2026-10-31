@@ -1,0 +1,488 @@
+[
+  {
+    "path": "apps/hybrid-runner/sql/extract/extract_query_silver_rejected_records_summary.sql",
+    "owner": "apps/hybrid-runner",
+    "executor": "pipeline.steps.rejected_summary -> DuckDB",
+    "artifact": "apps/hybrid-runner/runner.zip",
+    "archive_member": "sql/extract/extract_query_silver_rejected_records_summary.sql",
+    "sha256": "70a0585889e5ef615247568384f0a31da5b00a13b6e53a6d829e98d205439e25",
+    "unchanged_vs_baseline": true
+  },
+  {
+    "path": "apps/hybrid-runner/sql/extract/extract_query_table_concentration_limit.sql",
+    "owner": "apps/hybrid-runner",
+    "executor": "pipeline.extraction_catalog.extract_entity -> extract.landing_snapshot / extract.sql_query",
+    "artifact": "apps/hybrid-runner/runner.zip",
+    "archive_member": "sql/extract/extract_query_table_concentration_limit.sql",
+    "sha256": "d5e81b562798dba8c8ef27d2dd6e366c8eee1c1359e224ab170f9169e68e9edf",
+    "unchanged_vs_baseline": true
+  },
+  {
+    "path": "apps/hybrid-runner/sql/extract/extract_query_table_fund.sql",
+    "owner": "apps/hybrid-runner",
+    "executor": "pipeline.extraction_catalog.extract_entity -> extract.landing_snapshot / extract.sql_query",
+    "artifact": "apps/hybrid-runner/runner.zip",
+    "archive_member": "sql/extract/extract_query_table_fund.sql",
+    "sha256": "baef73c01f489b1621fc182bca88a349d1297ba9919e720cf01e5a9400515fba",
+    "unchanged_vs_baseline": true
+  },
+  {
+    "path": "apps/hybrid-runner/sql/extract/extract_query_table_instrument_registry.sql",
+    "owner": "apps/hybrid-runner",
+    "executor": "pipeline.extraction_catalog.extract_entity -> extract.landing_snapshot / extract.sql_query",
+    "artifact": "apps/hybrid-runner/runner.zip",
+    "archive_member": "sql/extract/extract_query_table_instrument_registry.sql",
+    "sha256": "e968ea63216c281c1a9330029fe46cf8010785a7b653958088b8ca69b4776182",
+    "unchanged_vs_baseline": true
+  },
+  {
+    "path": "apps/hybrid-runner/sql/extract/extract_query_table_portfolio.sql",
+    "owner": "apps/hybrid-runner",
+    "executor": "pipeline.extraction_catalog.extract_entity -> extract.landing_snapshot / extract.sql_query",
+    "artifact": "apps/hybrid-runner/runner.zip",
+    "archive_member": "sql/extract/extract_query_table_portfolio.sql",
+    "sha256": "4c876446cd64a0a0c11f7870f91b6544c75ffa439bb9bd8b8b679fa3861dcd19",
+    "unchanged_vs_baseline": true
+  },
+  {
+    "path": "apps/hybrid-runner/sql/extract/extract_query_table_processed_position.sql",
+    "owner": "apps/hybrid-runner",
+    "executor": "pipeline.extraction_catalog.extract_entity -> extract.landing_snapshot / extract.sql_query",
+    "artifact": "apps/hybrid-runner/runner.zip",
+    "archive_member": "sql/extract/extract_query_table_processed_position.sql",
+    "sha256": "d35db3d83aea816feccbf36d09f6b127955298f85b333fac8cf12c8f335f2cdb",
+    "unchanged_vs_baseline": true
+  },
+  {
+    "path": "apps/hybrid-runner/sql/extract/extract_query_table_processing_batch.sql",
+    "owner": "apps/hybrid-runner",
+    "executor": "pipeline.extraction_catalog.extract_entity -> extract.landing_snapshot / extract.sql_query",
+    "artifact": "apps/hybrid-runner/runner.zip",
+    "archive_member": "sql/extract/extract_query_table_processing_batch.sql",
+    "sha256": "18f3027f61a327ec8939920fc903c023778ace3811183bc23eb7919b411040c0",
+    "unchanged_vs_baseline": true
+  },
+  {
+    "path": "apps/hybrid-runner/sql/extract/extract_query_table_source_identity_map.sql",
+    "owner": "apps/hybrid-runner",
+    "executor": "pipeline.extraction_catalog.extract_entity -> extract.landing_snapshot / extract.sql_query",
+    "artifact": "apps/hybrid-runner/runner.zip",
+    "archive_member": "sql/extract/extract_query_table_source_identity_map.sql",
+    "sha256": "0404685b1a59db4e33413b018c24d62ef1ac06f5d7389313160d6bc2f52f5a6f",
+    "unchanged_vs_baseline": true
+  },
+  {
+    "path": "apps/hybrid-runner/sql/extract/extract_query_table_stock_position.sql",
+    "owner": "apps/hybrid-runner",
+    "executor": "pipeline.extraction_catalog.extract_entity -> extract.landing_snapshot / extract.sql_query",
+    "artifact": "apps/hybrid-runner/runner.zip",
+    "archive_member": "sql/extract/extract_query_table_stock_position.sql",
+    "sha256": "afbe5496655be843a5c296a4d2db035007ec8e3ddee145e14d31bffdfb04e9e3",
+    "unchanged_vs_baseline": true
+  },
+  {
+    "path": "apps/hybrid-runner/sql/extract/extract_query_view_resgate_pendente.sql",
+    "owner": "apps/hybrid-runner",
+    "executor": "pipeline.extraction_catalog.extract_entity -> extract.landing_snapshot / extract.sql_query",
+    "artifact": "apps/hybrid-runner/runner.zip",
+    "archive_member": "sql/extract/extract_query_view_resgate_pendente.sql",
+    "sha256": "c56134953c50c0ef600186ecb7e6c529e490bdc590c7d1cd20d8756bf6fd9801",
+    "unchanged_vs_baseline": true
+  },
+  {
+    "path": "apps/hybrid-runner/sql/extract/extract_query_view_saldo_caixa.sql",
+    "owner": "apps/hybrid-runner",
+    "executor": "pipeline.extraction_catalog.extract_entity -> extract.landing_snapshot / extract.sql_query",
+    "artifact": "apps/hybrid-runner/runner.zip",
+    "archive_member": "sql/extract/extract_query_view_saldo_caixa.sql",
+    "sha256": "c3dcdda0a07671a49d544f4bd8e9ad56298613580c6fa8c28866cbdbc966e70f",
+    "unchanged_vs_baseline": true
+  },
+  {
+    "path": "apps/hybrid-runner/sql/extract/readiness_query_table_processing_batch.sql",
+    "owner": "apps/hybrid-runner",
+    "executor": "pipeline.extraction_catalog.check_readiness -> extract.sql_query.fetch_scalar",
+    "artifact": "apps/hybrid-runner/runner.zip",
+    "archive_member": "sql/extract/readiness_query_table_processing_batch.sql",
+    "sha256": "b4d504258648d0ce25bbfeb487e64bc310547513ae6781fa08504abc624d1dd5",
+    "unchanged_vs_baseline": true
+  },
+  {
+    "path": "apps/publisher/python/load/sql/create_schema_postgresql.sql",
+    "owner": "apps/publisher",
+    "executor": "load.publisher.ensure_schema / _acquire_publication_lock",
+    "artifact": "apps/publisher/publisher.zip; also bundled by declared runner consumer",
+    "archive_member": "load/sql/create_schema_postgresql.sql",
+    "sha256": "b2e00743e366c9599544542a8bef8ccb398c8880d6d24461d68cffd209383f9e",
+    "unchanged_vs_baseline": true
+  },
+  {
+    "path": "apps/publisher/python/load/sql/create_schema_sqlserver.sql",
+    "owner": "apps/publisher",
+    "executor": "load.publisher.ensure_schema / _acquire_publication_lock",
+    "artifact": "apps/publisher/publisher.zip; also bundled by declared runner consumer",
+    "archive_member": "load/sql/create_schema_sqlserver.sql",
+    "sha256": "bc6dba865edf9b858691b1d676a3a9bdd27faa96bb7ec738436c7caf8d4f0ead",
+    "unchanged_vs_baseline": true
+  },
+  {
+    "path": "apps/publisher/python/load/sql/export_query_gold_product.sql",
+    "owner": "apps/publisher",
+    "executor": "load.package.build_from_duckdb",
+    "artifact": "apps/publisher/publisher.zip; also bundled by declared runner consumer",
+    "archive_member": "load/sql/export_query_gold_product.sql",
+    "sha256": "f5f03327e71903df7e4d97fe069a0fb49ef38954db24c2c798e32a7ed5fed2dc",
+    "unchanged_vs_baseline": true
+  },
+  {
+    "path": "apps/publisher/python/load/sql/lock_publication_postgresql.sql",
+    "owner": "apps/publisher",
+    "executor": "load.publisher.ensure_schema / _acquire_publication_lock",
+    "artifact": "apps/publisher/publisher.zip; also bundled by declared runner consumer",
+    "archive_member": "load/sql/lock_publication_postgresql.sql",
+    "sha256": "155b308ac5be2d0b3e974d6d26e67de57f968f4857e36afe9cca996e8752c613",
+    "unchanged_vs_baseline": true
+  },
+  {
+    "path": "apps/publisher/python/load/sql/lock_publication_sqlserver.sql",
+    "owner": "apps/publisher",
+    "executor": "load.publisher.ensure_schema / _acquire_publication_lock",
+    "artifact": "apps/publisher/publisher.zip; also bundled by declared runner consumer",
+    "archive_member": "load/sql/lock_publication_sqlserver.sql",
+    "sha256": "6dd5c8bcc0ff0627a3dcd06bcf1cec36e67065f859e339452d3b4a4a375f3be0",
+    "unchanged_vs_baseline": true
+  },
+  {
+    "path": "apps/publisher/python/load/sql/set_lock_timeout_postgresql.sql",
+    "owner": "apps/publisher",
+    "executor": "load.publisher.ensure_schema / _acquire_publication_lock",
+    "artifact": "apps/publisher/publisher.zip; also bundled by declared runner consumer",
+    "archive_member": "load/sql/set_lock_timeout_postgresql.sql",
+    "sha256": "79a4bd46d06e52c5a322e9dacdc8227a86d20c7095867851a6295b4df49464cb",
+    "unchanged_vs_baseline": true
+  },
+  {
+    "path": "dbt/macros/platform.sql",
+    "owner": "dbt",
+    "executor": "dbt adapter: macros",
+    "artifact": "Separate versioned dbt project, located through runner Settings; no cloud job ZIP",
+    "archive_member": null,
+    "sha256": "2f0525145e34b32921a906b891a24ae1175a6259203efee07c9bbee6dbe735ea",
+    "unchanged_vs_baseline": true
+  },
+  {
+    "path": "dbt/models/gold/gold_exposure_compliance.sql",
+    "owner": "dbt",
+    "executor": "dbt adapter: model transformation",
+    "artifact": "Separate versioned dbt project, located through runner Settings; no cloud job ZIP",
+    "archive_member": null,
+    "sha256": "e26cb922af14ff760fe730e3d9175a688748feff77f281d0dd3df516d27a5714",
+    "unchanged_vs_baseline": true
+  },
+  {
+    "path": "dbt/models/gold/gold_exposure_compliance_candidate.sql",
+    "owner": "dbt",
+    "executor": "dbt adapter: model transformation",
+    "artifact": "Separate versioned dbt project, located through runner Settings; no cloud job ZIP",
+    "archive_member": null,
+    "sha256": "20ded842aef91e523b495d93311abdb4513e1e1b4f5da3c72beb177e6f03c312",
+    "unchanged_vs_baseline": true
+  },
+  {
+    "path": "dbt/models/gold/gold_liquidity_summary.sql",
+    "owner": "dbt",
+    "executor": "dbt adapter: model transformation",
+    "artifact": "Separate versioned dbt project, located through runner Settings; no cloud job ZIP",
+    "archive_member": null,
+    "sha256": "c45cac68d3cd11e4bd1b29254c91615d7db12554090af136dec13cf54fce195c",
+    "unchanged_vs_baseline": true
+  },
+  {
+    "path": "dbt/models/gold/gold_liquidity_summary_candidate.sql",
+    "owner": "dbt",
+    "executor": "dbt adapter: model transformation",
+    "artifact": "Separate versioned dbt project, located through runner Settings; no cloud job ZIP",
+    "archive_member": null,
+    "sha256": "7da5c35fb857f1cce06414a4f898fca89c7aca7dff57f10704217f15d082128a",
+    "unchanged_vs_baseline": true
+  },
+  {
+    "path": "dbt/models/silver/checks/int_cash_balance_checks.sql",
+    "owner": "dbt",
+    "executor": "dbt adapter: model transformation",
+    "artifact": "Separate versioned dbt project, located through runner Settings; no cloud job ZIP",
+    "archive_member": null,
+    "sha256": "98ed4e16aec3a8a6fd78ca69947cd4630309d599be4a174391b3a06515eafb60",
+    "unchanged_vs_baseline": true
+  },
+  {
+    "path": "dbt/models/silver/checks/int_compliance_position_checks.sql",
+    "owner": "dbt",
+    "executor": "dbt adapter: model transformation",
+    "artifact": "Separate versioned dbt project, located through runner Settings; no cloud job ZIP",
+    "archive_member": null,
+    "sha256": "b4fa1e3a94e9fcf39b27bf76567038c541753bdc9ffc7312f2c25d4f9a97a771",
+    "unchanged_vs_baseline": true
+  },
+  {
+    "path": "dbt/models/silver/checks/int_market_price_checks.sql",
+    "owner": "dbt",
+    "executor": "dbt adapter: model transformation",
+    "artifact": "Separate versioned dbt project, located through runner Settings; no cloud job ZIP",
+    "archive_member": null,
+    "sha256": "616b94e03ba40fe89749eef14be5f5309040038f73fe44732485fdbbca7c9375",
+    "unchanged_vs_baseline": true
+  },
+  {
+    "path": "dbt/models/silver/checks/int_pending_redemption_checks.sql",
+    "owner": "dbt",
+    "executor": "dbt adapter: model transformation",
+    "artifact": "Separate versioned dbt project, located through runner Settings; no cloud job ZIP",
+    "archive_member": null,
+    "sha256": "59584b35624209d0121d1a0aca0c6eb788ac9974a827841eadfd5abee64a89f5",
+    "unchanged_vs_baseline": true
+  },
+  {
+    "path": "dbt/models/silver/checks/int_position_checks.sql",
+    "owner": "dbt",
+    "executor": "dbt adapter: model transformation",
+    "artifact": "Separate versioned dbt project, located through runner Settings; no cloud job ZIP",
+    "archive_member": null,
+    "sha256": "32350f8022561b6195c965164ee7d76aead1b20a1d364c8d1637f2a270886f81",
+    "unchanged_vs_baseline": true
+  },
+  {
+    "path": "dbt/models/silver/silver_cash_balance.sql",
+    "owner": "dbt",
+    "executor": "dbt adapter: model transformation",
+    "artifact": "Separate versioned dbt project, located through runner Settings; no cloud job ZIP",
+    "archive_member": null,
+    "sha256": "058853791e9f89040c24ade2a02a8064eabf3e9b43e89251bf8bcf81e85905bf",
+    "unchanged_vs_baseline": true
+  },
+  {
+    "path": "dbt/models/silver/silver_compliance_position.sql",
+    "owner": "dbt",
+    "executor": "dbt adapter: model transformation",
+    "artifact": "Separate versioned dbt project, located through runner Settings; no cloud job ZIP",
+    "archive_member": null,
+    "sha256": "1c7a849a5411c7dd8e6103305f7b80260616bec36c0df54f0664b12320304693",
+    "unchanged_vs_baseline": true
+  },
+  {
+    "path": "dbt/models/silver/silver_concentration_limit.sql",
+    "owner": "dbt",
+    "executor": "dbt adapter: model transformation",
+    "artifact": "Separate versioned dbt project, located through runner Settings; no cloud job ZIP",
+    "archive_member": null,
+    "sha256": "8899ccff15ab071a1a969c4fe314760815bbf1a65f5e6237ba1f871c905370af",
+    "unchanged_vs_baseline": true
+  },
+  {
+    "path": "dbt/models/silver/silver_instrument.sql",
+    "owner": "dbt",
+    "executor": "dbt adapter: model transformation",
+    "artifact": "Separate versioned dbt project, located through runner Settings; no cloud job ZIP",
+    "archive_member": null,
+    "sha256": "7f1a0aed240680fa447318a694dc1e0ab2c79a6d6858205dcfb9f2c7e9657770",
+    "unchanged_vs_baseline": true
+  },
+  {
+    "path": "dbt/models/silver/silver_market_price.sql",
+    "owner": "dbt",
+    "executor": "dbt adapter: model transformation",
+    "artifact": "Separate versioned dbt project, located through runner Settings; no cloud job ZIP",
+    "archive_member": null,
+    "sha256": "deb966a978b5c8cf8b35c1761c250f983c1678938338d2defc69147a26b9f43f",
+    "unchanged_vs_baseline": true
+  },
+  {
+    "path": "dbt/models/silver/silver_pending_redemption.sql",
+    "owner": "dbt",
+    "executor": "dbt adapter: model transformation",
+    "artifact": "Separate versioned dbt project, located through runner Settings; no cloud job ZIP",
+    "archive_member": null,
+    "sha256": "6979caed8ed41223769543cbb766674831fcf9422408585e54bbe0e8853a3a9e",
+    "unchanged_vs_baseline": true
+  },
+  {
+    "path": "dbt/models/silver/silver_portfolio.sql",
+    "owner": "dbt",
+    "executor": "dbt adapter: model transformation",
+    "artifact": "Separate versioned dbt project, located through runner Settings; no cloud job ZIP",
+    "archive_member": null,
+    "sha256": "109c617269937eba64853f7929b15255dfa2ad9b72512b47888dc5468b85507c",
+    "unchanged_vs_baseline": true
+  },
+  {
+    "path": "dbt/models/silver/silver_position.sql",
+    "owner": "dbt",
+    "executor": "dbt adapter: model transformation",
+    "artifact": "Separate versioned dbt project, located through runner Settings; no cloud job ZIP",
+    "archive_member": null,
+    "sha256": "339a194c23e3d7353e95b386d38544aef194921beb40c9252711d72bc9091e19",
+    "unchanged_vs_baseline": true
+  },
+  {
+    "path": "dbt/models/silver/silver_rejected_records.sql",
+    "owner": "dbt",
+    "executor": "dbt adapter: model transformation",
+    "artifact": "Separate versioned dbt project, located through runner Settings; no cloud job ZIP",
+    "archive_member": null,
+    "sha256": "497ed569a9e7437c8325b88eda610975dd1b283418bccdeec335d496157e4a9d",
+    "unchanged_vs_baseline": true
+  },
+  {
+    "path": "dbt/models/staging/stg_compliance__concentration_limit.sql",
+    "owner": "dbt",
+    "executor": "dbt adapter: model transformation",
+    "artifact": "Separate versioned dbt project, located through runner Settings; no cloud job ZIP",
+    "archive_member": null,
+    "sha256": "10514f1f8495f2792588cab8c45ed2e164065f0be995a0d4b475041b7812ac63",
+    "unchanged_vs_baseline": true
+  },
+  {
+    "path": "dbt/models/staging/stg_compliance__instrument.sql",
+    "owner": "dbt",
+    "executor": "dbt adapter: model transformation",
+    "artifact": "Separate versioned dbt project, located through runner Settings; no cloud job ZIP",
+    "archive_member": null,
+    "sha256": "af6ad4c30dbc109f8824b8f7e50bb41b94e10c507bbff59cc623cc7e2a4e9678",
+    "unchanged_vs_baseline": true
+  },
+  {
+    "path": "dbt/models/staging/stg_compliance__stock_position.sql",
+    "owner": "dbt",
+    "executor": "dbt adapter: model transformation",
+    "artifact": "Separate versioned dbt project, located through runner Settings; no cloud job ZIP",
+    "archive_member": null,
+    "sha256": "666feab8bcf5b45a223896141cd08f34af164572092c6be90d305a7786392b4a",
+    "unchanged_vs_baseline": true
+  },
+  {
+    "path": "dbt/models/staging/stg_fund_ops__identity_map.sql",
+    "owner": "dbt",
+    "executor": "dbt adapter: model transformation",
+    "artifact": "Separate versioned dbt project, located through runner Settings; no cloud job ZIP",
+    "archive_member": null,
+    "sha256": "97c1ee2e3defc1aad44d2416f430610075bc858fb93903c923cf9db3baddddd6",
+    "unchanged_vs_baseline": true
+  },
+  {
+    "path": "dbt/models/staging/stg_fund_ops__portfolio.sql",
+    "owner": "dbt",
+    "executor": "dbt adapter: model transformation",
+    "artifact": "Separate versioned dbt project, located through runner Settings; no cloud job ZIP",
+    "archive_member": null,
+    "sha256": "e780c46bc14bb45787946abbaf78f7fd168085408927351122d0241dae508fc9",
+    "unchanged_vs_baseline": true
+  },
+  {
+    "path": "dbt/models/staging/stg_legacy__cash_balance.sql",
+    "owner": "dbt",
+    "executor": "dbt adapter: model transformation",
+    "artifact": "Separate versioned dbt project, located through runner Settings; no cloud job ZIP",
+    "archive_member": null,
+    "sha256": "cb557ab0e063a81cfbee366b76159a34a219450974f1f0ed4d81b595ff938333",
+    "unchanged_vs_baseline": true
+  },
+  {
+    "path": "dbt/models/staging/stg_legacy__pending_redemption.sql",
+    "owner": "dbt",
+    "executor": "dbt adapter: model transformation",
+    "artifact": "Separate versioned dbt project, located through runner Settings; no cloud job ZIP",
+    "archive_member": null,
+    "sha256": "945f38f19728dcfd4cec2127a158fcfc8afcb23b747e60bd78047f0179fffd99",
+    "unchanged_vs_baseline": true
+  },
+  {
+    "path": "dbt/models/staging/stg_market__daily_price.sql",
+    "owner": "dbt",
+    "executor": "dbt adapter: model transformation",
+    "artifact": "Separate versioned dbt project, located through runner Settings; no cloud job ZIP",
+    "archive_member": null,
+    "sha256": "f81b3f3f1d2f6088f36c097484425331725b910848c86abc02ae7f85b3084208",
+    "unchanged_vs_baseline": true
+  },
+  {
+    "path": "dbt/models/staging/stg_positions__unioned.sql",
+    "owner": "dbt",
+    "executor": "dbt adapter: model transformation",
+    "artifact": "Separate versioned dbt project, located through runner Settings; no cloud job ZIP",
+    "archive_member": null,
+    "sha256": "af8a9d2c22b73b461a6c428ceef81b3869624a4d68fd231cb2d6086f2663e62d",
+    "unchanged_vs_baseline": true
+  },
+  {
+    "path": "dbt/tests/assert_active_portfolios_have_positions.sql",
+    "owner": "dbt",
+    "executor": "dbt adapter: quality tests",
+    "artifact": "Separate versioned dbt project, located through runner Settings; no cloud job ZIP",
+    "archive_member": null,
+    "sha256": "7467d8dccad1dd3b1057ce2d0c064181f734891a60f8ab38b42afec1821de454",
+    "unchanged_vs_baseline": true
+  },
+  {
+    "path": "dbt/tests/generic/expression_is_true.sql",
+    "owner": "dbt",
+    "executor": "dbt adapter: quality tests",
+    "artifact": "Separate versioned dbt project, located through runner Settings; no cloud job ZIP",
+    "archive_member": null,
+    "sha256": "65998fa1e2dd23bbd900b9787962c67e5d3f64e3885b0b30f11abe270b49c4f5",
+    "unchanged_vs_baseline": true
+  },
+  {
+    "path": "dbt/tests/generic/not_empty.sql",
+    "owner": "dbt",
+    "executor": "dbt adapter: quality tests",
+    "artifact": "Separate versioned dbt project, located through runner Settings; no cloud job ZIP",
+    "archive_member": null,
+    "sha256": "14f9602ecc542f5a61076f665b4a404727bf2f59ed9f76a5d417dd7d3b31a995",
+    "unchanged_vs_baseline": true
+  },
+  {
+    "path": "dbt/tests/generic/reconciles_liquidity_totals.sql",
+    "owner": "dbt",
+    "executor": "dbt adapter: quality tests",
+    "artifact": "Separate versioned dbt project, located through runner Settings; no cloud job ZIP",
+    "archive_member": null,
+    "sha256": "17c900827514c6bed11f12d55c72f9694e577e44d177add30599df4a2ba2fb7e",
+    "unchanged_vs_baseline": true
+  },
+  {
+    "path": "dbt/tests/generic/rejection_ratio_within.sql",
+    "owner": "dbt",
+    "executor": "dbt adapter: quality tests",
+    "artifact": "Separate versioned dbt project, located through runner Settings; no cloud job ZIP",
+    "archive_member": null,
+    "sha256": "391d444df5999df0e849efed3c44a56bb77891bd4a8418e38dbf6c60aad7d645",
+    "unchanged_vs_baseline": true
+  },
+  {
+    "path": "dbt/tests/generic/single_active_limit.sql",
+    "owner": "dbt",
+    "executor": "dbt adapter: quality tests",
+    "artifact": "Separate versioned dbt project, located through runner Settings; no cloud job ZIP",
+    "archive_member": null,
+    "sha256": "7ca9c6997d980820646dd55635413581018c13e35afa056d4bd6afdf9c6c3226",
+    "unchanged_vs_baseline": true
+  },
+  {
+    "path": "dbt/tests/generic/unique_combination.sql",
+    "owner": "dbt",
+    "executor": "dbt adapter: quality tests",
+    "artifact": "Separate versioned dbt project, located through runner Settings; no cloud job ZIP",
+    "archive_member": null,
+    "sha256": "7b78b5918de46e9d16ed8edf2c85c780cf962269c9887a3b73b5ce06c6795ae0",
+    "unchanged_vs_baseline": true
+  },
+  {
+    "path": "dbt/tests/generic/value_between.sql",
+    "owner": "dbt",
+    "executor": "dbt adapter: quality tests",
+    "artifact": "Separate versioned dbt project, located through runner Settings; no cloud job ZIP",
+    "archive_member": null,
+    "sha256": "b6a58144ed57c57997b5c902aec0333305c4cd4f8d273ff9548fde1c294a2ec3",
+    "unchanged_vs_baseline": true
+  }
+]

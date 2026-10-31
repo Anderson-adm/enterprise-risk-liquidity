@@ -210,17 +210,30 @@ json.dump(report, open(output, "w"), indent=2)
 """
 
 LOCAL_CHILD = r"""
-import json, sys
+import json, sys, zipfile
 
 archive, extra, unit, out = sys.argv[1:5]
 sys.path[:0] = [archive, extra]
+
+def check_sql(prefix, loader):
+    with zipfile.ZipFile(archive) as package:
+        names = [n for n in package.namelist() if n.startswith(prefix) and n.endswith(".sql")]
+        assert names, (unit, prefix)
+        for name in names:
+            assert loader(name.removeprefix(prefix)) == package.read(name).decode("utf-8"), name
+    return len(names)
+
 if unit == "apps/publisher":
     from load import publisher
     from load.sql_files import read_sql
 
     assert "SELECT" in read_sql("load/lock_publication_postgresql.sql")
     assert "pipeline" not in sys.modules and "sources" not in sys.modules
-    report = {"publisher_imported": True, "own_sql_resources_read": True}
+    report = {
+        "publisher_imported": True,
+        "own_sql_resources_read": True,
+        "sql_files_checked": check_sql("load/sql/", read_sql),
+    }
 elif unit == "apps/source-generator":
     from sources import synthetic, seed
     from datetime import date
@@ -237,10 +250,14 @@ else:
     assert set(PARSERS) == {"market_data", "internal_xml", "external_xml"}
     assert "SELECT" in read_sql("extract/extract_query_table_fund.sql")
     assert cli.main(["new-run-id"]) == 0
+    from load.sql_files import read_sql as publisher_sql
+
     report = {
         "cli_imported_from_artifact": True,
         "own_sql_resources_read": True,
         "public_parsers": sorted(PARSERS),
+        "runner_sql_files_checked": check_sql("sql/", read_sql),
+        "publisher_sql_files_checked": check_sql("load/sql/", publisher_sql),
     }
 json.dump(report, open(out, "w"))
 """

@@ -1,0 +1,20 @@
+{
+  "baseline": "fec9280",
+  "sql_files_identical": 54,
+  "unit_programs": {
+    "glue/extract-liquidez/job.py": "identical executable AST",
+    "glue/extract-liquidez/spark/unit_spark.py": "identical executable AST",
+    "glue/extract-enquadramento/job.py": "identical executable AST",
+    "glue/extract-enquadramento/spark/unit_spark.py": "identical executable AST",
+    "glue/export-risk-analytics/job.py": "identical executable AST",
+    "glue/export-risk-analytics/spark/unit_spark.py": "identical executable AST",
+    "protocols/integrity-v2/erl_protocol/snapshot_manifests.py": "identical executable AST; documentation paths only",
+    "protocols/integrity-v2/erl_protocol/publication.py": "identical executable AST; documentation paths only",
+    "apps/hybrid-runner/python/ingestion/snapshots.py": "identical executable AST; documentation paths only",
+    "apps/publisher/python/load/package.py": "identical executable AST; documentation paths only",
+    "apps/hybrid-runner/python/pipeline/aws_services.py": "identical after normalizing explicit service/API renames",
+    "apps/hybrid-runner/python/pipeline/steps.py": "identical after normalizing explicit service/API renames"
+  },
+  "published_contracts_unchanged": true,
+  "business_rule_changes": false
+}

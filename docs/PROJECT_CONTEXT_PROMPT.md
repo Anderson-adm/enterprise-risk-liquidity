@@ -1,4 +1,4 @@
-# Prompt de contexto do Case 01 — atualizado em 30/10/2026 (após correção e refatoração offline)
+# Prompt de contexto do Case 01 — atualizado em 31/10/2026 (unidades autônomas e nomes do proprietário)
 
 Copie o bloco abaixo para continuar a discussão técnica em outro chat. As evidências AWS
 registram eventos anteriores; nenhum recurso foi recriado para produzir este resumo.
@@ -23,8 +23,11 @@ manifestos/checksums/quarentena → dbt/Athena e Iceberg Silver/Gold → gate de
 Airflow orquestra; CloudWatch/SNS/EventBridge observam; Terraform define infraestrutura.
 Os produtos são liquidity_summary e exposure_compliance. Valores usam Decimal/DECIMAL.
 Fontes, consumidor SQL Server e Airflow permanecem locais; AWS não acessa localhost.
-Há três jobs Glue 5.0 em Python/PySpark: db-gb e db-tb compartilham db_ingest.py;
-gold-load usa gold_load.py. GB/TB são padrões de ingestão, não benchmarks de volume.
+Há três jobs Glue 5.0 em Python/PySpark com implementação/build próprios:
+extract-liquidez (antigo perfil GB), extract-enquadramento (antigo perfil TB) e
+export-risk-analytics (dois produtos Gold -> pacote). Os nomes foram escolhidos pelo
+proprietário, mas não dividem exclusivamente os domínios: as entidades e perfis GB/TB
+permanecem os anteriores. A fonte SQL é extraída pelo runner; Glue lê o Landing.
 
 2. O QUE FOI VALIDADO LOCALMENTE
 Pipeline completo com DuckDB/dbt, PostgreSQL 17 e SQL Server 2022 reais em containers,
@@ -97,12 +100,13 @@ direto, por isso via S3). A layer exata não pôde ser reproduzida offline; o ZI
 testado localmente em interpretador isolado com S3 simulado (moto). Não houve novo deploy.
 Gerador: papéis de cenário posicionais (D1 limpa, D2 problemas, D3 chegada tardia), datas
 estritamente crescentes, geração estável por prefixo; uma data gera só a D1 limpa.
-Estrutura: src/python/{connect,extract,transform,load,ingestion,storage,utils}, pipeline e
-sources; src/spark/{readers,transforms,writers}; SQL versionado em src/sql; contratos em
-src/contracts; entrypoints finos lambda/bronze, glue/bronze, glue/load; build pré-Terraform em
-scripts/build -> dist/ com manifest (SHA-256, commit, runtime) e smoke dos artefatos; bucket de
-artefatos separado do state e do data lake. O wrapper src/erl foi removido.
-Validação local após a refatoração: 149 casos (106 históricos + 43 novos), Terraform com
+Estrutura atual: apps/{hybrid-runner,publisher,source-generator}, três unidades Glue e
+três Lambda; cada unidade possui implementação/dependências próprias. SQL de fonte/relatório
+pertence ao runner; SQL consumidor/exportação local pertence ao publisher; dbt mantém seus
+SQLs. Contratos na raiz e protocolo explícito erl_protocol 2.0.0 vendorizado por artefato.
+Build pré-Terraform em scripts/build -> dist/ por unidade, com manifesto/hash e smoke;
+bucket de artefatos separado do state e do data lake. Não há biblioteca global de ingestão.
+Validação histórica da refatoração de 30/10: 149 casos (106 históricos + 43 novos), Terraform com
 14 testes mockados, TFLint 0, Checkov 162/0/40; comparação exata antes/depois dos oito
 cenários em SQLite e em PostgreSQL+SQL Server. Spark não foi executado (sem JVM local) e
 nenhum Glue/Athena/Iceberg rodou na AWS.
@@ -110,9 +114,9 @@ nenhum Glue/Athena/Iceberg rodou na AWS.
 6. PENDÊNCIAS E DIREÇÃO DISCUTIDA
 Ainda faltam execução real de Glue, instalação das dependências, Ion SerDe,
 dbt/Athena/Iceberg, comparação decimal e publicação SQL Server em modo híbrido.
-Código modular e artefatos com hash no S3 (chaves estáveis + bucket versionado) foram
-implementados offline em 30/10; releases imutáveis por hash e CI/CD com OIDC continuam
-apenas discutidos. A CI testa o repositório e constrói/testa os artefatos; não faz deploy AWS.
+Artefatos independentes foram implementados offline: Glue usa pares script/lib com chaves
+imutáveis por hash; Lambda referencia sua versão S3. Deploy deve ocorrer com jobs ociosos;
+rollback de código não reverte dados. CI/CD de deploy com OIDC continua apenas discutido. A CI testa o repositório e constrói/testa os artefatos; não faz deploy AWS.
 Hoje não há laboratório AWS do Case 01 ativo. Não há autorização vigente para
 recriar recursos, fazer deploy, gastar ou repetir o pipeline. Qualquer retomada
 exige decisão explícita e novos planos; os antigos foram consumidos e o backend removido.

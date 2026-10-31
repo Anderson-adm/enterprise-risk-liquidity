@@ -1,6 +1,6 @@
 """Local (PyArrow) Bronze ingestion of database extraction snapshots.
 
-The Glue job ``glue/db-gb/job.py`` composes the same steps of
+The Glue job ``glue/extract-liquidez/job.py`` composes the same steps of
 ``ingestion.snapshot_manifests`` with a Spark writer.
 """
 

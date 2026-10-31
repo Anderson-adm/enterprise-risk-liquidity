@@ -1,7 +1,7 @@
 """Publication package: the hand-off between the lakehouse (Gold) and the consumer database.
 
 Layout and manifest: ``load.package_manifest``. Locally the package is built from DuckDB
-(``build_from_duckdb``). On AWS the Glue job ``glue/gold-load/job.py`` builds the same package
+(``build_from_duckdb``). On AWS the Glue job ``glue/export-risk-analytics/job.py`` builds the same package
 from the Iceberg Gold tables. In both cases only rows written by the current pipeline run are
 exported, and only after the quality gate passed. ``load_package`` re-verifies everything the
 publisher reads: checksums, gate, products, columns, types, nullability, keys and date.

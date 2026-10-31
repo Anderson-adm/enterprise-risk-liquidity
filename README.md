@@ -48,8 +48,8 @@ flowchart LR
   end
   subgraph ING[Ingestion]
     X[Python SQL extraction<br/>chunked, checksummed]
-    G1[Glue job db-gb]
-    G2[Glue job db-tb]
+    G1[Glue job extract-liquidez]
+    G2[Glue job extract-enquadramento]
     L[Lambdas: market data,<br/>internal XML, external XML]
   end
   subgraph LAKE[S3 lakehouse]
@@ -60,7 +60,7 @@ flowchart LR
   S1 & S2 & S3 & S4 --> X --> G1 & G2 --> B
   S5 & S6 & S7 --> L --> B
   B --> SV --> GD
-  GD --> GL[Glue job gold-load<br/>publication package] --> P[Python publisher<br/>staging + validation + 1 transaction] --> C[(SQL Server<br/>controle e relatórios)]
+  GD --> GL[Glue job export-risk-analytics<br/>publication package] --> P[Python publisher<br/>staging + validation + 1 transaction] --> C[(SQL Server<br/>controle e relatórios)]
   AF[Airflow DAG] -. orchestrates .-> X & L & G1 & G2 & SV & GL & P
   CW[CloudWatch + SNS] -. failed-step alerts .- AF & L & G1
   TF[Terraform] -. provisions .- LAKE & L & G1 & G2 & GL & CW
@@ -72,7 +72,7 @@ flowchart LR
 | Extraction | parameterised SQL, streamed in chunks, landing snapshot + manifest | Validated locally on PostgreSQL, SQL Server (incl. legacy views) and SQLite; identical content hashes across engines |
 | Bronze | run-scoped keys, conditional writes, checksums, duplicate detection, quarantine | Validated locally (filesystem) and with moto (S3 API mock) |
 | Lambdas (CSV / XML ingestion) | per-function handlers/parsers in `lambda/<unit>`; own ZIP with pinned PyArrow (and lxml for XML), versioned integrity protocol (no managed layer) | built ZIP smoke-tested locally (isolated interpreter, moto S3, Zstandard round-trip); the one AWS invocation (old package) **failed** on the managed layer's codec; the fix is **not validated on AWS** |
-| Glue jobs db-gb / db-tb / gold-load | unit-local entry points/Spark code in `glue/{db-gb,db-tb,gold-load}` + independent library per job via `--extra-py-files` | **Implemented, not validated**: library imports and non-Spark steps smoke-tested from the built ZIP; no Spark (no local JVM) and no AWS run |
+| Glue jobs extract-liquidez / extract-enquadramento / export-risk-analytics | unit-local entry points/Spark code in `glue/{extract-liquidez,extract-enquadramento,export-risk-analytics}` + independent library per job via `--extra-py-files` | **Implemented, not validated**: library imports and non-Spark steps smoke-tested from the built ZIP; no Spark (no local JVM) and no AWS run |
 | Silver / Gold | dbt, portable SQL, DuckDB locally; Athena + Iceberg target configured | Validated locally on DuckDB; **Athena/Iceberg not validated** |
 | Quality gate | dbt tests on write-audit-publish candidates + gate step | Validated locally |
 | Publication | staging, in-DB checks, single transaction, content-hash idempotency, publication lock, publication log | Validated locally on a SQL Server 2022 container (incl. concurrent publishers) and on SQLite |
@@ -82,9 +82,13 @@ flowchart LR
 | CI | GitHub Actions (Python, dbt on DuckDB, PostgreSQL + SQL Server integration, per-unit build/smoke, Terraform checks), actions pinned by SHA | Historical baseline green; autonomous-unit changes checked locally, not pushed |
 
 Why a publication package between Gold and SQL Server: AWS must not connect to a local
-database (no VPN/NAT, nothing exposed). The Glue `gold-load` job exports the audited Gold rows
+database (no VPN/NAT, nothing exposed). The Glue `export-risk-analytics` job exports the audited Gold rows
 of the run to S3; the local publisher performs the transactional SQL Server load. In an
 enterprise network the same job would write through a Glue JDBC connection.
+
+The owner-selected Glue names preserve the original GB/TB entity routing; they do not define
+exclusive liquidity/compliance domains. Both ingest landing snapshots; source SQL belongs to
+the local runner. The exporter packages both Gold products.
 
 Code layout (details and rationale: [docs/REFACTORING.md](docs/REFACTORING.md)):
 
@@ -94,7 +98,7 @@ Code layout (details and rationale: [docs/REFACTORING.md](docs/REFACTORING.md)):
 | `apps/publisher/` | package validation/export and transactional publication; own consumer SQL |
 | `apps/source-generator/` | synthetic source systems and scenarios; public configuration/connection interface |
 | `lambda/{market-data,internal-xml,external-xml}/` | each function owns its handler, parser, dependencies and ZIP |
-| `glue/{db-gb,db-tb,gold-load}/` | each job owns its entry point, native Spark operations, requirements and script/library artifacts |
+| `glue/{extract-liquidez,extract-enquadramento,export-risk-analytics}/` | each job owns its entry point, native Spark operations, requirements and script/library artifacts |
 | `contracts/` | published JSON/XSD/source-schema interfaces |
 | `protocols/integrity-v2/` | pinned 2.0.0 integrity exception, vendored per artifact; no mutable shared runtime ZIP |
 | `scripts/build` → `dist/<runtime>/<unit>/` | independent artifacts/manifests (SHA-256, commit, runtime), built offline from cached dependencies before planning |

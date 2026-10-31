@@ -323,7 +323,7 @@ def step_load(settings: Settings, ref: date, run_id: str) -> dict:
     if settings.mode == "aws":
         from pipeline import aws_services
 
-        key = aws_services.run_gold_load(settings, ref, run_id, gate)
+        key = aws_services.run_gold_export(settings, ref, run_id, gate)
     else:
         key = package.build_from_duckdb(
             settings.store(), settings.warehouse_path, ref, run_id, gate, compression=parquet_compression()

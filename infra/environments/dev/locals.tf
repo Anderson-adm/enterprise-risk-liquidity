@@ -16,7 +16,7 @@ locals {
   artifacts_bucket = "${var.name_prefix}-artifacts-${local.account_id}"
 
   # Independent artifacts built before planning; no code generation in Terraform.
-  glue_units = { for name in ["db-gb", "db-tb", "gold-load"] : name => jsondecode(file("${var.artifacts_dir}/glue/${name}/manifest.json")) }
+  glue_units = { for name in ["extract-liquidez", "extract-enquadramento", "export-risk-analytics"] : name => jsondecode(file("${var.artifacts_dir}/glue/${name}/manifest.json")) }
   glue_artifacts = merge([for unit, manifest in local.glue_units : {
     for filename, artifact in manifest.artifacts : "${unit}/${filename}" => {
       path   = "glue/${unit}/${filename}"

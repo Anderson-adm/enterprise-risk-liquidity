@@ -1,5 +1,5 @@
 """Publication package layout and manifest, shared by the local builder (``load.package``) and
-the Glue Gold Load job (``glue/gold-load/job.py``). Pure: no PyArrow, Spark or I/O.
+the Glue Gold Load job (``glue/export-risk-analytics/job.py``). Pure: no PyArrow, Spark or I/O.
 
     publish/reference_date=<D>/<run_id>/<product>.parquet
     publish/reference_date=<D>/<run_id>/manifest.json    (written last = commit marker)

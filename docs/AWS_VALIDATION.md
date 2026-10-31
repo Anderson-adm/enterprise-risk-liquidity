@@ -32,7 +32,7 @@ Evidence: [failed functional attempt](../evidence/aws/functional/2026-10-26/summ
 
 Hybrid design: sources, Airflow and the consumer SQL Server stay local. The local pipeline
 uploads landing objects to S3 with temporary SSO credentials; Lambdas and Glue ingest them;
-dbt runs on Athena producing Iceberg Silver/Gold; the Glue `gold-load` job writes the
+dbt runs on Athena producing Iceberg Silver/Gold; the Glue `export-risk-analytics` job writes the
 publication package to S3; the local publisher loads SQL Server. AWS never connects to
 localhost and no local database is exposed.
 

@@ -1,5 +1,5 @@
 {
-  "id": "gold-load",
+  "id": "export-risk-analytics",
   "runtime": "glue",
   "entrypoint": "job.py",
   "protocol_version": "2.0.0",
@@ -39,9 +39,10 @@
   ],
   "state_and_effects": "Reads Gold; writes immutable publication products and package manifest; deletes only temporary output.",
   "lifecycle": {
-    "build": "Offline build_artifacts.py --unit glue/gold-load; own job.py/lib.zip plus selected protocol modules.",
+    "build": "Offline build_artifacts.py --unit glue/export-risk-analytics; own job.py/lib.zip plus selected protocol modules.",
     "deploy": "Own immutable script/library keys and Glue definition in project dev Terraform state; deploy only with jobs idle.",
     "rollback": "Rebuild/test this unit from the selected Git commit and deploy its compatible pair; does not revert data/schema/state.",
     "remove": "Remove routing/callers and own Terraform job/artifacts under approval; preserve shared IAM, buckets, contracts and committed data used by other units."
-  }
+  },
+  "effective_scope": "Exports both liquidity_summary and exposure_compliance for the current run/date to the publication package; SQL Server publication belongs to apps/publisher."
 }

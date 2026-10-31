@@ -1,5 +1,26 @@
 # HANDOFF
 
+_Last update: 2026-10-31 (America/Fortaleza), Codex: owner-selected Glue naming and scoped SQL
+ownership check from `fec9280`. Local/offline only; no AWS, remote Terraform, deploy or push._
+
+## Current naming and SQL ownership
+
+* `db-gb` -> `extract-liquidez`, `db-tb` -> `extract-enquadramento`, `gold-load` ->
+  `export-risk-analytics`. Chosen names do not change the original mixed-domain GB/TB routing.
+  Both ingestion units remain independent; the exporter handles both Gold products.
+* Runner mapping, directories/build IDs, worker keys, artifact prefixes, job definitions and
+  exporter IAM naming updated. Unchanged contract labels `glue_db_gb`/`glue_db_tb`, profiles
+  `gb`/`tb`, tables, arguments and business rules. No Airflow change was necessary.
+* All 54 SQL files retain their content/location: 12 runner, six publisher and 36 dbt. Packaged
+  SQL belongs to its executor; Glue uses DataFrame API and needs no SQL directory.
+* Revalidated: 159 fast + 11 dbt tests, nine built-unit smokes, three selected Glue builds,
+  Ruff and three isolated Terraform roots with 15 mocked tests. All passed; no containers started.
+* Tests, hashes and the SQL ownership inventory: `evidence/naming-sql/`. Current map/tree and
+  future state/replacement caveats: [REFACTORING.md](REFACTORING.md). Historical AWS evidence
+  and previous validation records below are preserved unchanged.
+
+## Previous final-autonomy adjustment record
+
 _Last update: 2026-10-31 (America/Fortaleza), Codex: scoped final unit-autonomy adjustments on
 `d75ebec`. Local commit only; no AWS/network/deploy/push. Current evidence: [../evidence/unit-final/](../evidence/unit-final/)._
 

@@ -2,11 +2,11 @@
   "artifacts": {
     "job.py": {
       "sha256": "3e9cb81408dfd320ee2757c72cf616579eba5cb277b7b8a378e3cbb857730e3e",
-      "s3_key": "case01/glue/db-gb/3e9cb81408dfd320ee2757c72cf616579eba5cb277b7b8a378e3cbb857730e3e/job.py"
+      "s3_key": "case01/glue/extract-enquadramento/3e9cb81408dfd320ee2757c72cf616579eba5cb277b7b8a378e3cbb857730e3e/job.py"
     },
     "lib.zip": {
       "sha256": "c1504dedf86182d912de2a7307fa6dd053f0ea2205341d6fbf4782e60d9e9761",
-      "s3_key": "case01/glue/db-gb/c1504dedf86182d912de2a7307fa6dd053f0ea2205341d6fbf4782e60d9e9761/lib.zip"
+      "s3_key": "case01/glue/extract-enquadramento/c1504dedf86182d912de2a7307fa6dd053f0ea2205341d6fbf4782e60d9e9761/lib.zip"
     }
   },
   "python_modules": [

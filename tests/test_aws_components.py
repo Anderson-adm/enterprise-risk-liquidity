@@ -146,7 +146,7 @@ def test_dedup_on_s3_compares_only_the_latest_accepted_delivery(s3):
 
 
 def test_glue_volume_profiles():
-    db_ingest = load_entrypoint("glue/db-gb/job.py")
+    db_ingest = load_entrypoint("glue/extract-liquidez/job.py")
     assert db_ingest.parts_for("gb", 10_000_000) == 1
     assert db_ingest.parts_for("tb", 0) == 1
     assert db_ingest.parts_for("tb", 2_500_000) == 3
@@ -190,9 +190,22 @@ def test_runner_routes_contract_patterns_to_explicit_job_names(settings, store, 
     ]
     assert [call["Arguments"]["--landing_manifests"] for call in started] == keys
     assert all(call["Arguments"]["--run_id"] == run for call in started)
+    gate = {"status": "PASSED"}
+    assert aws_services.run_gold_export(settings, D1, run, gate) == (
+        f"publish/reference_date={D1}/{run}/manifest.json"
+    )
+    assert started[-1] == {
+        "JobName": f"{settings.name_prefix}-export-risk-analytics",
+        "Arguments": {
+            "--bucket": settings.s3_bucket,
+            "--run_id": run,
+            "--reference_date": D1.isoformat(),
+            "--quality_gate": json.dumps(gate),
+        },
+    }
 
 
-@pytest.mark.parametrize("unit", ["db-gb", "db-tb", "gold-load"])
+@pytest.mark.parametrize("unit", ["extract-liquidez", "extract-enquadramento", "export-risk-analytics"])
 def test_glue_sdk_dependencies_are_pinned_to_the_tested_lock(unit):
     root = Path(__file__).resolve().parents[1]
     locked = {p["name"]: p["version"] for p in tomllib.loads((root / "uv.lock").read_text())["package"]}

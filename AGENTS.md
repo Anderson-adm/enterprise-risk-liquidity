@@ -13,7 +13,7 @@ Current record: [docs/HANDOFF.md](docs/HANDOFF.md). Ownership and migration map:
 | `apps/publisher/` | package validation/export, transactional publisher, own consumer SQL |
 | `apps/source-generator/` | synthetic fixtures and scenarios; caller supplies connections through `SourceEnvironment` |
 | `lambda/{market-data,internal-xml,external-xml}/` | own handler and parser, dependency and contract declaration in `unit.json` |
-| `glue/{db-gb,db-tb,gold-load}/` | own entry point, native Spark code and pinned SDK requirements |
+| `glue/{extract-liquidez,extract-enquadramento,export-risk-analytics}/` | own entry point, native Spark code and pinned SDK requirements |
 | `contracts/` | published Bronze/consumer/XSD/source-schema interfaces; one source of truth |
 | `protocols/integrity-v2/erl_protocol/` | explicit `2.0.0` integrity dependency, vendored per artifact; hash/commit/checksum/atomic I/O guarantees |
 | `dbt/`, `airflow/`, `infra/` | model ownership, orchestration, project/environment Terraform state |
@@ -52,7 +52,7 @@ uv run ruff check apps protocols contracts tests airflow glue lambda scripts
 uv run ruff format --check apps protocols contracts tests airflow glue lambda scripts
 DBT_SEND_ANONYMOUS_USAGE_STATS=false uv run pytest -m 'not integration'
 uv run python scripts/build/build_artifacts.py                  # offline cache only
-uv run python scripts/build/build_artifacts.py --unit glue/db-gb
+uv run python scripts/build/build_artifacts.py --unit glue/extract-liquidez
 uv run python scripts/build/smoke_artifacts.py                  # built units, local emulation
 scripts/terraform_checks.sh                                   # isolated copy, mocked provider
 ```

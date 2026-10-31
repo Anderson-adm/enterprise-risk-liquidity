@@ -4,19 +4,19 @@
 
 locals {
   glue_jobs = {
-    db-gb = {
+    extract-liquidez = {
       role    = aws_iam_role.glue_db_ingest.arn
-      workers = var.glue_workers["db_gb"]
+      workers = var.glue_workers["extract-liquidez"]
       args    = { "--volume_profile" = "gb" }
     }
-    db-tb = {
+    extract-enquadramento = {
       role    = aws_iam_role.glue_db_ingest.arn
-      workers = var.glue_workers["db_tb"]
+      workers = var.glue_workers["extract-enquadramento"]
       args    = { "--volume_profile" = "tb" }
     }
-    gold-load = {
-      role    = aws_iam_role.glue_gold_load.arn
-      workers = var.glue_workers["gold_load"]
+    export-risk-analytics = {
+      role    = aws_iam_role.glue_gold_export.arn
+      workers = var.glue_workers["export-risk-analytics"]
       args = {
         "--datalake-formats" = "iceberg"
         "--gold_database"    = aws_glue_catalog_database.layer["gold"].name

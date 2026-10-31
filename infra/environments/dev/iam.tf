@@ -121,7 +121,7 @@ resource "aws_iam_role_policy" "glue_db_ingest" {
         Sid      = "ReadOwnCode"
         Effect   = "Allow"
         Action   = ["s3:GetObject"]
-        Resource = ["${module.artifacts_bucket.arn}/case01/glue/db-gb/*", "${module.artifacts_bucket.arn}/case01/glue/db-tb/*"]
+        Resource = ["${module.artifacts_bucket.arn}/case01/glue/extract-liquidez/*", "${module.artifacts_bucket.arn}/case01/glue/extract-enquadramento/*"]
       },
       {
         Sid    = "ReadLandingManifests"
@@ -174,14 +174,14 @@ resource "aws_iam_role_policy" "glue_db_ingest" {
 
 # ------------------------------------------------------------------ Glue: Gold load (export package)
 
-resource "aws_iam_role" "glue_gold_load" {
-  name               = "${var.name_prefix}-glue-gold-load"
+resource "aws_iam_role" "glue_gold_export" {
+  name               = "${var.name_prefix}-glue-export-risk-analytics"
   assume_role_policy = data.aws_iam_policy_document.glue_assume.json
 }
 
-resource "aws_iam_role_policy" "glue_gold_load" {
-  name = "gold-load"
-  role = aws_iam_role.glue_gold_load.id
+resource "aws_iam_role_policy" "glue_gold_export" {
+  name = "export-risk-analytics"
+  role = aws_iam_role.glue_gold_export.id
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
@@ -202,7 +202,7 @@ resource "aws_iam_role_policy" "glue_gold_load" {
         Sid      = "ReadOwnCode"
         Effect   = "Allow"
         Action   = ["s3:GetObject"]
-        Resource = ["${module.artifacts_bucket.arn}/case01/glue/gold-load/*"]
+        Resource = ["${module.artifacts_bucket.arn}/case01/glue/export-risk-analytics/*"]
       },
       {
         Sid      = "ReadIcebergFiles"

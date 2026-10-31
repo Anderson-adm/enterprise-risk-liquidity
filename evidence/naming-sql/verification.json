@@ -1,0 +1,80 @@
+{
+  "checked_at_utc": "2026-10-31T17:38:32.036663+00:00",
+  "baseline": "fec9280e00b54ba7ea1e34f60b56ca59649186c5",
+  "scope": "Owner-selected Glue names, SQL ownership/loading verification; local commit only.",
+  "renames": {
+    "db-gb": "extract-liquidez",
+    "db-tb": "extract-enquadramento",
+    "gold-load": "export-risk-analytics"
+  },
+  "actual_scope": {
+    "extract-liquidez": "Unchanged GB profile: fund_ops, portfolio_risk and exposure_compliance registers/limits; reads landing snapshots, not source SQL.",
+    "extract-enquadramento": "Unchanged TB profile: legacy_finance views and exposure_compliance stock_position; reads landing snapshots, not source SQL.",
+    "export-risk-analytics": "Both Gold products -> committed publication package; local publisher owns SQL Server publication."
+  },
+  "semantic_caveat": "Owner-selected ingestion names are not exclusive business-domain boundaries; GB/TB routes, entities and algorithms are unchanged.",
+  "sql": {
+    "versioned_files": 54,
+    "runner": 12,
+    "publisher": 6,
+    "dbt": 36,
+    "moved": 0,
+    "content_changed": 0,
+    "inventory": "sql_inventory.json",
+    "packaged_resources_loaded": {
+      "runner": 12,
+      "publisher": 6
+    },
+    "dbt_distribution": "Separate versioned project configured by runner; not bundled into cloud jobs."
+  },
+  "unit_interfaces_checked": 9,
+  "obsolete_operational_job_name_references": 0,
+  "terraform": {
+    "scope": "Clean temporary copy; local cached provider only; credentials hidden; init -backend=false, validate, mocked test; no real provider plan.",
+    "fmt": "passed",
+    "validate_roots": 3,
+    "mocked_tests_passed": 15,
+    "job_keys_and_names": "<prefix>-extract-liquidez / extract-enquadramento / export-risk-analytics",
+    "artifact_keys": "case01/glue/<unit>/<artifact-sha256>/{job.py,lib.zip}",
+    "worker_keys": "New unit IDs; unchanged 2 G.1X defaults, timeout 15 minutes and zero retries.",
+    "IAM": "Existing ingestion role retains its actions with renamed code-read prefixes. Exporter role/policy now glue_gold_export / <prefix>-glue-export-risk-analytics, with renamed artifact prefix; no permission expansion.",
+    "state_migration": false,
+    "future_risk": "Renamed for_each keys, physical job names and exporter IAM may require replacements with an old live state. Do not reuse archived plans/states without a new explicitly authorised review."
+  },
+  "tests_rerun": {
+    "fast": 159,
+    "dbt": 11,
+    "total_python": 170,
+    "ruff": "check passed; 87 files formatted",
+    "built_unit_smokes": 9,
+    "selected_Glue_builds": 3,
+    "reproduced_Glue_artifacts": 6,
+    "full_artifacts": 12
+  },
+  "preservation": {
+    "SQL_bytes_unchanged": 54,
+    "published_contracts_unchanged": true,
+    "business_program_AST_check": "behavior_preservation.json",
+    "Airflow_unchanged": true,
+    "dbt_unchanged": true,
+    "Lambda_implementation_unchanged": true,
+    "dependency_pins_unchanged": true,
+    "historical_AWS_evidence_unchanged": true,
+    "no_shared_ingestion_implementation_added": true
+  },
+  "isolation": "Existing mutation/add/remove tests passed under new IDs. Selected real builds preserve other unit files/hashes/mtimes. Each job retains own source/Spark/requirements/artifacts/deploy references.",
+  "restrictions": {
+    "AWS_SSO_remote_calls": 0,
+    "Terraform_remote_apply_destroy_deploy": false,
+    "push": false,
+    "containers_started": false,
+    "paid_services": false,
+    "dependency_downloads": false
+  },
+  "limits": [
+    "Spark processing is stubbed; real Glue/Spark/Athena/Iceberg and managed-runtime execution remain unvalidated.",
+    "SQL ZIP/resource loading is proved offline; dbt project and external Python dependencies remain separate runtime requirements.",
+    "Future deploy with jobs idle; Git rollback does not roll back data/schema/state."
+  ],
+  "provenance": "Build/smoke manifest records the honest pre-commit snapshot (baseline + dirty=true); source_inputs.json and artifact hashes identify exact inputs/bytes. The local commit containing this evidence is the final change; post-commit rebuild checks the same hashes without a circular evidence commit."
+}

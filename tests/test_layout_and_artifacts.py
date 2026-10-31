@@ -140,7 +140,7 @@ def test_lambda_handlers_in_terraform_exist_in_the_entry_point():
 
 def test_terraform_uploads_exactly_the_built_artifacts_under_the_same_keys():
     fixture = DEV / "tests/fixtures/dist"
-    for unit in ("db-gb", "db-tb", "gold-load"):
+    for unit in ("extract-liquidez", "extract-enquadramento", "export-risk-analytics"):
         manifest = __import__("json").loads((fixture / "glue" / unit / "manifest.json").read_text())
         assert set(manifest["artifacts"]) == {"job.py", "lib.zip"}
         for filename, artifact in manifest["artifacts"].items():
@@ -159,9 +159,27 @@ def test_contract_ingestion_routes_name_existing_independent_glue_jobs():
         if e["ingestion_pattern"].startswith("glue_")
     }
     assert set(aws_services.GLUE_FOR_PATTERN) == patterns
-    for unit in [*aws_services.GLUE_FOR_PATTERN.values(), "gold-load"]:
+    assert aws_services.GLUE_FOR_PATTERN == {
+        "glue_db_gb": "extract-liquidez",
+        "glue_db_tb": "extract-enquadramento",
+    }
+    for unit in [*aws_services.GLUE_FOR_PATTERN.values(), "export-risk-analytics"]:
         assert f"    {unit} = {{" in _tf("glue.tf")
         assert (ROOT / "glue" / unit / "unit.json").is_file()
+
+
+@pytest.mark.parametrize("unit", ["apps/hybrid-runner", "apps/publisher"])
+def test_sql_is_packaged_with_its_executing_owner(tmp_path, unit):
+    import zipfile
+
+    result = build.build_unit(ROOT / unit, tmp_path, {}, ROOT)
+    sql_root = ROOT / unit / ("sql" if unit == "apps/hybrid-runner" else "python/load/sql")
+    prefix = "sql/" if unit == "apps/hybrid-runner" else "load/sql/"
+    expected = {prefix + p.relative_to(sql_root).as_posix(): p for p in sql_root.rglob("*.sql")}
+    with zipfile.ZipFile(tmp_path / unit / next(iter(result["artifacts"]))) as package:
+        actual = {name for name in package.namelist() if name.startswith(prefix) and name.endswith(".sql")}
+        assert actual == expected.keys()
+        assert all(package.read(name) == source.read_bytes() for name, source in expected.items())
 
 
 def test_terraform_never_builds_and_never_writes_code_to_the_state_or_data_bucket():

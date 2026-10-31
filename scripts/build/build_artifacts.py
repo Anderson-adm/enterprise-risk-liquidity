@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build independent units offline: python scripts/build/build_artifacts.py [--unit glue/db-gb].
+"""Build independent units offline: python scripts/build/build_artifacts.py [--unit glue/extract-liquidez].
 
 Each artifact vendors its pinned integrity dependency; no global mutable runtime ZIP.
 The local hybrid application explicitly consumes the public parser APIs for local mode.
@@ -245,7 +245,9 @@ def build(selected: list[str] | None = None) -> dict:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--unit", action="append", help="Build only a declared unit, e.g. glue/db-gb")
+    parser.add_argument(
+        "--unit", action="append", help="Build only a declared unit, e.g. glue/extract-liquidez"
+    )
     result = build(parser.parse_args().unit)
     for key, unit in result["units"].items():
         for name, artifact in unit["artifacts"].items():

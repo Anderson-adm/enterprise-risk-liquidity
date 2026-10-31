@@ -32,20 +32,21 @@ per-unit manifests record provenance and hashes. Detailed map: [REFACTORING.md](
 ```text
 s3://<prefix>-artifacts-<account>/
   case01/lambda/<market-data|internal-xml|external-xml>/function.zip
-  case01/glue/<db-gb|db-tb|gold-load>/<script-sha256>/job.py
-  case01/glue/<db-gb|db-tb|gold-load>/<library-sha256>/lib.zip
+  case01/glue/<extract-liquidez|extract-enquadramento|export-risk-analytics>/<script-sha256>/job.py
+  case01/glue/<extract-liquidez|extract-enquadramento|export-risk-analytics>/<library-sha256>/lib.zip
 ```
 
 Each Lambda references its own S3 object version. Each Glue job references its own immutable
 script/library keys and SDK arguments from the built manifest. The ingest role reads only
-`db-gb/*` and `db-tb/*`; Gold Load reads only `gold-load/*`. Runtime roles cannot overwrite code.
+`extract-liquidez/*` and `extract-enquadramento/*`; Gold Load reads only `export-risk-analytics/*`. Runtime roles cannot overwrite code.
 Content keys prevent incompatible script/library mixing. Deploy with jobs idle: Terraform may
 remove replaced keys after updating the job, so this does not guarantee access for an old run
 starting during deployment. Rollback requires rebuilding/testing and a new authorised deploy.
 
 The state, data, Athena results and artifacts buckets remain separate. No bucket, job, role or
-state per unit was added. Only artifact objects/references change: six Glue objects and three
-Lambda objects. New fixtures are for mocked plans, not executable cloud evidence. The previous
+state per unit was added. Artifact objects/references remain six Glue objects and three Lambda objects. The owner-selected
+Glue IDs also rename job keys/names, worker-map keys and the exporter IAM role/policy; an old
+live state could plan replacements. No state migration was performed; inspect any future plan. New fixtures are for mocked plans, not executable cloud evidence. The previous
 AWS state/backend are destroyed/archived; this migration made no state migration or cloud call.
 Local apps have separate ZIPs; they are not uploaded by this Terraform root.
 

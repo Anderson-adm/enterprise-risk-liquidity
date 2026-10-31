@@ -1,4 +1,4 @@
-"""Glue 5.0 db-gb: landing snapshots -> committed Bronze.
+"""Glue 5.0 extract-liquidez: landing snapshots -> committed Bronze.
 
 Own Spark implementation in spark/unit_spark.py; pinned integrity implementation in this
 unit's lib.zip. Unit-local SDK requirements. Implemented; no real Spark/Glue execution claimed.

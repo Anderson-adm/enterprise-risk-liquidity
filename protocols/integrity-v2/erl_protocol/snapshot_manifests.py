@@ -1,5 +1,5 @@
 """Acceptance steps of a database extraction snapshot (landing -> Bronze), shared by the local
-writer (``ingestion.snapshots``, PyArrow) and the Glue job (``glue/db-gb/job.py``, Spark).
+writer (``ingestion.snapshots``, PyArrow) and the Glue job (``glue/extract-liquidez/job.py``, Spark).
 
 Each entry point composes the same steps; only the Bronze write differs:
 

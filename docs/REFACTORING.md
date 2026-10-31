@@ -2,7 +2,8 @@
 
 Migration baseline: independently approved `3e11db9` (H1/H2/H3). Business rules, CLI commands,
 seven sources, source/date routing and the portfolio macro diagram are preserved. This layout
-has not been deployed. Earlier refactors and evidence remain in Git history/evidence/refactor.
+has not been deployed. Owner-selected Glue names were applied offline from `fec9280` without
+functional changes; current evidence is `evidence/naming-sql/`. Earlier records remain intact.
 
 Before:
 
@@ -20,7 +21,7 @@ After (only populated directories):
 apps/hybrid-runner/{erl.py,unit.json,python/,sql/extract/}
 apps/publisher/{unit.json,requirements.txt,python/load/}     # own sql/ inside load package
 apps/source-generator/{unit.json,requirements.txt,python/sources/}
-glue/{db-gb,db-tb,gold-load}/{job.py,spark/unit_spark.py,requirements.txt,unit.json}
+glue/{extract-liquidez,extract-enquadramento,export-risk-analytics}/{job.py,spark/unit_spark.py,requirements.txt,unit.json}
 lambda/market-data/{handler.py,python/market_data/,unit.json}
 lambda/internal-xml/{handler.py,python/internal_xml/,unit.json}
 lambda/external-xml/{handler.py,python/external_xml/,unit.json}
@@ -36,22 +37,23 @@ dbt/  airflow/  infra/  scripts/build/  tests/  evidence/  dist/ (ignored)
 | hybrid-runner | `erl` / `pipeline.cli:main`; configure, extract, coordinate, resume | sources/inbox + date/run → landing and step state/report | `apps/hybrid-runner/runner.zip`; local process, existing Airflow CLI calls |
 | publisher | `load.package`, `load.publisher:publish` | passed gate + committed package → atomic consumer publication/log | `apps/publisher/publisher.zip`; local SQL Server consumer |
 | source-generator | `sources.seed:generate_all` and scenario APIs | dates + caller's SourceEnvironment → synthetic databases/inbox | `apps/source-generator/source-generator.zip`; local fixtures |
-| db-gb | `glue/db-gb/job.py` | landing manifests → committed Bronze snapshots | own `job.py` + `lib.zip`; existing `*-db-gb` job/ingestion role |
-| db-tb | `glue/db-tb/job.py` | landing manifests → partitioned committed Bronze | own `job.py` + `lib.zip`; existing `*-db-tb` job/ingestion role |
-| gold-load | `glue/gold-load/job.py` | Iceberg Gold + passed gate → committed publication package | own `job.py` + `lib.zip`; existing Gold load job/role |
+| extract-liquidez | `glue/extract-liquidez/job.py` | landing manifests → committed Bronze snapshots | own `job.py` + `lib.zip`; `<prefix>-extract-liquidez` job/shared ingestion role |
+| extract-enquadramento | `glue/extract-enquadramento/job.py` | landing manifests → partitioned committed Bronze | own `job.py` + `lib.zip`; `<prefix>-extract-enquadramento` job/shared ingestion role |
+| export-risk-analytics | `glue/export-risk-analytics/job.py` | Iceberg Gold + passed gate → committed publication package | own `job.py` + `lib.zip`; `<prefix>-export-risk-analytics` job/export role |
 | market-data | own `handler.handler`, public `market_data.parse` | CSV delivery/event → acceptance/quarantine manifest + Bronze | own `function.zip`; existing market Lambda/role |
 | internal-xml | own `handler.handler`, public `internal_xml.parse` | internal XML → acceptance/quarantine manifest + Bronze | own `function.zip`; existing internal Lambda/role |
 | external-xml | own `handler.handler`, public `external_xml.parse` | external XML → acceptance/quarantine manifest + Bronze | own `function.zip`; existing external Lambda/role |
 
-`db-gb` / `db-tb` are volume patterns, not liquidity/exposure products. The contract still routes
-fund_ops and portfolio_risk to GB; legacy_finance to TB; exposure_compliance uses both. Their
-initial scripts/libraries can have identical bytes; source ownership and S3 prefixes are separate.
-The TB profile repartitions; this small lab has no TB-performance validation. GB/TB remain
-independent integrations by explicit architectural decision, even where implementations match;
-no common ingestion implementation is required. `gold-load` exports a publication package, not
-SQL Server rows. These existing names describe actual profiles/responsibilities; no business-domain
-renaming or Terraform resource renaming is necessary. The runner maps contract routing labels
-explicitly to job names (`GLUE_FOR_PATTERN`), without deriving names by string replacement.
+Owner-selected names (renamed offline from `db-gb`, `db-tb`, `gold-load` respectively):
+`extract-liquidez`, `extract-enquadramento`, `export-risk-analytics`. Naming does not redefine
+business boundaries. The first still uses GB routing: fund_ops + portfolio_risk +
+exposure_compliance instrument_registry/concentration_limit. The second still uses TB routing:
+legacy_finance views + exposure_compliance stock_position. Both read landing snapshots, not
+source databases directly. The exporter handles BOTH Gold products and does not publish to
+SQL Server. The TB profile repartitions; this small lab has no TB-performance validation.
+The two ingestion implementations remain independent even where bytes currently match.
+The runner maps unchanged contract labels `glue_db_gb`/`glue_db_tb` explicitly to the chosen job
+names (`GLUE_FOR_PATTERN`); profiles `gb`/`tb` and entity routing remain unchanged.
 
 dbt continues to own Silver/Gold SQL and Airflow continues to call `erl step`. No new services,
 commands, schedulers, Terraform state/bucket, or business functions were invented.
@@ -91,6 +93,22 @@ The GB/TB stage composition is intentionally owned twice. Conformance tests exec
 job control flows with only Spark processing stubbed: bad checksum, write/copy failure, commit
 after all parts, and completed-delivery reuse. These checks do not claim Spark execution.
 
+## SQL ownership (54 versioned files, all retained byte-for-byte)
+
+| SQL location | Executor / responsibility | Distribution |
+|---|---|---|
+| `apps/hybrid-runner/sql/extract/extract_query_table_*.sql`, `extract_query_view_*.sql` (10) | `pipeline.extraction_catalog` -> `extract.landing_snapshot`/`extract.sql_query`, source SELECTs | runner ZIP `sql/extract/`; installed wheel resource `sql` |
+| Same folder: `readiness_query_table_processing_batch.sql` (1) | runner source readiness check | runner ZIP / wheel |
+| Same folder: `extract_query_silver_rejected_records_summary.sql` (1) | `pipeline.steps.rejected_summary`, local DuckDB report read | runner ZIP / wheel; not Glue SQL |
+| `apps/publisher/python/load/sql/export_query_gold_product.sql` (1) | `load.package.build_from_duckdb`, Gold -> publication package | publisher ZIP `load/sql/`; also bundled by its declared runner consumer |
+| Same publisher folder: schema/lock/timeout SQL (5) | `load.publisher`, consumer schema setup and transaction locks | publisher ZIP / wheel; runner consumer bundles the same files |
+| `dbt/{models,macros,tests}/` (36) | dbt adapter on DuckDB or Athena, transformation and quality | separate versioned dbt project, configured externally for the local runner; not bundled into cloud jobs |
+
+No SQL move is warranted: ownership and loading already match execution. No Glue has SQL files
+because its implementation uses native DataFrame expressions. All packaged SQL is checked with
+`importlib.resources` from actual ZIPs; source bytes and archive members must match. Business SQL
+is never copied into generic loaders. dbt/SQL content and published contracts remain unchanged.
+
 ## Build, Terraform and rollback
 
 `build_artifacts.py --unit <runtime>/<unit>` builds only that declared unit; without `--unit` it
@@ -116,7 +134,14 @@ job update, so old runs are not guaranteed continued access to removed keys. Con
 protects coherence, not availability of deleted artifacts. Rollback means rebuild/test the Git
 commit and deploy again; it does not revert data, schemas or state.
 
-One project/environment Terraform state remains. Existing job/function/IAM identifiers remain;
+One project/environment Terraform state remains. Glue job map keys/names and artifact prefixes
+now follow the new unit IDs. `glue_workers` keys use these same IDs; worker counts and profiles
+are unchanged. The exporter IAM role/policy has the corresponding name (`glue_gold_export`
+Terraform address). Lambda/function/ingestion-IAM identifiers remain unchanged. If an old live
+state were reused, renamed job keys and exporter IAM could plan replacement; no state was
+migrated or queried here. The recorded lab is decommissioned: review a new authorised plan before
+any future provisioning. No automatic state migration is supplied.
+
 S3 objects now have per-unit ownership (six Glue objects and three Lambda objects instead of
 one common library/script pair/package). Future init/plan needs renewed identity and explicit
 approval; the destroyed backend and archived state must not be reused blindly. No state migration
@@ -129,5 +154,5 @@ publication rollback and local dbt behavior. Build tests perturb one owner, add 
 in an isolated copy, compare unrelated artifacts, and reject missing declared consumers.
 Cloud unit imports cannot resolve other units' private implementation. Smoke checks native
 codecs/handlers with moto and import graphs with Spark/Glue stubs: no Spark/JVM, Glue, Athena,
-Iceberg or AWS execution is claimed. Results and artifact hashes: `evidence/units/` and ignored
+Iceberg or AWS execution is claimed. Current results and artifact hashes: `evidence/naming-sql/` and ignored
 `dist/manifest.json`.
