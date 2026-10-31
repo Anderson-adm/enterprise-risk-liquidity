@@ -51,6 +51,73 @@ def test_integrity_dependency_has_one_version_and_selected_source_of_truth():
             assert spec["dependencies"] == ["pyarrow"]
 
 
+def test_protocol_packages_contain_only_reachable_modules():
+    """Check the import closure, including deferred imports and bundled public dependencies."""
+    protocol = ROOT / "protocols/integrity-v2/erl_protocol"
+    for key, directory in build.units().items():
+        spec, files = build.own_files(directory)
+        pending = [
+            p for name, p in files.items() if p.suffix == ".py" and not name.startswith("erl_protocol/")
+        ]
+        if spec["runtime"] == "glue":
+            pending.append(directory / spec["entrypoint"])
+        required = set()
+        while pending:
+            for node in ast.walk(ast.parse(pending.pop().read_text())):
+                modules = []
+                if isinstance(node, ast.ImportFrom) and node.module == "erl_protocol":
+                    modules = [alias.name for alias in node.names]
+                elif isinstance(node, ast.ImportFrom) and (node.module or "").startswith("erl_protocol."):
+                    modules = [node.module.split(".")[1]]
+                elif isinstance(node, ast.Import):
+                    modules = [
+                        alias.name.split(".")[1]
+                        for alias in node.names
+                        if alias.name.startswith("erl_protocol.")
+                    ]
+                for name in modules:
+                    if name not in required:
+                        required.add(name)
+                        pending.append(protocol / f"{name}.py")
+        included = {
+            Path(name).stem
+            for name in files
+            if name.startswith("erl_protocol/") and name != "erl_protocol/__init__.py"
+        }
+        assert included == required, (key, included - required, required - included)
+
+
+def test_compatible_protocol_implementation_change_uses_hashes_not_a_version_bump(tmp_path):
+    project = tmp_path / "project"
+    for directory in ("apps", "glue", "lambda", "protocols", "contracts"):
+        shutil.copytree(
+            ROOT / directory, project / directory, ignore=shutil.ignore_patterns("__pycache__", "*.pyc")
+        )
+    shutil.copyfile(ROOT / "uv.lock", project / "uv.lock")
+
+    def manifests():
+        return {
+            key: build.build_unit(path, tmp_path / "dist", {"pyarrow": {}, "lxml": {}}, project)
+            for key, path in build.units(project).items()
+        }
+
+    before = manifests()
+    source = project / "protocols/integrity-v2/erl_protocol/objects.py"
+    old = "COPY_PART_BYTES = 1024**3"
+    assert old in source.read_text()
+    source.write_text(source.read_text().replace(old, "COPY_PART_BYTES = 1 << 30"))  # same integer
+    after = manifests()
+    changed = {key for key in before if before[key]["artifacts"] != after[key]["artifacts"]}
+    assert changed == build.units(project).keys() - {"apps/source-generator"}
+    for key, manifest in after.items():
+        assert manifest["protocol_version"] == before[key]["protocol_version"] == "2.0.0"
+        assert manifest["contracts"] == before[key]["contracts"]
+        assert ("erl_protocol/objects.py" in manifest["files"]) == (key in changed)
+        if key.startswith("glue/"):
+            assert manifest["artifacts"]["job.py"] == before[key]["artifacts"]["job.py"]
+    assert manifests() == after, "identical source produces identical hashes and manifests"
+
+
 def test_exclusive_changes_addition_and_removal_do_not_propagate(tmp_path):
     project = tmp_path / "project"
     for directory in ("apps", "glue", "lambda", "protocols", "contracts"):
@@ -80,10 +147,14 @@ def test_exclusive_changes_addition_and_removal_do_not_propagate(tmp_path):
         "apps/hybrid-runner",
     }
     # The runner is a declared consumer of this public parser; other cloud units are independent.
-    spark = project / "glue/db-gb/spark/unit_spark.py"
-    spark.write_text(spark.read_text() + "\n# Exclusive GB job change.\n")
-    second = hashes()
-    assert {key for key in changed if changed[key] != second[key]} == {"glue/db-gb"}
+    second = changed
+    for unit in ("db-gb", "db-tb", "gold-load"):
+        for filename in ("spark/unit_spark.py", "job.py", "requirements.txt"):
+            source = project / "glue" / unit / filename
+            source.write_text(source.read_text() + "\n# Exclusive owner change.\n")
+            changed_owner = hashes()
+            assert {key for key in second if second[key] != changed_owner[key]} == {f"glue/{unit}"}
+            second = changed_owner
     for unit, filename in [
         ("apps/publisher", "python/load/publisher.py"),
         ("apps/source-generator", "python/sources/synthetic.py"),
@@ -102,11 +173,14 @@ def test_exclusive_changes_addition_and_removal_do_not_propagate(tmp_path):
     spec.write_text(json.dumps(data))
     added = hashes()
     assert all(added[key] == second[key] for key in second)
-    shutil.rmtree(project / "glue/db-gb")
+    for unit in ("db-gb", "db-tb", "gold-load"):
+        shutil.rmtree(project / "glue" / unit)
+        remaining = hashes()
+        assert all(remaining[key] == added[key] for key in remaining)
     shutil.rmtree(project / "lambda/market-data")
     for key, directory in build.units(project).items():
         if key == "apps/hybrid-runner":
-            with pytest.raises(ValueError, match="declared public parser"):
+            with pytest.raises(ValueError, match="declared public dependency"):
                 build.build_unit(directory, tmp_path / "dist", dependencies, project)
         else:
             result = build.build_unit(directory, tmp_path / "dist", dependencies, project)

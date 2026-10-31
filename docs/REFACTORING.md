@@ -46,13 +46,22 @@ dbt/  airflow/  infra/  scripts/build/  tests/  evidence/  dist/ (ignored)
 `db-gb` / `db-tb` are volume patterns, not liquidity/exposure products. The contract still routes
 fund_ops and portfolio_risk to GB; legacy_finance to TB; exposure_compliance uses both. Their
 initial scripts/libraries can have identical bytes; source ownership and S3 prefixes are separate.
-The TB profile repartitions; this small lab has no TB-performance validation.
+The TB profile repartitions; this small lab has no TB-performance validation. GB/TB remain
+independent integrations by explicit architectural decision, even where implementations match;
+no common ingestion implementation is required. `gold-load` exports a publication package, not
+SQL Server rows. These existing names describe actual profiles/responsibilities; no business-domain
+renaming or Terraform resource renaming is necessary. The runner maps contract routing labels
+explicitly to job names (`GLUE_FOR_PATTERN`), without deriving names by string replacement.
 
 dbt continues to own Silver/Gold SQL and Airflow continues to call `erl step`. No new services,
 commands, schedulers, Terraform state/bucket, or business functions were invented.
 
 ## Explicit dependencies, not global implementation
 
+* Each `unit.json` declares responsibility, input/output interfaces (referencing the root contracts
+  and protocol types), invariants, dependencies, external resources, state/effects and lifecycle.
+  `public_dependencies` names APIs consumed and bundled by the unit (formerly the misleading
+  `public_consumers`); wheel/runtime dependencies retain their existing fields.
 * The runner consumes the publisher/generator public APIs and, in local mode, the three public
   parser APIs. Those declared integrations are bundled for a standalone local artifact. A parser
   change legitimately changes its own Lambda and the runner; other cloud units stay unchanged.
@@ -65,10 +74,18 @@ commands, schedulers, Terraform state/bucket, or business functions were invente
   diverge across producers/readers. Parsers, Spark operations, source generation, orchestration
   and consumer publication are not in it. Version and selected module files are recorded per unit.
 * It is source-vendored into each artifact, not loaded from a global mutable S3 ZIP. Updating the
-  protocol requires an explicit version decision and tests of affected consumers. Copying business
-  code into this exception is not the default for future units.
+  protocol requires tests of affected consumers and a compatibility decision: **2.0.0 is a semantic
+  contract version**, not an implementation hash. Compatible internal edits can keep it; artifact
+  SHA-256 identifies exact bytes. No additional version mechanism is needed. Copying business code
+  into this exception is not the default for future units.
 * Contracts have one source: root JSON/XSD/schema declarations and the pinned protocol's manifest
   types. SQL loaders bind to each owner's package; their common allowlist mechanism is versioned.
+
+`objects.py` is actually imported by eight packages: runner, publisher, three Glue and three
+Lambdas; the source generator does not consume it. A compatible internal edit therefore changes
+eight packages legitimately, while Glue scripts and the generator stay identical. The import-closure
+check finds no unused protocol modules in current packages. Critical hash/manifest/commit semantics
+remain covered by behavior regressions, not by requiring an implementation hash to equal a version.
 
 The GB/TB stage composition is intentionally owned twice. Conformance tests execute both real
 job control flows with only Spark processing stubbed: bad checksum, write/copy failure, commit

@@ -15,5 +15,33 @@
   "volume_profile": null,
   "contracts": [
     "consumer_contract.json"
-  ]
+  ],
+  "responsibility": "Export the current run/date of both Iceberg Gold products to a committed publication package; does not publish to SQL Server.",
+  "interfaces": {
+    "input": "Consumer contract gold_model tables in Glue Catalog + PASSED quality gate; erl_protocol.publication.require_passed_gate.",
+    "output": "Consumer-contract Parquet products + erl_protocol.publication.build_manifest package, written last.",
+    "parameters": [
+      "JOB_NAME",
+      "bucket",
+      "run_id",
+      "reference_date",
+      "quality_gate",
+      "gold_database",
+      "max_product_rows"
+    ]
+  },
+  "invariants": [
+    "Export only the requested run/date after PASSED gate; enforce max_product_rows.",
+    "Conditional product copy; checksums and manifest commit before publisher can consume."
+  ],
+  "external_resources": [
+    "Glue 5.0 / Spark 3.5 / Iceberg, Glue Catalog Gold, S3 publication/tmp, unit artifact prefix, CloudWatch; IAM supplied by Terraform."
+  ],
+  "state_and_effects": "Reads Gold; writes immutable publication products and package manifest; deletes only temporary output.",
+  "lifecycle": {
+    "build": "Offline build_artifacts.py --unit glue/gold-load; own job.py/lib.zip plus selected protocol modules.",
+    "deploy": "Own immutable script/library keys and Glue definition in project dev Terraform state; deploy only with jobs idle.",
+    "rollback": "Rebuild/test this unit from the selected Git commit and deploy its compatible pair; does not revert data/schema/state.",
+    "remove": "Remove routing/callers and own Terraform job/artifacts under approval; preserve shared IAM, buckets, contracts and committed data used by other units."
+  }
 }

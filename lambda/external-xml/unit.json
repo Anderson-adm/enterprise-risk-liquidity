@@ -28,5 +28,24 @@
   "contracts": [
     "bronze_contract.json",
     "transfer_in_portfolio.xsd"
-  ]
+  ],
+  "responsibility": "Accept external transfer-in XML deliveries into Bronze or quarantine.",
+  "interfaces": {
+    "input": "handler.handler event: bucket/key/run_id/reference_date; landing/files/external_xml/ only; XML parsed by public external_xml.parse.",
+    "output": "Bronze contract + erl_protocol.manifests.IngestionManifest in response and S3; invalid delivery in quarantine. XML input: contracts/transfer_in_portfolio.xsd."
+  },
+  "invariants": [
+    "Prove contract codec before first write; preserve raw delivery, validate format/reference date, version-aware deduplication.",
+    "Conditional immutable output; manifest is commit; parse violations quarantine, infrastructure failures propagate."
+  ],
+  "external_resources": [
+    "S3 landing/Bronze/raw/quarantine/manifests, CloudWatch; synchronous invocation; IAM supplied by Terraform."
+  ],
+  "state_and_effects": "Reads its source landing prefix; writes raw, accepted Bronze or quarantine and manifests. No direct database access.",
+  "lifecycle": {
+    "build": "Offline build_artifacts.py --unit lambda/external-xml; own ZIP plus selected protocol modules and pinned native dependencies.",
+    "deploy": "Own S3 package version and Lambda definition in project dev Terraform state.",
+    "rollback": "Rebuild/test this unit from the selected Git commit and deploy its package; does not revert data/schema/state.",
+    "remove": "Remove routing/callers and own function/package/IAM under approval; preserve shared buckets, contracts and committed data."
+  }
 }

@@ -1,5 +1,26 @@
 # HANDOFF
 
+_Last update: 2026-10-31 (America/Fortaleza), Codex: scoped final unit-autonomy adjustments on
+`d75ebec`. Local commit only; no AWS/network/deploy/push. Current evidence: [../evidence/unit-final/](../evidence/unit-final/)._
+
+## Final autonomy adjustments
+
+* Keep independent `db-gb`, `db-tb`, `gold-load`; unchanged job implementations, SQL, contracts,
+  dbt and Airflow. Existing names describe real volume profiles/package export, not business domains.
+* Each unit declares interfaces, invariants, dependencies, resources, effects and lifecycle in its
+  existing `unit.json`. Rename misleading `public_consumers` to `public_dependencies` in build metadata.
+* Protocol **2.0.0 describes contract compatibility**, while existing artifact SHA-256 identifies
+  implementation bytes. Compatible internal changes do not force a version bump. All eight consumers
+  of `objects.py` legitimately package it; no unused protocol modules found in the import closure.
+* Replace runner string-derived Glue names with an explicit contract-pattern/job mapping; current
+  names and routing unchanged. Terraform differs only by a corrected historical comment.
+* Revalidated: 157 unique fast tests, nine built-unit smokes and Ruff passed. Eleven of twelve
+  artifact hashes equal `d75ebec`; only the runner ZIP changes. Previous dbt (11), Terraform mocks
+  (15) and eight-scenario equivalence were inspected/reused, not rerun: business code and Terraform
+  resource expressions did not change. Results/hashes: `evidence/unit-final/`.
+
+## Autonomous-unit migration record (previous validation)
+
 _Last update: 2026-10-30 (America/Fortaleza), Codex: autonomous-unit migration from independently
 approved `3e11db9`, using data-project-engineering v1.3. Local commit only; no push or AWS action._
 

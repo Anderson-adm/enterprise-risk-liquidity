@@ -1,0 +1,120 @@
+{
+  "scope": "Local artifact emulation only; no Spark JVM, Glue or AWS execution",
+  "git": {
+    "commit": "d75ebec56a2d80cb81890c5d4c471740c1ccb349",
+    "dirty": true
+  },
+  "units": {
+    "apps/hybrid-runner": {
+      "cli_imported_from_artifact": true,
+      "own_sql_resources_read": true,
+      "public_parsers": [
+        "external_xml",
+        "internal_xml",
+        "market_data"
+      ]
+    },
+    "apps/publisher": {
+      "publisher_imported": true,
+      "own_sql_resources_read": true
+    },
+    "apps/source-generator": {
+      "generator_imported": true,
+      "single_date_fixture_generated_in_memory": true
+    },
+    "glue/db-gb": {
+      "protocol_version": "2.0.0",
+      "imports_from_own_zip": [
+        "erl_protocol",
+        "erl_protocol.clock",
+        "erl_protocol.contracts",
+        "erl_protocol.errors",
+        "erl_protocol.objects",
+        "erl_protocol.snapshot_manifests",
+        "unit_spark"
+      ],
+      "spark_executed": false,
+      "acceptance_status": "ACCEPTED",
+      "volume_profiles": {
+        "gb": 1,
+        "tb": 3
+      },
+      "conditional_copy_refuses_overwrite": true
+    },
+    "glue/db-tb": {
+      "protocol_version": "2.0.0",
+      "imports_from_own_zip": [
+        "erl_protocol",
+        "erl_protocol.clock",
+        "erl_protocol.contracts",
+        "erl_protocol.errors",
+        "erl_protocol.objects",
+        "erl_protocol.snapshot_manifests",
+        "unit_spark"
+      ],
+      "spark_executed": false,
+      "acceptance_status": "ACCEPTED",
+      "volume_profiles": {
+        "gb": 1,
+        "tb": 3
+      },
+      "conditional_copy_refuses_overwrite": true
+    },
+    "glue/gold-load": {
+      "protocol_version": "2.0.0",
+      "imports_from_own_zip": [
+        "erl_protocol",
+        "erl_protocol.contracts",
+        "erl_protocol.errors",
+        "erl_protocol.objects",
+        "unit_spark"
+      ],
+      "spark_executed": false,
+      "publication_manifest_checked": true,
+      "conditional_copy_refuses_overwrite": true
+    },
+    "lambda/external-xml": {
+      "protocol_version": "2.0.0",
+      "pyarrow": "26.0.0",
+      "codec_roundtrip": true,
+      "cases": [
+        {
+          "status": "ACCEPTED",
+          "rows": 4,
+          "reason": null
+        },
+        {
+          "status": "REJECTED",
+          "rows": 0,
+          "reason": "XSD_VALIDATION_FAILED"
+        }
+      ],
+      "lxml": "6.1.3"
+    },
+    "lambda/internal-xml": {
+      "protocol_version": "2.0.0",
+      "pyarrow": "26.0.0",
+      "codec_roundtrip": true,
+      "cases": [
+        {
+          "status": "ACCEPTED",
+          "rows": 4,
+          "reason": null
+        }
+      ],
+      "lxml": "6.1.3"
+    },
+    "lambda/market-data": {
+      "protocol_version": "2.0.0",
+      "pyarrow": "26.0.0",
+      "codec_roundtrip": true,
+      "cases": [
+        {
+          "status": "ACCEPTED",
+          "rows": 16,
+          "reason": null
+        }
+      ]
+    }
+  }
+}

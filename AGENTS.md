@@ -23,8 +23,10 @@ Current record: [docs/HANDOFF.md](docs/HANDOFF.md). Ownership and migration map:
 * Own implementation belongs to its executable unit. No global implementation root, private imports
   between units, empty scaffolds or default shared library. Public integrations go in `unit.json`.
   The runner deliberately consumes publisher/generator and parser APIs for local composition.
-* The pinned integrity dependency is the exception for guarantees that must not diverge. Change its
-  version deliberately, test affected consumers, and vendor selected modules into each artifact.
+* The pinned integrity dependency is the exception for guarantees that must not diverge. Its version
+  describes public contract compatibility, not implementation bytes: compatible internal edits do not
+  automatically require a bump. Test affected consumers; artifact SHA-256 identifies the built bytes.
+  Vendor only required modules into each artifact.
   Format-specific parsing and Spark operations remain local. No mutable global runtime ZIP.
 * Contracts precede implementation. Preserve hash v2/legacy separation, commit visibility,
   immutable deliveries, quarantine, exact decimals, consumer-only ASCII and compatible checkpoints.

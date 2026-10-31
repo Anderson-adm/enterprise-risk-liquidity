@@ -12,12 +12,31 @@
   "contracts": [
     "source_schemas.py"
   ],
-  "public_consumers": [],
   "external_dependencies": [
     "sqlalchemy",
     "psycopg",
     "psycopg-binary",
     "pymssql"
   ],
-  "dependencies_file": "requirements.txt"
+  "dependencies_file": "requirements.txt",
+  "public_dependencies": [],
+  "responsibility": "Generate only synthetic source fixtures and the existing test scenarios.",
+  "interfaces": {
+    "input": "sources.seed.generate_all / scenario APIs; dates + sources.config.SourceEnvironment supplied by caller; source_schemas.py contract.",
+    "output": "Synthetic source databases and CSV/XML inbox deliveries."
+  },
+  "invariants": [
+    "Strictly increasing dates; prefix-stable positional date roles; exact decimals.",
+    "No dependency on runner configuration or production data."
+  ],
+  "external_resources": [
+    "Caller-supplied source/consumer SQL connections and inbox path; no AWS resources."
+  ],
+  "state_and_effects": "Fixture generation/scenarios can recreate source data or reset the synthetic consumer; inspect command scope before use. Not an ingestion job.",
+  "lifecycle": {
+    "build": "Offline build_artifacts.py --unit apps/source-generator; ZIP requires the declared locked external Python environment.",
+    "deploy": "Local Python application/API; no dedicated cloud deployment. Runner bundles only its declared public_dependencies.",
+    "rollback": "Rebuild/test selected Git commit with locked dependencies; does not revert data/schema/state.",
+    "remove": "Update declared callers and local packaging; preserve data, contracts and unrelated executable units."
+  }
 }

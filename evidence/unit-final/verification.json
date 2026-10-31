@@ -1,0 +1,97 @@
+{
+  "checked_at_utc": "2026-10-31T14:48:55.125183+00:00",
+  "baseline": "d75ebec56a2d80cb81890c5d4c471740c1ccb349",
+  "scope": "Final scoped unit-autonomy adjustments; local commit only.",
+  "decisions": {
+    "independent_jobs": [
+      "glue/db-gb",
+      "glue/db-tb",
+      "glue/gold-load"
+    ],
+    "shared_ingestion_implementation_added": false,
+    "unit_names_changed": false,
+    "protocol_contract_version": "2.0.0",
+    "compatible_internal_edits_require_version_bump": false,
+    "implementation_identity": "Existing artifact SHA-256; no extra version mechanism.",
+    "public_consumers_renamed_to": "public_dependencies",
+    "runner_job_routing": "Explicit GLUE_FOR_PATTERN mapping; current routing unchanged.",
+    "contracts_and_lifecycle": "Declared in each of the nine existing unit.json files; published contract definitions are referenced, not copied."
+  },
+  "objects_py_investigation": {
+    "consuming_units": [
+      "apps/hybrid-runner",
+      "apps/publisher",
+      "glue/db-gb",
+      "glue/db-tb",
+      "glue/gold-load",
+      "lambda/external-xml",
+      "lambda/internal-xml",
+      "lambda/market-data"
+    ],
+    "consumer_count": 8,
+    "unused_packaged_protocol_modules": [],
+    "finding": "All eight packages actually consume ObjectStore/S3Store or their transitive imports. Generator does not. Import closure checked for all nine units.",
+    "perturbation": "Isolated copy changes COPY_PART_BYTES from 1024**3 to 1 << 30 (same value); eight package hashes change, version/contracts remain identical, Glue scripts and generator do not change."
+  },
+  "rerun": {
+    "focused_tests": {
+      "passed": 58,
+      "evidence": "focused.txt"
+    },
+    "remaining_fast_tests": {
+      "passed": 99,
+      "deselected": 35,
+      "evidence": "remaining-fast.txt",
+      "network_guard": "Temporary socket-denying sitecustomize, with no production changes."
+    },
+    "total_unique_fast_tests": 157,
+    "ruff": "check passed; 87 files formatted",
+    "full_offline_build": {
+      "units": 9,
+      "artifacts": 12,
+      "changed_vs_baseline": [
+        "apps/hybrid-runner/runner.zip"
+      ],
+      "unchanged_artifacts": 11
+    },
+    "isolated_artifact_smoke": {
+      "passed_units": 9,
+      "evidence": "smoke_report.json",
+      "limits": "moto, Spark/Glue stubs; no real Spark JVM or AWS."
+    },
+    "independence": "Perturb each Glue script/Spark/requirements; add job; remove all Glue jobs one by one; other artifacts stay identical. Declared local public consumers rebuild only when their dependencies change.",
+    "manifest_and_deploy_references": "Layout tests confirm three independent Glue artifact pairs and explicit contract/job routing. Terraform source differs only by a comment.",
+    "unchanged_implementation": "git diff vs d75ebec: protocol, contracts, all Glue implementations/requirements, Lambda implementation, publisher/generator implementation, SQL, dbt, Airflow, pyproject and uv.lock unchanged."
+  },
+  "previous_evidence_reused_not_rerun": {
+    "dbt": {
+      "passed": 11,
+      "evidence": "../units/dbt.txt"
+    },
+    "eight_scenario_equivalence": {
+      "differences": 0,
+      "exact_decimals": 248,
+      "evidence": "../units/comparison/diff.json"
+    },
+    "terraform_mocked_tests": {
+      "passed": 15,
+      "evidence": "../units/terraform.txt"
+    },
+    "reason": "Business/runtime implementations and published contracts unchanged except the explicitly mapped runner routing covered by a local service-double test. Terraform only has a comment correction; deployed resource expressions are unchanged."
+  },
+  "restrictions_observed": {
+    "AWS_or_SSO_calls": 0,
+    "remote_terraform": false,
+    "deploy_apply_destroy_push": false,
+    "paid_services": false,
+    "containers_started": false,
+    "dependency_downloads": false
+  },
+  "residual_risks": [
+    "Real Spark/Glue/Athena/Iceberg and corrected Lambda on AWS remain unvalidated; offline results do not prove managed runtime access or performance.",
+    "Independent Glue artifacts/deploy references share the existing project Terraform state and ingestion IAM role; no mandatory shared implementation was introduced.",
+    "Deploy with jobs idle: old content keys can be removed during updates. Git rollback requires rebuild/test/deploy and does not revert data/schema/state.",
+    "Other documented historical limitations remain unchanged; no new AWS inventory was queried."
+  ],
+  "provenance_note": "Committed build manifest records the pre-commit source snapshot (baseline Git commit, dirty=true). source_inputs.json identifies exact build inputs; artifact SHA-256 identifies final bytes. The commit containing this evidence is the completed change. Rebuild after commit checks the same artifact hashes without a circular evidence commit."
+}

@@ -154,6 +154,44 @@ def test_glue_volume_profiles():
         db_ingest.parts_for("pb", 1)
 
 
+def test_runner_routes_contract_patterns_to_explicit_job_names(settings, store, monkeypatch):
+    """Pure service doubles: route labels and job names may evolve independently, no AWS client."""
+    from pipeline import aws_services
+
+    started = []
+
+    class Glue:
+        def start_job_run(self, **kwargs):
+            started.append(kwargs)
+            return {"JobRunId": "local-double"}
+
+        def get_job_run(self, **kwargs):
+            return {"JobRun": {"JobRunState": "SUCCEEDED"}}
+
+    class Session:
+        def client(self, service):
+            return Glue() if service == "glue" else None
+
+    monkeypatch.setattr(type(settings), "aws_session", lambda _: Session())
+    monkeypatch.setattr(aws_services, "S3Store", lambda *a, **kw: store)
+    # Intentionally different job suffix: an explicit mapping must win over name manipulation.
+    monkeypatch.setattr(
+        aws_services, "GLUE_FOR_PATTERN", {"glue_db_gb": "gb-import", "glue_db_tb": "tb-import"}
+    )
+    run = run_id()
+    keys = [
+        f"landing/db/fund_ops/fund/reference_date={D1}/{run}.json",
+        f"landing/db/legacy_finance/cash_balance/reference_date={D1}/{run}.json",
+    ]
+    assert aws_services.ingest_on_aws(settings, D1, run, keys, []) == []
+    assert [call["JobName"] for call in started] == [
+        f"{settings.name_prefix}-gb-import",
+        f"{settings.name_prefix}-tb-import",
+    ]
+    assert [call["Arguments"]["--landing_manifests"] for call in started] == keys
+    assert all(call["Arguments"]["--run_id"] == run for call in started)
+
+
 @pytest.mark.parametrize("unit", ["db-gb", "db-tb", "gold-load"])
 def test_glue_sdk_dependencies_are_pinned_to_the_tested_lock(unit):
     root = Path(__file__).resolve().parents[1]

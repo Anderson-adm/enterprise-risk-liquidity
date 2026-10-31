@@ -3,13 +3,6 @@
   "runtime": "local",
   "entrypoint": "erl.py",
   "protocol_version": "2.0.0",
-  "public_consumers": [
-    "apps/publisher",
-    "apps/source-generator",
-    "lambda/market-data",
-    "lambda/internal-xml",
-    "lambda/external-xml"
-  ],
   "capabilities": [
     "CLI/pipeline and checkpoints",
     "SQL extraction",
@@ -36,5 +29,31 @@
     "dbt-core",
     "dbt-duckdb",
     "dbt-athena"
-  ]
+  ],
+  "public_dependencies": [
+    "apps/publisher",
+    "apps/source-generator",
+    "lambda/market-data",
+    "lambda/internal-xml",
+    "lambda/external-xml"
+  ],
+  "responsibility": "Drive the existing hybrid pipeline CLI, SQL extraction, local composition and compatible checkpoint resume.",
+  "interfaces": {
+    "input": "erl CLI (pipeline.cli:main), Settings, run/date, source-schema contract and inbox deliveries.",
+    "output": "Landing Parquet/manifests, checkpoint state/run report; invokes declared public dependencies locally or AWS services in AWS mode."
+  },
+  "invariants": [
+    "Reject incompatible checkpoints before state mutation; preserve evidence origin.",
+    "Compose published contracts; preserve commit visibility, quality gating and exact decimals."
+  ],
+  "external_resources": [
+    "Source/consumer SQL engines, inbox/data paths, dbt project/runtime; in AWS mode SSO data-dev, sa-east-1, S3, Lambda, Glue, Athena, SNS."
+  ],
+  "state_and_effects": "Reads sources/inbox; writes landing, local checkpoint/report/warehouse and orchestrates downstream effects. One pipeline at a time, stable sources during extraction.",
+  "lifecycle": {
+    "build": "Offline build_artifacts.py --unit apps/hybrid-runner; ZIP requires the declared locked external Python environment.",
+    "deploy": "Local Python application/API; no dedicated cloud deployment. Runner bundles only its declared public_dependencies.",
+    "rollback": "Rebuild/test selected Git commit with locked dependencies; does not revert data/schema/state.",
+    "remove": "Update declared callers and local packaging; preserve data, contracts and unrelated executable units."
+  }
 }

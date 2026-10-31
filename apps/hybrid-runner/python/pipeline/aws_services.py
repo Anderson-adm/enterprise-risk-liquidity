@@ -36,6 +36,7 @@ LAMBDA_FOR_SOURCE = {
     "internal_xml": "ingest-internal-xml",
     "external_xml": "ingest-external-xml",
 }
+GLUE_FOR_PATTERN = {"glue_db_gb": "db-gb", "glue_db_tb": "db-tb"}
 GLUE_POLL_SECONDS = 15
 GLUE_TIMEOUT_SECONDS = 20 * 60
 
@@ -77,7 +78,7 @@ def ingest_on_aws(
         by_pattern.setdefault(bronze_entity(source, entity).ingestion_pattern, []).append(key)
     glue = session.client("glue")
     for pattern, keys in sorted(by_pattern.items()):
-        job = f"{settings.name_prefix}-{pattern.replace('glue_', '').replace('_', '-')}"
+        job = f"{settings.name_prefix}-{GLUE_FOR_PATTERN[pattern]}"
         run = glue.start_job_run(
             JobName=job,
             Arguments={

@@ -18,5 +18,31 @@
   "volume_profile": "gb",
   "contracts": [
     "bronze_contract.json"
-  ]
+  ],
+  "responsibility": "Accept database landing snapshots into committed Bronze using the GB volume profile.",
+  "interfaces": {
+    "input": "Landing Parquet + JSON extraction manifest; erl_protocol.snapshot_manifests.LandingSnapshot.",
+    "output": "Bronze Parquet + erl_protocol.manifests.IngestionManifest, written last as commit.",
+    "parameters": [
+      "JOB_NAME",
+      "bucket",
+      "run_id",
+      "landing_manifests",
+      "volume_profile"
+    ]
+  },
+  "invariants": [
+    "Verify landing checksum before processing; reuse completed deliveries.",
+    "Apply Bronze contract and version-aware duplicate detection; never overwrite committed parts."
+  ],
+  "external_resources": [
+    "Glue 5.0 / Spark 3.5, S3 landing/Bronze/manifests/tmp, unit artifact prefix, CloudWatch; IAM supplied by Terraform."
+  ],
+  "state_and_effects": "Reads landing, writes immutable Bronze and ingestion manifests; deletes only temporary output. No direct database access.",
+  "lifecycle": {
+    "build": "Offline build_artifacts.py --unit glue/db-gb; own job.py/lib.zip plus selected protocol modules.",
+    "deploy": "Own immutable script/library keys and Glue definition in project dev Terraform state; deploy only with jobs idle.",
+    "rollback": "Rebuild/test this unit from the selected Git commit and deploy its compatible pair; does not revert data/schema/state.",
+    "remove": "Remove routing/callers and own Terraform job/artifacts under approval; preserve shared IAM, buckets, contracts and committed data used by other units."
+  }
 }

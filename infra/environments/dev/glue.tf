@@ -1,7 +1,6 @@
 # Glue jobs (design: "Glue job - Volume em GB", "Glue job - Volume em TB", "Glue job - Load").
-# One db_ingest script implements both ingestion patterns; the TB pattern repartitions the
-# write and can run with more workers. Spark is required for the TB pattern; the lab uses
-# the minimum of 2 G.1X workers and tiny inputs.
+# Independently owned scripts/libraries implement each ingestion profile. The TB profile
+# repartitions the write. The lab uses the minimum of 2 G.1X workers and tiny inputs.
 
 locals {
   glue_jobs = {

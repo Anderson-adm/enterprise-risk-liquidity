@@ -125,10 +125,10 @@ def own_files(unit: Path, root: Path = ROOT) -> tuple[dict, dict[str, Path]]:
         common |= tree(unit / "python") | tree(unit / "sql", "sql/")
         if spec["entrypoint"] == "erl.py":
             common["erl.py"] = unit / spec["entrypoint"]
-        for dependency in spec["public_consumers"]:
+        for dependency in spec["public_dependencies"]:
             public = root / dependency / "python"
             if not public.is_dir():
-                raise ValueError(f"missing declared public parser dependency: {dependency}")
+                raise ValueError(f"missing declared public dependency: {dependency}")
             common |= tree(public)
     if spec.get("dependencies_file") and (unit / spec["dependencies_file"]).is_file():
         common["requirements.txt"] = unit / spec["dependencies_file"]
@@ -179,7 +179,7 @@ def build_unit(unit: Path, output: Path, dependencies: dict[str, dict[str, Path]
         ]
         if spec.get("dependencies_file") and spec["runtime"] == "glue"
         else [],
-        "public_consumers": spec.get("public_consumers", []),
+        "public_dependencies": spec.get("public_dependencies", []),
         "files": sorted(files),
         "artifacts": artifacts,
     }

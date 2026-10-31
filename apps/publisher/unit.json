@@ -20,11 +20,30 @@
   "contracts": [
     "consumer_contract.json"
   ],
-  "public_consumers": [],
   "external_dependencies": [
     "sqlalchemy",
     "pyarrow",
     "duckdb"
   ],
-  "dependencies_file": "requirements.txt"
+  "dependencies_file": "requirements.txt",
+  "public_dependencies": [],
+  "responsibility": "Validate publication packages and atomically publish both consumer products; also build local packages from DuckDB Gold.",
+  "interfaces": {
+    "input": "load.package.load_package(ObjectStore, manifest_key); consumer contract + committed erl_protocol.publication package.",
+    "output": "load.publisher.publish(engine, Package); consumer tables and publication log per consumer contract."
+  },
+  "invariants": [
+    "Validate checksums, gate, product set, types, nullable fields, keys, date and consumer-only ASCII/width before publication.",
+    "Serialize publication transactions; identical content skips replacement; any failure preserves the previous valid publication."
+  ],
+  "external_resources": [
+    "Consumer SQL Server (SQLite stand-in / PostgreSQL tested separately); ObjectStore; DuckDB only for local package creation."
+  ],
+  "state_and_effects": "Own consumer SQL and rpt/stg tables; creates missing schema, stages/replaces date and writes publication log transactionally.",
+  "lifecycle": {
+    "build": "Offline build_artifacts.py --unit apps/publisher; ZIP requires the declared locked external Python environment.",
+    "deploy": "Local Python application/API; no dedicated cloud deployment. Runner bundles only its declared public_dependencies.",
+    "rollback": "Rebuild/test selected Git commit with locked dependencies; does not revert data/schema/state.",
+    "remove": "Update declared callers and local packaging; preserve data, contracts and unrelated executable units."
+  }
 }

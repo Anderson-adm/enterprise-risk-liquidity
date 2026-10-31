@@ -15,9 +15,9 @@ from pathlib import Path
 import pytest
 
 from connect.secrets import get_secret
-from erl_protocol.contracts import bronze_entity
+from erl_protocol.contracts import bronze_contract, bronze_entity
 from erl_protocol.errors import ConfigurationError
-from pipeline import extraction_catalog
+from pipeline import aws_services, extraction_catalog
 from tests.conftest import load_entrypoint
 from utils.sql_files import read_sql, render_identifiers
 
@@ -150,6 +150,18 @@ def test_terraform_uploads_exactly_the_built_artifacts_under_the_same_keys():
         assert (fixture / "lambda" / unit / "function.zip").is_file()
     assert "key         = each.value.key" in _tf("glue.tf")
     assert "case01/lambda/${each.value.unit}/function.zip" in _tf("lambda.tf")
+
+
+def test_contract_ingestion_routes_name_existing_independent_glue_jobs():
+    patterns = {
+        e["ingestion_pattern"]
+        for e in bronze_contract()["entities"].values()
+        if e["ingestion_pattern"].startswith("glue_")
+    }
+    assert set(aws_services.GLUE_FOR_PATTERN) == patterns
+    for unit in [*aws_services.GLUE_FOR_PATTERN.values(), "gold-load"]:
+        assert f"    {unit} = {{" in _tf("glue.tf")
+        assert (ROOT / "glue" / unit / "unit.json").is_file()
 
 
 def test_terraform_never_builds_and_never_writes_code_to_the_state_or_data_bucket():

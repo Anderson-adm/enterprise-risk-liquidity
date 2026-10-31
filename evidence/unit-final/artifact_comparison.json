@@ -1,0 +1,12 @@
+{
+  "baseline": "d75ebec",
+  "baseline_hashes": "../units/artifact_hashes.json",
+  "changed_units": [
+    "apps/hybrid-runner"
+  ],
+  "unchanged_artifacts": 11,
+  "total_artifacts": 12,
+  "protocol_version": "2.0.0",
+  "business_contracts_changed": false,
+  "explanation": "Only the runner ZIP changes: explicit Glue routing map. unit.json metadata is not packaged into runtime ZIPs; all Glue/Lambda/publisher/generator bytes match the baseline."
+}
