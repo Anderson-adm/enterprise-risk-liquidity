@@ -12,11 +12,11 @@ import pyarrow.parquet as pq
 import pytest
 from sqlalchemy import make_url
 
+from erl_protocol.checksums import sha256_hex
+from erl_protocol.contracts import consumer_contract, parquet_compression
+from erl_protocol.objects import LocalStore
+from erl_protocol.run_ids import new_run_id
 from pipeline import config
-from storage.objects import LocalStore
-from utils.checksums import sha256_hex
-from utils.contracts import consumer_contract, parquet_compression
-from utils.run_ids import new_run_id
 
 ROOT = Path(__file__).resolve().parents[1]
 D1, D2, D3 = date(2026, 10, 26), date(2026, 10, 27), date(2026, 10, 28)

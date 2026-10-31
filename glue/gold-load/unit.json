@@ -1,0 +1,19 @@
+{
+  "id": "gold-load",
+  "runtime": "glue",
+  "entrypoint": "job.py",
+  "protocol_version": "2.0.0",
+  "protocol_modules": [
+    "clock",
+    "contracts",
+    "errors",
+    "objects",
+    "publication",
+    "structured_log"
+  ],
+  "dependencies_file": "requirements.txt",
+  "volume_profile": null,
+  "contracts": [
+    "consumer_contract.json"
+  ]
+}

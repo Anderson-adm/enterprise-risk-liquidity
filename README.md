@@ -11,7 +11,7 @@ All data, codes, limits and rules are **synthetic**; nothing comes from any real
 > pipeline is **not validated**. All Case 01 AWS resources were subsequently deleted.
 > Since then (2026-10-30, offline): the codec and single-date generator defects are fixed and
 > covered by tests, the code follows a documented layout ([REFACTORING.md](docs/REFACTORING.md)),
-> and the deployable artifacts are built and smoke-tested before Terraform. None of this has
+> and the deployable artifacts are built and smoke-tested before Terraform. Units now own their implementations and deploy artifacts; see the ownership map below. None of this has
 > been deployed or run on AWS.
 
 Current record: [handoff](docs/HANDOFF.md), [failed AWS run](evidence/aws/functional/2026-10-26/summary.json),
@@ -71,15 +71,15 @@ flowchart LR
 | 7 sources | SQLAlchemy schemas for 4 DBs + CSV + 2 XML/XSD formats, deterministic generator | Validated locally on PostgreSQL 17 + SQL Server 2022 containers and on SQLite stand-ins |
 | Extraction | parameterised SQL, streamed in chunks, landing snapshot + manifest | Validated locally on PostgreSQL, SQL Server (incl. legacy views) and SQLite; identical content hashes across engines |
 | Bronze | run-scoped keys, conditional writes, checksums, duplicate detection, quarantine | Validated locally (filesystem) and with moto (S3 API mock) |
-| Lambdas (CSV / XML ingestion) | thin handlers `lambda/bronze/file_ingestion.py` → same `ingestion.files` code as local; self-contained ZIP with PyArrow/lxml pinned to `uv.lock` (no managed layer) | built ZIP smoke-tested locally (isolated interpreter, moto S3, Zstandard round-trip); the one AWS invocation (old package) **failed** on the managed layer's codec; the fix is **not validated on AWS** |
-| Glue jobs db-gb / db-tb / gold-load | thin entry points `glue/bronze`, `glue/load` + library ZIP (`src/python`, `src/spark`) via `--extra-py-files` | **Implemented, not validated**: library imports and non-Spark steps smoke-tested from the built ZIP; no Spark (no local JVM) and no AWS run |
+| Lambdas (CSV / XML ingestion) | per-function handlers/parsers in `lambda/<unit>`; own ZIP with pinned PyArrow (and lxml for XML), versioned integrity protocol (no managed layer) | built ZIP smoke-tested locally (isolated interpreter, moto S3, Zstandard round-trip); the one AWS invocation (old package) **failed** on the managed layer's codec; the fix is **not validated on AWS** |
+| Glue jobs db-gb / db-tb / gold-load | unit-local entry points/Spark code in `glue/{db-gb,db-tb,gold-load}` + independent library per job via `--extra-py-files` | **Implemented, not validated**: library imports and non-Spark steps smoke-tested from the built ZIP; no Spark (no local JVM) and no AWS run |
 | Silver / Gold | dbt, portable SQL, DuckDB locally; Athena + Iceberg target configured | Validated locally on DuckDB; **Athena/Iceberg not validated** |
 | Quality gate | dbt tests on write-audit-publish candidates + gate step | Validated locally |
 | Publication | staging, in-DB checks, single transaction, content-hash idempotency, publication lock, publication log | Validated locally on a SQL Server 2022 container (incl. concurrent publishers) and on SQLite |
 | Airflow | local Airflow 3.3.2, one task per step, retries, alerts, failure watcher | Validated locally on PostgreSQL + SQL Server (`airflow dags test`, success and quality-failure runs) |
 | CloudWatch / SNS | log groups, Lambda error alarms, Glue failure EventBridge rule, DAG failure → SNS | Real Lambda error logs and successful alarm action to SNS observed; human receipt and other alert paths not verified |
-| Terraform | bootstrap + dev root module + 1 module; uploads pre-built artifacts to a separate artifacts bucket | local checks pass (fmt, validate, 14 mocked tests, TFLint, Checkov 162/0/40); the earlier layout was applied (7 bootstrap + 69 dev) and fully destroyed; the current layout was **never applied** |
-| CI | GitHub Actions (Python, dbt on DuckDB, PostgreSQL + SQL Server integration, Terraform checks), actions pinned by SHA | Green on GitHub |
+| Terraform | bootstrap + dev root module + 1 module; uploads pre-built artifacts to a separate artifacts bucket | local checks pass (fmt, validate, 15 mocked tests, TFLint, Checkov 162/0/40); the earlier layout was applied (7 bootstrap + 69 dev) and fully destroyed; the current layout was **never applied** |
+| CI | GitHub Actions (Python, dbt on DuckDB, PostgreSQL + SQL Server integration, per-unit build/smoke, Terraform checks), actions pinned by SHA | Historical baseline green; autonomous-unit changes checked locally, not pushed |
 
 Why a publication package between Gold and SQL Server: AWS must not connect to a local
 database (no VPN/NAT, nothing exposed). The Glue `gold-load` job exports the audited Gold rows
@@ -90,12 +90,15 @@ Code layout (details and rationale: [docs/REFACTORING.md](docs/REFACTORING.md)):
 
 | Path | Responsibility |
 |---|---|
-| `src/python/{connect,extract,transform,load,ingestion,storage,utils}` | connections/secrets, SQL execution, pure record shaping, publication, delivery acceptance, object I/O, transversal helpers |
-| `src/python/pipeline`, `src/python/sources` | step composition + `erl` CLI; simulated source systems (dev/test data) |
-| `src/spark/{readers,transforms,writers}` | native PySpark operations used by the Glue jobs |
-| `src/sql/{extract,load}`, `src/contracts` | versioned SQL (binds, allowlisted identifiers); data contracts |
-| `lambda/bronze`, `glue/bronze`, `glue/load` | thin runtime entry points |
-| `scripts/build` → `dist/` | artifacts + `manifest.json` (SHA-256, commit, runtime), built and smoke-tested before any plan |
+| `apps/hybrid-runner/` | existing CLI, configuration/checkpoints, SQL extraction and orchestration; own extraction SQL |
+| `apps/publisher/` | package validation/export and transactional publication; own consumer SQL |
+| `apps/source-generator/` | synthetic source systems and scenarios; public configuration/connection interface |
+| `lambda/{market-data,internal-xml,external-xml}/` | each function owns its handler, parser, dependencies and ZIP |
+| `glue/{db-gb,db-tb,gold-load}/` | each job owns its entry point, native Spark operations, requirements and script/library artifacts |
+| `contracts/` | published JSON/XSD/source-schema interfaces |
+| `protocols/integrity-v2/` | pinned 2.0.0 integrity exception, vendored per artifact; no mutable shared runtime ZIP |
+| `scripts/build` → `dist/<runtime>/<unit>/` | independent artifacts/manifests (SHA-256, commit, runtime), built offline from cached dependencies before planning |
+
 
 ## 4. The seven sources and 5. the model
 
@@ -140,9 +143,9 @@ Exit codes: 0 ok, 2 configuration, 3 infrastructure/source unavailable, 4 contra
 ## 9. Tests
 
 ```bash
-uv run ruff check src tests airflow glue lambda scripts
+uv run ruff check apps protocols contracts tests airflow glue lambda scripts
 uv run pytest -m "not dbt and not integration"   # unit/contract/moto/layout tests (~2 min)
-uv run pytest -m "dbt and not integration"       # 11 end-to-end regression cases with dbt
+DBT_SEND_ANONYMOUS_USAGE_STATS=false uv run pytest -m "dbt and not integration"       # 11 end-to-end regression cases with dbt
 uv run python scripts/build/build_artifacts.py && uv run python scripts/build/smoke_artifacts.py
 # real PostgreSQL + SQL Server (docker/compose.yaml running, .env with local passwords):
 set -a; . ./.env; set +a; ERL_IT_CONTAINERS=1 uv run pytest -m integration   # ~1.5 min

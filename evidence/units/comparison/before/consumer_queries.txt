@@ -1,0 +1,42 @@
+-- consumer engine: sqlite
+
+-- liquidity_summary_d2
+SELECT reference_date, portfolio_id, total_value, liquid_value, liquidity_ratio, pending_redemptions, redemption_coverage, lineage_sources FROM liquidity_summary WHERE reference_date = '2026-10-27' ORDER BY portfolio_id
+reference_date | portfolio_id | total_value | liquid_value | liquidity_ratio | pending_redemptions | redemption_coverage | lineage_sources
+2026-10-27 | PRT-0001 | 5095640.21 | 4515053.49 | 0.886062 | 800000.00 | 5.643817 | fund_ops,legacy_finance,market_data,portfolio_risk
+2026-10-27 | PRT-0002 | 3747293.82 | 3572101.77 | 0.953248 | 0.00 |  | fund_ops,legacy_finance,market_data,portfolio_risk
+2026-10-27 | PRT-0003 | 7970108.04 | 6818558.87 | 0.855516 | 9500000.00 | 0.717743 | fund_ops,legacy_finance,market_data,portfolio_risk
+2026-10-27 | PRT-0004 | 5152655.79 | 1383223.63 | 0.268449 | 1200000.00 | 1.152686 | fund_ops,legacy_finance,market_data,portfolio_risk
+2026-10-27 | PRT-0005 | 4375221.83 | 3864367.12 | 0.883239 | 0.00 |  | fund_ops,legacy_finance,market_data,portfolio_risk
+2026-10-27 | PRT-0006 | 3062287.12 | 3062287.12 | 1.000000 | 0.00 |  | fund_ops,internal_xml,legacy_finance,market_data
+2026-10-27 | PRT-0007 | 2421892.75 | 2316777.52 | 0.956598 | 0.00 |  | external_xml,fund_ops,legacy_finance,market_data
+2026-10-27 | PRT-0008 | 1913870.34 | 1913870.34 | 1.000000 | 0.00 |  | external_xml,fund_ops,legacy_finance,market_data
+
+-- exposure_compliance_d3
+SELECT reference_date, portfolio_id, total_exposure, top_issuer_code, top_issuer_pct, concentration_limit_pct, concentration_check, reconciliation_status, quality_status FROM exposure_compliance WHERE reference_date = '2026-10-28' ORDER BY portfolio_id
+reference_date | portfolio_id | total_exposure | top_issuer_code | top_issuer_pct | concentration_limit_pct | concentration_check | reconciliation_status | quality_status
+2026-10-28 | PRT-0001 | 3843523.84 | ISS-A | 0.220380 | 0.250000 | PASS | MISMATCH | WARN
+2026-10-28 | PRT-0002 | 3279810.69 | ISS-E | 0.166707 | 0.250000 | PASS | MATCHED | OK
+2026-10-28 | PRT-0003 | 5787721.67 | ISS-H | 0.163729 | 0.250000 | PASS | MISMATCH | WARN
+2026-10-28 | PRT-0004 | 5048861.70 | ISS-B | 0.603438 | 0.250000 | BREACH | MATCHED | OK
+2026-10-28 | PRT-0005 | 3407283.29 | ISS-A | 0.106714 | 0.250000 | PASS | MATCHED | OK
+2026-10-28 | PRT-0006 | 2738235.63 | ISS-C | 0.150928 | 0.250000 | PASS | MATCHED | OK
+2026-10-28 | PRT-0007 | 2276376.60 | ISS-A | 0.156791 | 0.250000 | PASS | MATCHED | OK
+2026-10-28 | PRT-0008 | 1844860.44 | ISS-E | 0.177824 | 0.250000 | PASS | MATCHED | OK
+
+-- publication_log
+SELECT reference_date, publication_id, status, liquidity_rows, exposure_rows, superseded_by, message FROM publication_log ORDER BY reference_date, published_at
+reference_date | publication_id | status | liquidity_rows | exposure_rows | superseded_by | message
+2026-10-26 | 20261026-20261031T002658Z-cf516e-ebd8658373a94dfea03e2020cb7fa522 | ACTIVE | 8 | 8 |  |
+2026-10-27 | 20261027-20261031T002730Z-5167bb-92fb8e0d1193480b9cb875cbb8e483d3 | SUPERSEDED | 7 | 8 | 20261027-20261031T002830Z-31dc05-484b680e16d247d6b97a3c9c69176430 |
+2026-10-27 | 20261027-20261031T002830Z-31dc05-484b680e16d247d6b97a3c9c69176430 | ACTIVE | 8 | 8 |  |
+2026-10-27 | 20261027-20261031T002901Z-2f7abd-083b487af74548c7884882c14fe99ca0 | SKIPPED_IDENTICAL | 8 | 8 |  | identical to active publication 20261027-20261031T002830Z-31dc05-484b680e16d247d6b97a3c9c69176430
+2026-10-28 | 20261028-20261031T002800Z-81b19c-b81aca3862984a7c995b1a2d6d358022 | SUPERSEDED | 8 | 8 | 20261028-20261031T002932Z-490fbe-ef81f2270601492e942b423a51701b92 |
+2026-10-28 | 20261028-20261031T002932Z-490fbe-ef81f2270601492e942b423a51701b92 | ACTIVE | 8 | 8 |  |
+
+-- active_version_per_date
+SELECT reference_date, publication_id, pipeline_run_id, content_sha256 FROM publication_log WHERE status = 'ACTIVE' ORDER BY reference_date
+reference_date | publication_id | pipeline_run_id | content_sha256
+2026-10-26 | 20261026-20261031T002658Z-cf516e-ebd8658373a94dfea03e2020cb7fa522 | 20261031T002658Z-cf516e | 3cab7f23df38ecf5e4881631e327e5dcac0b22dd12c300a158f51c09d3b957af
+2026-10-27 | 20261027-20261031T002830Z-31dc05-484b680e16d247d6b97a3c9c69176430 | 20261031T002830Z-31dc05 | dfd63aeabcb5a92e1e31a91516d28a6481a2d39b2790fcdd1a01a64f965d705e
+2026-10-28 | 20261028-20261031T002932Z-490fbe-ef81f2270601492e942b423a51701b92 | 20261031T002932Z-490fbe | 6c194797d1b58d0dc74d044a07ed7152b6f8f223c1d2d5c7f94f4156ce09252b

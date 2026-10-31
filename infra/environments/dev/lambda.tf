@@ -11,14 +11,16 @@ resource "aws_cloudwatch_log_group" "lambda" {
   retention_in_days = var.log_retention_days
 }
 
-# One package for the three functions. It bundles its own PyArrow/lxml pinned to uv.lock: the
+# One independent package per function. It bundles its own PyArrow/lxml pinned to uv.lock: the
 # AWS-managed pandas layer's PyArrow could not write the Zstandard codec of the Bronze contract
 # (failed AWS attempt 2026-10-30). The ZIP exceeds the 50 MB direct-upload limit, hence S3.
 resource "aws_s3_object" "lambda_package" {
+  for_each = local.file_sources
+
   bucket      = module.artifacts_bucket.id
-  key         = local.lambda_package_key
-  source      = local.lambda_package
-  source_hash = filebase64sha256(local.lambda_package)
+  key         = "case01/lambda/${each.value.unit}/function.zip"
+  source      = "${var.artifacts_dir}/lambda/${each.value.unit}/function.zip"
+  source_hash = filebase64sha256("${var.artifacts_dir}/lambda/${each.value.unit}/function.zip")
 }
 
 resource "aws_lambda_function" "ingest" {
@@ -35,9 +37,9 @@ resource "aws_lambda_function" "ingest" {
   architectures     = ["x86_64"]
   handler           = each.value.handler
   s3_bucket         = module.artifacts_bucket.id
-  s3_key            = aws_s3_object.lambda_package.key
-  s3_object_version = aws_s3_object.lambda_package.version_id
-  source_code_hash  = filebase64sha256(local.lambda_package)
+  s3_key            = aws_s3_object.lambda_package[each.key].key
+  s3_object_version = aws_s3_object.lambda_package[each.key].version_id
+  source_code_hash  = filebase64sha256("${var.artifacts_dir}/lambda/${each.value.unit}/function.zip")
   memory_size       = 512
   timeout           = 60
 

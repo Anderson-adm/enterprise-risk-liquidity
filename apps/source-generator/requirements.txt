@@ -1,0 +1,5 @@
+# Direct runtime requirements pinned from the repository uv.lock.
+sqlalchemy==2.1.6
+psycopg==3.3.6
+psycopg-binary==3.3.6
+pymssql==2.4.6

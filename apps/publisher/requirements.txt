@@ -1,0 +1,4 @@
+# Direct runtime requirements pinned from the repository uv.lock.
+sqlalchemy==2.1.6
+pyarrow==26.0.0
+duckdb==2.0.0

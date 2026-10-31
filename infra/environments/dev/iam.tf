@@ -3,13 +3,12 @@
 # /aws-glue/* log groups, whose names Glue chooses. See docs/TERRAFORM.md.
 
 locals {
-  data_arn      = module.data_bucket.arn
-  results_arn   = module.athena_results_bucket.arn
-  glue_code_arn = "${module.artifacts_bucket.arn}/case01/glue/*" # scripts + library (read-only)
-  catalog_arn   = "arn:aws:glue:${var.aws_region}:${local.account_id}:catalog"
-  db_arn        = { for k, db in aws_glue_catalog_database.layer : k => "arn:aws:glue:${var.aws_region}:${local.account_id}:database/${db.name}" }
-  table_arn     = { for k, db in aws_glue_catalog_database.layer : k => "arn:aws:glue:${var.aws_region}:${local.account_id}:table/${db.name}/*" }
-  glue_logs     = "arn:aws:logs:${var.aws_region}:${local.account_id}:log-group:/aws-glue/*"
+  data_arn    = module.data_bucket.arn
+  results_arn = module.athena_results_bucket.arn
+  catalog_arn = "arn:aws:glue:${var.aws_region}:${local.account_id}:catalog"
+  db_arn      = { for k, db in aws_glue_catalog_database.layer : k => "arn:aws:glue:${var.aws_region}:${local.account_id}:database/${db.name}" }
+  table_arn   = { for k, db in aws_glue_catalog_database.layer : k => "arn:aws:glue:${var.aws_region}:${local.account_id}:table/${db.name}/*" }
+  glue_logs   = "arn:aws:logs:${var.aws_region}:${local.account_id}:log-group:/aws-glue/*"
   glue_metrics = {
     Sid       = "GlueMetrics"
     Effect    = "Allow"
@@ -122,7 +121,7 @@ resource "aws_iam_role_policy" "glue_db_ingest" {
         Sid      = "ReadOwnCode"
         Effect   = "Allow"
         Action   = ["s3:GetObject"]
-        Resource = [local.glue_code_arn]
+        Resource = ["${module.artifacts_bucket.arn}/case01/glue/db-gb/*", "${module.artifacts_bucket.arn}/case01/glue/db-tb/*"]
       },
       {
         Sid    = "ReadLandingManifests"
@@ -203,7 +202,7 @@ resource "aws_iam_role_policy" "glue_gold_load" {
         Sid      = "ReadOwnCode"
         Effect   = "Allow"
         Action   = ["s3:GetObject"]
-        Resource = [local.glue_code_arn]
+        Resource = ["${module.artifacts_bucket.arn}/case01/glue/gold-load/*"]
       },
       {
         Sid      = "ReadIcebergFiles"

@@ -15,10 +15,10 @@ from pathlib import Path
 import pytest
 
 from connect.secrets import get_secret
+from erl_protocol.contracts import bronze_entity
+from erl_protocol.errors import ConfigurationError
 from pipeline import extraction_catalog
 from tests.conftest import load_entrypoint
-from utils.contracts import bronze_entity
-from utils.errors import ConfigurationError
 from utils.sql_files import read_sql, render_identifiers
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -46,13 +46,20 @@ def test_wheel_maps_every_package_to_a_top_level_name():
 
 def test_every_import_root_package_is_declared_and_importable():
     declared = set(_packages())
+    roots = [
+        "apps/hybrid-runner/python",
+        "apps/publisher/python",
+        "apps/source-generator/python",
+        "protocols/integrity-v2",
+        *[f"lambda/{u}/python" for u in ("market-data", "internal-xml", "external-xml")],
+    ]
     found = {
-        p.parent.relative_to(ROOT).as_posix()
-        for root in ("src/python", "src/spark")
-        for p in (ROOT / root).glob("*/__init__.py")
-    } | {"src/contracts", "src/sql"}
+        p.parent.relative_to(ROOT).as_posix() for root in roots for p in (ROOT / root).glob("*/__init__.py")
+    } | {"contracts", "apps/hybrid-runner/sql"}
     assert declared == found
-    assert not (ROOT / "src/erl").exists(), "the old wrapper package must be gone"
+    assert not (ROOT / "src").exists(), (
+        "implementation belongs to an owning unit or pinned integrity protocol"
+    )
 
 
 def test_top_level_names_do_not_collide_with_stdlib_or_installed_distributions():
@@ -64,10 +71,19 @@ def test_top_level_names_do_not_collide_with_stdlib_or_installed_distributions()
 
 
 def test_artifact_contents_are_declared_packages():
-    declared = set(_packages())
-    assert set(build.LAMBDA_PACKAGES) <= declared
-    assert set(build.GLUE_LIBRARY_PACKAGES) <= declared
-    assert {"src/python/pipeline", "src/python/sources"}.isdisjoint(build.GLUE_LIBRARY_PACKAGES)
+    for key, unit in build.units().items():
+        spec, files = build.own_files(unit)
+        assert spec["protocol_version"] == "2.0.0"
+        if spec["runtime"] != "local":
+            assert not any(
+                name.startswith(("pipeline/", "sources/", "load/", "ingestion/")) for name in files
+            )
+            assert all(
+                p.is_relative_to(unit)
+                or p.is_relative_to(ROOT / "protocols/integrity-v2")
+                or p.is_relative_to(ROOT / "contracts")
+                for p in files.values()
+            ), key
 
 
 @pytest.mark.parametrize(("key", "query"), sorted(extraction_catalog.EXTRACT_QUERIES.items()))
@@ -81,9 +97,9 @@ def test_extraction_sql_selects_exactly_the_contract_columns(key, query):
 def test_every_sql_file_is_referenced():
     referenced = {q.sql_file for q in extraction_catalog.EXTRACT_QUERIES.values()}
     referenced |= set(extraction_catalog.READINESS_QUERIES.values())
-    code = "\n".join(p.read_text() for p in (ROOT / "src/python").rglob("*.py"))
-    for path in (ROOT / "src/sql").rglob("*.sql"):
-        relative = path.relative_to(ROOT / "src/sql").as_posix()
+    code = "\n".join(p.read_text() for p in (ROOT / "apps/hybrid-runner/python").rglob("*.py"))
+    for path in (ROOT / "apps/hybrid-runner/sql").rglob("*.sql"):
+        relative = path.relative_to(ROOT / "apps/hybrid-runner/sql").as_posix()
         assert relative in referenced or relative in code, f"unused SQL file {relative}"
 
 
@@ -114,24 +130,26 @@ def _tf(name: str) -> str:
 
 
 def test_lambda_handlers_in_terraform_exist_in_the_entry_point():
-    handlers = re.findall(r'handler = "file_ingestion\.(\w+)"', _tf("locals.tf"))
-    module = ast.parse((ROOT / build.LAMBDA_HANDLER).read_text())
-    defined = {n.name for n in module.body if isinstance(n, ast.FunctionDef)}
-    assert len(handlers) == 3 and set(handlers) <= defined
-    assert Path(build.LAMBDA_HANDLER).stem == "file_ingestion"
+    local = _tf("locals.tf")
+    for unit in ("market-data", "internal-xml", "external-xml"):
+        assert f'unit = "{unit}"' in local or f'unit     = "{unit}"' in local
+        source = ast.parse((ROOT / "lambda" / unit / "handler.py").read_text())
+        assert "handler" in {n.name for n in source.body if isinstance(n, ast.FunctionDef)}
+    assert 'handler = "handler.handler"' in local or 'handler  = "handler.handler"' in local
 
 
 def test_terraform_uploads_exactly_the_built_artifacts_under_the_same_keys():
-    locals_tf = _tf("locals.tf")
-    glue = dict(re.findall(r'(\w+)\s*=\s*"(glue/[\w/.]+)"', locals_tf))
-    lambda_path = re.search(r'lambda_package\s*=\s*"\$\{var\.artifacts_dir\}/([\w/.]+)"', locals_tf).group(1)
-    lambda_key = re.search(r'lambda_package_key\s*=\s*"([\w/.]+)"', locals_tf).group(1)
-    assert set(glue.values()) | {lambda_path} == set(build.ARTIFACTS)
-    assert build.ARTIFACTS[lambda_path] == lambda_key
-    assert 'key         = "case01/${each.value}"' in _tf("glue.tf")
-    assert all(build.ARTIFACTS[p] == f"case01/{p}" for p in glue.values())
-    for path in build.ARTIFACTS:  # the terraform test fixtures mirror dist/
-        assert (DEV / "tests/fixtures/dist" / path).is_file(), path
+    fixture = DEV / "tests/fixtures/dist"
+    for unit in ("db-gb", "db-tb", "gold-load"):
+        manifest = __import__("json").loads((fixture / "glue" / unit / "manifest.json").read_text())
+        assert set(manifest["artifacts"]) == {"job.py", "lib.zip"}
+        for filename, artifact in manifest["artifacts"].items():
+            assert artifact["s3_key"] == f"case01/glue/{unit}/{artifact['sha256']}/{filename}"
+            assert (fixture / "glue" / unit / filename).is_file()
+    for unit in ("market-data", "internal-xml", "external-xml"):
+        assert (fixture / "lambda" / unit / "function.zip").is_file()
+    assert "key         = each.value.key" in _tf("glue.tf")
+    assert "case01/lambda/${each.value.unit}/function.zip" in _tf("lambda.tf")
 
 
 def test_terraform_never_builds_and_never_writes_code_to_the_state_or_data_bucket():
@@ -145,7 +163,7 @@ def test_terraform_never_builds_and_never_writes_code_to_the_state_or_data_bucke
 
 def test_terraform_reads_the_contract_from_its_current_location():
     path = re.search(r'file\("\$\{path\.module\}/([^"]+bronze_contract\.json)"\)', _tf("locals.tf")).group(1)
-    assert (DEV / path).resolve() == (ROOT / "src/contracts/bronze_contract.json").resolve()
+    assert (DEV / path).resolve() == (ROOT / "contracts/bronze_contract.json").resolve()
 
 
 def test_generated_artifacts_are_not_versioned():

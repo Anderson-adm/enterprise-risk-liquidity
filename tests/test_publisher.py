@@ -8,10 +8,10 @@ import pytest
 from sqlalchemy import select
 
 from connect.databases import engine_for
+from erl_protocol.errors import PublicationError
 from load import package, publisher
 from sources import seed
 from tests.conftest import D1, D2, product_rows, reset_consumer, run_id, write_package
-from utils.errors import PublicationError
 
 
 @pytest.fixture

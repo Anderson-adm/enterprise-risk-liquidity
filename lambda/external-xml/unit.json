@@ -1,0 +1,32 @@
+{
+  "id": "external-xml",
+  "runtime": "lambda",
+  "entrypoint": "handler.py",
+  "handler": "handler.handler",
+  "python_package": "external_xml",
+  "protocol_version": "2.0.0",
+  "protocol_modules": [
+    "checksums",
+    "clock",
+    "contracts",
+    "errors",
+    "file_acceptance",
+    "file_contract",
+    "layout",
+    "manifests",
+    "objects",
+    "parquet",
+    "records",
+    "run_ids",
+    "structured_log",
+    "xml_validation"
+  ],
+  "dependencies": [
+    "pyarrow",
+    "lxml"
+  ],
+  "contracts": [
+    "bronze_contract.json",
+    "transfer_in_portfolio.xsd"
+  ]
+}

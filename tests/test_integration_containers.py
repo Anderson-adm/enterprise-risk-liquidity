@@ -17,14 +17,17 @@ from decimal import Decimal
 import pyarrow as pa
 import pyarrow.parquet as pq
 import pytest
+from contracts.source_schemas import SOURCE_METADATA
 from sqlalchemy import CHAR, Date, DateTime, String, delete, insert, make_url, select, text
 
 from connect.databases import engine_for
+from erl_protocol.contracts import consumer_contract
+from erl_protocol.errors import PublicationError
+from erl_protocol.objects import LocalStore
+from erl_protocol.sqltypes import Dec
 from load import package, publisher
 from pipeline import config, extraction_catalog, steps
 from sources import seed
-from sources.schemas import SOURCE_METADATA
-from storage.objects import LocalStore
 from tests.conftest import (
     D1,
     D2,
@@ -37,9 +40,6 @@ from tests.conftest import (
     use_backend,
     write_package,
 )
-from utils.contracts import consumer_contract
-from utils.errors import PublicationError
-from utils.sqltypes import Dec
 
 pytestmark = [pytest.mark.dbt, *REQUIRES_CONTAINERS]
 

@@ -12,12 +12,12 @@ import boto3
 import pytest
 from moto import mock_aws
 
-from ingestion import manifests
+from erl_protocol import manifests
+from erl_protocol.checksums import sha256_hex
+from erl_protocol.errors import ConfigurationError, ObjectExistsError
+from erl_protocol.objects import S3Store
 from sources import synthetic
-from storage.objects import S3Store
 from tests.conftest import D1, load_entrypoint, run_id
-from utils.checksums import sha256_hex
-from utils.errors import ConfigurationError, ObjectExistsError
 
 BUCKET = "erl-dev-test-data"
 
@@ -44,7 +44,7 @@ def test_s3_store_refuses_overwrite(s3):
 
 def test_lambda_handler_ingests_market_data_into_s3_bronze(s3, monkeypatch):
     monkeypatch.setenv("ERL_S3_BUCKET", BUCKET)
-    lambda_handlers = load_entrypoint("lambda/bronze/file_ingestion.py")
+    lambda_handlers = load_entrypoint("lambda/market-data/handler.py")
 
     name, body = next((n, b) for s, d, n, b in synthetic.generate().files if s == "market_data" and d == D1)
     run = run_id()
@@ -54,7 +54,7 @@ def test_lambda_handler_ingests_market_data_into_s3_bronze(s3, monkeypatch):
     class Ctx:
         function_name = "erl-dev-ingest-market-data"
 
-    out = lambda_handlers.market_data_handler(
+    out = lambda_handlers.handler(
         {"bucket": BUCKET, "key": key, "run_id": run, "reference_date": D1.isoformat()}, Ctx()
     )
     manifest = out["manifest"]
@@ -69,7 +69,7 @@ def test_lambda_handler_ingests_market_data_into_s3_bronze(s3, monkeypatch):
 
 def test_lambda_handler_rejects_objects_outside_its_scope(s3, monkeypatch):
     monkeypatch.setenv("ERL_S3_BUCKET", BUCKET)
-    lambda_handlers = load_entrypoint("lambda/bronze/file_ingestion.py")
+    lambda_handlers = load_entrypoint("lambda/market-data/handler.py")
 
     event = {
         "bucket": BUCKET,
@@ -78,11 +78,9 @@ def test_lambda_handler_rejects_objects_outside_its_scope(s3, monkeypatch):
         "reference_date": D1.isoformat(),
     }
     with pytest.raises(ValueError, match="not a market_data landing object"):
-        lambda_handlers.market_data_handler(event, None)
+        lambda_handlers.handler(event, None)
     with pytest.raises(ValueError, match="outside this function's scope"):
-        lambda_handlers.market_data_handler(
-            event | {"bucket": "other", "key": "landing/files/market_data/x.csv"}, None
-        )
+        lambda_handlers.handler(event | {"bucket": "other", "key": "landing/files/market_data/x.csv"}, None)
 
 
 def test_wrong_aws_account_is_refused(s3):
@@ -148,7 +146,7 @@ def test_dedup_on_s3_compares_only_the_latest_accepted_delivery(s3):
 
 
 def test_glue_volume_profiles():
-    db_ingest = load_entrypoint("glue/bronze/db_ingest.py")
+    db_ingest = load_entrypoint("glue/db-gb/job.py")
     assert db_ingest.parts_for("gb", 10_000_000) == 1
     assert db_ingest.parts_for("tb", 0) == 1
     assert db_ingest.parts_for("tb", 2_500_000) == 3
@@ -156,10 +154,11 @@ def test_glue_volume_profiles():
         db_ingest.parts_for("pb", 1)
 
 
-def test_glue_sdk_dependencies_are_pinned_to_the_tested_lock():
+@pytest.mark.parametrize("unit", ["db-gb", "db-tb", "gold-load"])
+def test_glue_sdk_dependencies_are_pinned_to_the_tested_lock(unit):
     root = Path(__file__).resolve().parents[1]
     locked = {p["name"]: p["version"] for p in tomllib.loads((root / "uv.lock").read_text())["package"]}
-    requirements = (root / "glue/requirements.txt").read_text().splitlines()
+    requirements = (root / "glue" / unit / "requirements.txt").read_text().splitlines()
     for line in requirements:
         if line and not line.startswith("#"):
             name, version = line.split("==")
@@ -187,10 +186,10 @@ def test_lambda_without_the_parquet_codec_leaves_only_the_landing_object(s3, mon
     import pyarrow as pa
     import pyarrow.parquet as pq
 
-    from utils.contracts import parquet_compression
+    from erl_protocol.contracts import parquet_compression
 
     monkeypatch.setenv("ERL_S3_BUCKET", BUCKET)
-    lambda_handlers = load_entrypoint("lambda/bronze/file_ingestion.py")
+    lambda_handlers = load_entrypoint("lambda/external-xml/handler.py")
 
     real = pq.write_table
 
@@ -205,7 +204,7 @@ def test_lambda_without_the_parquet_codec_leaves_only_the_landing_object(s3, mon
     key = f"landing/files/external_xml/delivery_date={D1}/{run}/{name}"
     s3.put_object(Bucket=BUCKET, Key=key, Body=body)
     with pytest.raises(ConfigurationError, match="cannot use Parquet codec"):
-        lambda_handlers.external_xml_handler(
+        lambda_handlers.handler(
             {"bucket": BUCKET, "key": key, "run_id": run, "reference_date": D1.isoformat()}, None
         )
     assert [o["Key"] for o in s3.list_objects_v2(Bucket=BUCKET)["Contents"]] == [key]
@@ -236,7 +235,7 @@ class _FailingCopyClient:
 
 @pytest.fixture
 def two_part_source(s3, monkeypatch):
-    from storage import objects
+    from erl_protocol import objects
 
     monkeypatch.setattr(objects, "COPY_PART_BYTES", 5 * 1024 * 1024)
     s3.put_object(Bucket=BUCKET, Key="tmp/big", Body=b"x" * (6 * 1024 * 1024))  # two copy parts

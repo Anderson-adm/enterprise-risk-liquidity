@@ -1,0 +1,40 @@
+{
+  "id": "hybrid-runner",
+  "runtime": "local",
+  "entrypoint": "erl.py",
+  "protocol_version": "2.0.0",
+  "public_consumers": [
+    "apps/publisher",
+    "apps/source-generator",
+    "lambda/market-data",
+    "lambda/internal-xml",
+    "lambda/external-xml"
+  ],
+  "capabilities": [
+    "CLI/pipeline and checkpoints",
+    "SQL extraction",
+    "local transactional publisher",
+    "synthetic source generator"
+  ],
+  "dependencies_file": "requirements.txt",
+  "contracts": [
+    "bronze_contract.json",
+    "consumer_contract.json",
+    "internal_portfolio_statement.xsd",
+    "transfer_in_portfolio.xsd",
+    "source_schemas.py"
+  ],
+  "external_dependencies": [
+    "sqlalchemy",
+    "pyarrow",
+    "lxml",
+    "boto3",
+    "duckdb",
+    "psycopg",
+    "psycopg-binary",
+    "pymssql",
+    "dbt-core",
+    "dbt-duckdb",
+    "dbt-athena"
+  ]
+}

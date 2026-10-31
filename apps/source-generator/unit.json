@@ -1,0 +1,23 @@
+{
+  "id": "source-generator",
+  "runtime": "local",
+  "entrypoint": "python/sources/seed.py",
+  "python_api": "sources.seed:generate_all",
+  "artifact": "source-generator.zip",
+  "protocol_version": "2.0.0",
+  "protocol_modules": [
+    "sqltypes",
+    "structured_log"
+  ],
+  "contracts": [
+    "source_schemas.py"
+  ],
+  "public_consumers": [],
+  "external_dependencies": [
+    "sqlalchemy",
+    "psycopg",
+    "psycopg-binary",
+    "pymssql"
+  ],
+  "dependencies_file": "requirements.txt"
+}

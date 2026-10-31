@@ -1,0 +1,22 @@
+{
+  "id": "db-gb",
+  "runtime": "glue",
+  "entrypoint": "job.py",
+  "protocol_version": "2.0.0",
+  "protocol_modules": [
+    "checksums",
+    "clock",
+    "contracts",
+    "errors",
+    "layout",
+    "manifests",
+    "objects",
+    "snapshot_manifests",
+    "structured_log"
+  ],
+  "dependencies_file": "requirements.txt",
+  "volume_profile": "gb",
+  "contracts": [
+    "bronze_contract.json"
+  ]
+}

@@ -30,10 +30,10 @@ os.environ.setdefault("ERL_MODE", "local")
 
 from sqlalchemy import make_url, text  # noqa: E402
 
+from erl_protocol import structured_log  # noqa: E402
 from load import publisher  # noqa: E402
 from pipeline import config, steps  # noqa: E402
 from sources import seed  # noqa: E402
-from utils import structured_log  # noqa: E402
 
 D1, D2, D3 = date(2026, 10, 26), date(2026, 10, 27), date(2026, 10, 28)
 

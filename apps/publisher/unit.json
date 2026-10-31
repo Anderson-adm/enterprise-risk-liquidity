@@ -1,0 +1,30 @@
+{
+  "id": "publisher",
+  "runtime": "local",
+  "entrypoint": "python/load/publisher.py",
+  "python_api": "load.publisher:publish",
+  "artifact": "publisher.zip",
+  "protocol_version": "2.0.0",
+  "protocol_modules": [
+    "contracts",
+    "objects",
+    "parquet",
+    "errors",
+    "checksums",
+    "clock",
+    "publication",
+    "structured_log",
+    "sql_files",
+    "sqltypes"
+  ],
+  "contracts": [
+    "consumer_contract.json"
+  ],
+  "public_consumers": [],
+  "external_dependencies": [
+    "sqlalchemy",
+    "pyarrow",
+    "duckdb"
+  ],
+  "dependencies_file": "requirements.txt"
+}

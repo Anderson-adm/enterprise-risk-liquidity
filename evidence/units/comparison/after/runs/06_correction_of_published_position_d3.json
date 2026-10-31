@@ -1,0 +1,82 @@
+{
+  "run_id": "20261031T003317Z-41eca1",
+  "reference_date": "2026-10-28",
+  "mode": "local",
+  "steps": {
+    "validate": "SUCCEEDED",
+    "extract": "SUCCEEDED",
+    "collect": "SUCCEEDED",
+    "ingest": "SUCCEEDED",
+    "transform": "SUCCEEDED",
+    "gate": "SUCCEEDED",
+    "load": "SUCCEEDED",
+    "publish": "SUCCEEDED"
+  },
+  "records_read": {
+    "fund_ops": {
+      "fund": 4,
+      "portfolio": 8,
+      "source_identity_map": 34
+    },
+    "portfolio_risk": {
+      "processing_batch": 1,
+      "processed_position": 24
+    },
+    "legacy_finance": {
+      "cash_balance": 8,
+      "pending_redemption": 3
+    },
+    "exposure_compliance": {
+      "instrument_registry": 16,
+      "stock_position": 31,
+      "concentration_limit": 1
+    }
+  },
+  "ingestion": {
+    "by_status": {
+      "DUPLICATE": 14,
+      "ACCEPTED": 1
+    },
+    "records_written": 24,
+    "files_rejected": [],
+    "late_arrivals": [
+      "transfer_in_ADM77_EXT77-0002_20261027_retransmission.xml"
+    ]
+  },
+  "quality_gate": {
+    "status": "PASSED",
+    "dbt_invocation_id": "135b3d8b-173c-4e0c-bfd7-c58783f54d9b",
+    "tests_failed": [],
+    "warnings": []
+  },
+  "publication": {
+    "publication_status": "ACTIVE",
+    "publication_id": "20261028-20261031T003317Z-41eca1-cc7e56f01bb041a9b1bbcfabb360369d",
+    "superseded": "20261028-20261031T003142Z-e79e56-68338bf67672423e975624ad12d951e7",
+    "rows": {
+      "liquidity_summary": 8,
+      "exposure_compliance": 8
+    },
+    "content_sha256": "cc857f992f663509d294487caec599943929521ca84c667348f6015c0fcc1aa0"
+  },
+  "rejected_records": [
+    {
+      "entity": "portfolio_position",
+      "source_system": "portfolio_risk",
+      "reason": "UNMAPPED_PORTFOLIO",
+      "records": 2
+    }
+  ],
+  "step_elapsed_seconds": {
+    "validate": 0.0,
+    "extract": 0.027,
+    "collect": 0.002,
+    "ingest": 0.071,
+    "transform": 30.829,
+    "gate": 0.0,
+    "load": 0.027,
+    "publish": 0.011,
+    "report": 0.019
+  },
+  "total_elapsed_seconds": 30.99
+}

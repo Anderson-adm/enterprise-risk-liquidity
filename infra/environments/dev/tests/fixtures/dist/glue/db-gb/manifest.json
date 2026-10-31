@@ -1,0 +1,21 @@
+{
+  "artifacts": {
+    "job.py": {
+      "sha256": "3e9cb81408dfd320ee2757c72cf616579eba5cb277b7b8a378e3cbb857730e3e",
+      "s3_key": "case01/glue/db-gb/3e9cb81408dfd320ee2757c72cf616579eba5cb277b7b8a378e3cbb857730e3e/job.py"
+    },
+    "lib.zip": {
+      "sha256": "c1504dedf86182d912de2a7307fa6dd053f0ea2205341d6fbf4782e60d9e9761",
+      "s3_key": "case01/glue/db-gb/c1504dedf86182d912de2a7307fa6dd053f0ea2205341d6fbf4782e60d9e9761/lib.zip"
+    }
+  },
+  "python_modules": [
+    "boto3==1.43.121",
+    "botocore==1.43.121",
+    "jmespath==1.1.0",
+    "python-dateutil==2.9.0.post0",
+    "s3transfer==0.19.3",
+    "six==1.17.0",
+    "urllib3==2.8.0"
+  ]
+}

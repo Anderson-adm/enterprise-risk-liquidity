@@ -1,0 +1,103 @@
+{
+  "run_id": "20261031T003245Z-ac4bc8",
+  "reference_date": "2026-10-27",
+  "mode": "local",
+  "steps": {
+    "validate": "SUCCEEDED",
+    "extract": "SUCCEEDED",
+    "collect": "SUCCEEDED",
+    "ingest": "SUCCEEDED",
+    "transform": "SUCCEEDED",
+    "gate": "SUCCEEDED",
+    "load": "SUCCEEDED",
+    "publish": "SUCCEEDED"
+  },
+  "records_read": {
+    "fund_ops": {
+      "fund": 4,
+      "portfolio": 8,
+      "source_identity_map": 34
+    },
+    "portfolio_risk": {
+      "processing_batch": 1,
+      "processed_position": 25
+    },
+    "legacy_finance": {
+      "cash_balance": 8,
+      "pending_redemption": 3
+    },
+    "exposure_compliance": {
+      "instrument_registry": 16,
+      "stock_position": 31,
+      "concentration_limit": 1
+    }
+  },
+  "ingestion": {
+    "by_status": {
+      "DUPLICATE": 13,
+      "REJECTED": 2
+    },
+    "records_written": 0,
+    "files_rejected": [
+      {
+        "source_system": "external_xml",
+        "object": "transfer_in_ADM77_EXT77-0002_20261027.xml",
+        "reason": "XSD_VALIDATION_FAILED"
+      },
+      {
+        "source_system": "internal_xml",
+        "object": "statement_PRT-0006_20261027_resend.xml",
+        "reason": "MALFORMED_XML"
+      }
+    ],
+    "late_arrivals": []
+  },
+  "quality_gate": {
+    "status": "PASSED",
+    "dbt_invocation_id": "8c48f175-bb9a-4173-9e5e-ba47c26fb87c",
+    "tests_failed": [],
+    "warnings": []
+  },
+  "publication": {
+    "publication_status": "SKIPPED_IDENTICAL",
+    "publication_id": "20261027-20261031T003245Z-ac4bc8-7f55aed0d0c4437999036fd2f378b78f",
+    "superseded": null,
+    "rows": {
+      "liquidity_summary": 8,
+      "exposure_compliance": 8
+    },
+    "content_sha256": "9d1a4595d729e913e76fc9128272ba2f0505828a2e185dc5579bb0349139abad"
+  },
+  "rejected_records": [
+    {
+      "entity": "daily_price",
+      "source_system": "market_data",
+      "reason": "DUPLICATE_RECORD",
+      "records": 1
+    },
+    {
+      "entity": "portfolio_position",
+      "source_system": "portfolio_risk",
+      "reason": "DUPLICATE_RECORD",
+      "records": 1
+    },
+    {
+      "entity": "portfolio_position",
+      "source_system": "portfolio_risk",
+      "reason": "UNMAPPED_PORTFOLIO",
+      "records": 2
+    }
+  ],
+  "step_elapsed_seconds": {
+    "validate": 0.0,
+    "extract": 0.02,
+    "collect": 0.002,
+    "ingest": 0.064,
+    "transform": 31.334,
+    "gate": 0.0,
+    "load": 0.027,
+    "publish": 0.006,
+    "report": 0.019
+  },
+  "total_elapsed_seconds": 31.48
+}

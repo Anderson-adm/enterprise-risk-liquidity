@@ -8,10 +8,11 @@ import json
 import pyarrow.parquet as pq
 import pytest
 
-from ingestion import files, manifests
+from erl_protocol import manifests
+from erl_protocol.checksums import sha256_hex
+from ingestion import files
 from sources import synthetic
 from tests.conftest import CODEC, D1, D2, D3, run_id
-from utils.checksums import sha256_hex
 
 
 def _ingest(store, source, name, data, ref, run=None):
@@ -122,7 +123,7 @@ def test_bronze_is_append_only(store, dataset):
     name, body = _file(dataset, "market_data", D1)
     run = run_id()
     m = _ingest(store, "market_data", name, body, D1, run)
-    from utils.errors import ObjectExistsError
+    from erl_protocol.errors import ObjectExistsError
 
     with pytest.raises(ObjectExistsError):
         store.put(m.bronze_object, b"overwrite attempt")

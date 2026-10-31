@@ -274,7 +274,7 @@ exist and must not be reused.
    `data-dev`, account id verified, `sa-east-1`.
 3. Dev plan (authorisation 2): `init -backend-config` against the new bucket, `plan -out`,
    review: now **3 + 1 buckets** (data, Athena results, artifacts; state separate), Lambdas from
-   `case01/lambda/bronze/file_ingestion.zip` without any layer, Glue scripts/library from
+   `case01/lambda/<unit>/function.zip` without any layer, Glue scripts/library from
    `case01/glue/...` with `ScriptSha256`/`LibrarySha256` tags. Compare object hashes with
    `dist/manifest.json` before apply.
 4. Apply (authorisation 3), then read-only verification as before.
@@ -289,7 +289,7 @@ exist and must not be reused.
 Cost estimate for step 5 (sa-east-1 rates captured on 2026-10-29, see
 [TERRAFORM.md](TERRAFORM.md#cost-model-estimate--verify-before-apply)): Glue 3 jobs × 2 DPU ×
 2–5 min = USD 0.14–0.35; Athena USD 0.01–0.03 if 1–3 GB are billed (10 MB minimum per query);
-Lambda and S3 requests below USD 0.01; artifacts bucket ~55 MiB (+ replaced versions for up to
+Lambda and S3 requests below USD 0.01; artifacts bucket ~158 MiB (+ replaced versions for up to
 30 days) ≈ USD 0.002/month; CloudWatch alarms ≈ USD 0.405/month if kept a full month. Provisional
 reserve for one date including small diagnostics: **USD 1–3**, which is an estimate, not a cap.
 A Glue job that runs to its 15-minute timeout costs about USD 0.35 each. Taxes, exchange rate

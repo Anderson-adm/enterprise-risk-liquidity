@@ -22,9 +22,11 @@ fi
 work="$(mktemp -d)"
 trap 'rm -rf "$work"' EXIT
 if git -C "$root" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
-  (cd "$root" && git ls-files -co --exclude-standard -z | tar --null --ignore-failed-read -T - -cf - | tar -C "$work" -xf -)
+  (cd "$root" && git ls-files -co --exclude-standard -z -- infra contracts | tar --null --ignore-failed-read -T - -cf - | tar -C "$work" -xf -)
 else # copy used by the script's own tests (no git checkout)
-  tar -C "$root" --exclude=.terraform --exclude='*.tfvars' --exclude=backend.hcl -cf - infra | tar -C "$work" -xf -
+  inputs=(infra)
+  [ ! -d "$root/contracts" ] || inputs+=(contracts)
+  tar -C "$root" --exclude=.terraform --exclude='*.tfvars' --exclude=backend.hcl -cf - "${inputs[@]}" | tar -C "$work" -xf -
 fi
 unset AWS_PROFILE AWS_DEFAULT_PROFILE AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_SESSION_TOKEN
 export AWS_CONFIG_FILE=/dev/null AWS_SHARED_CREDENTIALS_FILE=/dev/null AWS_EC2_METADATA_DISABLED=true

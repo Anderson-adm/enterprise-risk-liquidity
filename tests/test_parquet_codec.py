@@ -18,13 +18,13 @@ import pyarrow.parquet as pq
 import pytest
 
 from connect.databases import engine_for
+from erl_protocol.contracts import parquet_compression
+from erl_protocol.errors import ConfigurationError
+from erl_protocol.parquet import require_codec, table_to_parquet_bytes
 from ingestion import files, snapshots
 from pipeline import extraction_catalog
 from sources import seed, synthetic
-from storage.parquet import require_codec, table_to_parquet_bytes
 from tests.conftest import CODEC, D1, EXTRACT, run_id
-from utils.contracts import parquet_compression
-from utils.errors import ConfigurationError
 
 
 def test_contract_codec_round_trips_the_contract_value_types(tmp_path):

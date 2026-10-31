@@ -1,0 +1,52 @@
+{
+  "baseline": "3e11db9",
+  "scope": "offline autonomous-unit migration; no AWS, deployment, push or container start",
+  "units": [
+    "apps/hybrid-runner",
+    "apps/publisher",
+    "apps/source-generator",
+    "glue/db-gb",
+    "glue/db-tb",
+    "glue/gold-load",
+    "lambda/external-xml",
+    "lambda/internal-xml",
+    "lambda/market-data"
+  ],
+  "fast_suite_passed": 145,
+  "additional_bronze_flow_cases_passed": 8,
+  "dbt_passed": 11,
+  "build_layout_recheck_passed": 28,
+  "terraform_runner_recheck_passed": 4,
+  "artifact_smoke_units": 9,
+  "terraform_mocked_cases": 15,
+  "tflint_issues": 0,
+  "checkov": {
+    "passed": 162,
+    "failed": 0,
+    "skipped": 40
+  },
+  "comparison": {
+    "scenarios": [
+      "01_first_run_d1:SUCCEEDED:ACTIVE",
+      "02_first_run_d2_quarantine_and_rejections:SUCCEEDED:ACTIVE",
+      "03_first_run_d3_late_arrival_for_d2:SUCCEEDED:ACTIVE",
+      "04_reprocess_d2_after_late_arrival:SUCCEEDED:ACTIVE",
+      "05_rerun_d2_idempotent:SUCCEEDED:SKIPPED_IDENTICAL",
+      "06_correction_of_published_position_d3:SUCCEEDED:ACTIVE",
+      "07_critical_quality_failure_d3:FAILED:None",
+      "08_source_unavailable_d1:FAILED:None"
+    ],
+    "run_reports": 8,
+    "liquidity_summary_rows": 24,
+    "exposure_compliance_rows": 24,
+    "decimal_values_compared_as_text": 248,
+    "publication_log_rows": 6
+  },
+  "unchanged_sql_files": 18,
+  "dbt_models_changed": false,
+  "airflow_dag_changed": false,
+  "integration_containers_rerun": false,
+  "real_spark_execution": false,
+  "aws_calls": 0,
+  "source_provenance_note": "Built and tested before the local commit; source_inputs.json plus artifact hashes identify the snapshot. A post-commit rebuild verifies the same artifact bytes."
+}

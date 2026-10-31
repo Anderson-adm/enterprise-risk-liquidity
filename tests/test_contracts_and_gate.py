@@ -7,11 +7,11 @@ from pathlib import Path
 
 import pytest
 
+from erl_protocol.contracts import bronze_contract, consumer_contract
+from erl_protocol.errors import ConfigurationError
 from ingestion import parsers
 from pipeline import config, steps
 from sources import seed, synthetic
-from utils.contracts import bronze_contract, consumer_contract
-from utils.errors import ConfigurationError
 
 ROOT = Path(__file__).resolve().parents[1]
 

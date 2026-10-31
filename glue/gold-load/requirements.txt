@@ -1,0 +1,9 @@
+# Glue 5.0 bundles boto3 1.34.131, which predates S3 PutObject IfNoneMatch.
+# Keep the complete SDK dependency closure aligned with uv.lock (tested offline).
+boto3==1.43.121
+botocore==1.43.121
+jmespath==1.1.0
+python-dateutil==2.9.0.post0
+s3transfer==0.19.3
+six==1.17.0
+urllib3==2.8.0

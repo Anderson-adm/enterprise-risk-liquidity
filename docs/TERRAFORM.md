@@ -23,34 +23,31 @@ infra/
 Only one module exists because only the bucket pattern is reused. Lambdas, Glue jobs and Bronze
 tables are `for_each` over small maps inside the root module.
 
-## Build and artifacts (since 2026-10-30; never applied)
+## Independent artifacts (local migration, never applied)
 
-Terraform does not build. `scripts/build/build_artifacts.py` writes `dist/` and
-`dist/manifest.json` (git commit, `uv.lock` hash, SHA-256 and target runtime per artifact);
-`scripts/build/smoke_artifacts.py` tests the built files. Only then may a plan be made.
+Build and smoke run before Terraform. Each `unit.json` owns its entry point, selected integrity
+protocol 2.0.0 modules, runtime dependencies and contract resources. `dist/manifest.json` and
+per-unit manifests record provenance and hashes. Detailed map: [REFACTORING.md](REFACTORING.md).
 
+```text
+s3://<prefix>-artifacts-<account>/
+  case01/lambda/<market-data|internal-xml|external-xml>/function.zip
+  case01/glue/<db-gb|db-tb|gold-load>/<script-sha256>/job.py
+  case01/glue/<db-gb|db-tb|gold-load>/<library-sha256>/lib.zip
 ```
-s3://<prefix>-artifacts-<account>/          versioned; replaced versions kept 30 days (7-90)
-  case01/lambda/bronze/file_ingestion.zip   one ZIP for the 3 functions (~54 MiB, own PyArrow/lxml)
-  case01/glue/bronze/db_ingest.py           script_location of db-gb and db-tb
-  case01/glue/load/gold_load.py             script_location of gold-load
-  case01/glue/lib/erl_glue_lib.zip          --extra-py-files (src/python + src/spark packages)
-```
 
-* Separate from the Terraform state bucket (`infra/bootstrap`, never holds code) and from the data
-  lake: runtime roles only **read** `case01/glue/*`; nothing at runtime can write code.
-* Stable keys per project/service (lab default). `aws_s3_object` uses `source_hash`; the Lambdas
-  reference the uploaded object version. A stable key does **not** pin what a Glue job runs: each
-  job is tagged with the SHA-256 of its script and of the library, so a new build shows up in the
-  plan. Deploy serially, with no Glue run in progress. Rollback = rebuild the commit, smoke-test,
-  publish again (or restore a previous object version that was tested).
-* Immutable release keys (`case01/releases/<sha>/...`) are not used: one operator, no concurrent
-  deploys and no promotion between environments. Adopt them if that changes.
-* The Lambda ZIP exceeds the 50 MB direct-upload limit, which is why the Lambdas read it from S3.
-* `tests/fixtures/dist/` mirrors `dist/` for the mocked tests and TFLint (placeholder files).
-* `tests/test_layout_and_artifacts.py` checks offline that Terraform keys, handler names, contract
-  path and build outputs agree, that no `local-exec`/`archive_file` exists, and that every
-  `aws_s3_object` targets the artifacts bucket.
+Each Lambda references its own S3 object version. Each Glue job references its own immutable
+script/library keys and SDK arguments from the built manifest. The ingest role reads only
+`db-gb/*` and `db-tb/*`; Gold Load reads only `gold-load/*`. Runtime roles cannot overwrite code.
+Content keys prevent incompatible script/library mixing. Deploy with jobs idle: Terraform may
+remove replaced keys after updating the job, so this does not guarantee access for an old run
+starting during deployment. Rollback requires rebuilding/testing and a new authorised deploy.
+
+The state, data, Athena results and artifacts buckets remain separate. No bucket, job, role or
+state per unit was added. Only artifact objects/references change: six Glue objects and three
+Lambda objects. New fixtures are for mocked plans, not executable cloud evidence. The previous
+AWS state/backend are destroyed/archived; this migration made no state migration or cloud call.
+Local apps have separate ZIPs; they are not uploaded by this Terraform root.
 
 ## Ownership
 
@@ -80,7 +77,7 @@ Terraform never declares Silver/Gold tables, so `terraform plan` does not fight 
   per query (minimum allowed: 10 MB).
 * Glue jobs: Glue 5.0, G.1X, 2 workers (validated 2–4), 15 min timeout, 0 retries (Airflow
   owns retries), max 1 concurrent run, security configuration (SSE-S3).
-  The complete Python SDK dependency closure is pinned in `glue/requirements.txt`, aligned
+  The complete Python SDK dependency closure is pinned in each job’s `glue/<unit>/requirements.txt`, aligned
   with `uv.lock`, and installed through `--additional-python-modules`. Glue 5.0's bundled
   boto3 1.34.131 predates the conditional S3 writes used here. Dependency installation still
   requires validation in Glue. Logs use the 5.0 `--custom-logGroup-prefix` with two managed
@@ -102,8 +99,8 @@ Terraform never declares Silver/Gold tables, so `terraform plan` does not fight 
 ## Checks
 
 Current layout, 2026-10-30, `scripts/terraform_checks.sh` (temporary copy of the versioned files,
-AWS credentials hidden): fmt pass; validate pass (3 dirs); **14 mocked tests passed (3 module +
-11 dev)**; TFLint 0 issues; **Checkov 162 passed, 0 failed, 40 skipped**. Evidence:
+AWS credentials hidden): fmt pass; validate pass (3 dirs); **15 mocked tests passed (3 module +
+12 dev)**; TFLint 0 issues; **Checkov 162 passed, 0 failed, 40 skipped**. Evidence:
 [../evidence/refactor/terraform_checks.txt](../evidence/refactor/terraform_checks.txt). The dev
 tests replaced `rejects_untrusted_lambda_layer` (no layer is used any more) with
 `artifacts_come_from_the_dedicated_bucket` and `rejects_short_artifact_recovery_window`.

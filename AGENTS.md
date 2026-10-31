@@ -1,110 +1,68 @@
-# AGENTS.md — shared instructions for Claude Code, Codex and humans
+# AGENTS.md — shared instructions for agents and humans
 
-## Goal
+## Goal and boundaries
 
-A small, complete, honest data platform for Case 01 (Enterprise Risk & Liquidity): seven
-synthetic sources → Bronze → dbt Silver/Gold → quality gate → transactional SQL Server
-publication, orchestrated by Airflow, with AWS infrastructure in Terraform. Architecture
-reference: the portfolio site's Case 01 diagram (Glue, Lambda, S3/Iceberg, Athena + dbt,
-Airflow, CloudWatch/SNS, Terraform, SQL Server consumer). Develop locally; validate AWS only in
-controlled, authorised runs.
+Seven synthetic sources → Bronze → dbt Silver/Gold → quality gate → transactional SQL Server
+publication, orchestrated by Airflow. Keep the portfolio's macro architecture and business rules.
+Current record: [docs/HANDOFF.md](docs/HANDOFF.md). Ownership and migration map:
+[docs/REFACTORING.md](docs/REFACTORING.md). Layout follows data-project-engineering v1.3.
 
-## Current architecture (where things live)
-
-Layout follows the `data-project-engineering` skill; mapping and decisions: [docs/REFACTORING.md](docs/REFACTORING.md).
-`src/python` and `src/spark` are import roots (each subdirectory is a top-level package; there is
-no project wrapper package). Import as `from ingestion import files`, `from pipeline import steps`.
-
-| Path | What |
+| Owner | Implementation |
 |---|---|
-| `src/contracts/` | Bronze contract (JSON, also read by Terraform; declares the Parquet codec), consumer contract, XSDs - data only |
-| `src/sql/extract/`, `src/sql/load/` | versioned SQL: source extraction/readiness, warehouse report, Gold export, publication locks/schemas |
-| `src/python/connect/` | `postgres_connect`, `sqlserver_connect`, `engine_for`, `get_secret`, AWS SSO session + account guard |
-| `src/python/extract/` | generic chunked SQL executor; landing snapshot writer |
-| `src/python/transform/` | pure Bronze record shaping (canonical text, row hashes, metadata columns) |
-| `src/python/ingestion/` | key layout, manifests (commit markers), duplicates, quarantine; file and DB-snapshot acceptance |
-| `src/python/storage/` | `LocalStore`/`S3Store` (conditional writes, conditional server-side copy); Parquet bytes + codec proof |
-| `src/python/load/` | publication package (local builder, reader/validator, shared manifest); transactional publisher |
-| `src/python/utils/` | errors, structured log, run ids, checksums, contract access, SQL file loader, SQL types |
-| `src/python/pipeline/` | `Settings`, extraction catalog (entity -> SQL file), steps + run state, hybrid AWS calls, `erl` CLI |
-| `src/python/sources/` | simulated source systems: schemas, synthetic generator, seeding, scenarios |
-| `src/spark/{readers,transforms,writers}/` | native PySpark operations for the Glue jobs (no UDFs) |
-| `lambda/bronze/file_ingestion.py` | thin Lambda handlers (one per file source) |
-| `glue/bronze/db_ingest.py`, `glue/load/gold_load.py` | thin Glue 5.0 entry points; code from the library ZIP |
-| `scripts/build/` | `build_artifacts.py` -> `dist/` (+ `manifest.json`), `smoke_artifacts.py` (tests the built files) |
-| `dbt/` | staging -> silver (incl. rejected records) -> gold candidates (tested) -> gold. dbt owns Silver/Gold SQL |
-| `airflow/dags/` | DAG calling `erl step <name>`; Airflow has its own venv |
-| `infra/` | `bootstrap/` (state), `environments/dev/` (lab, artifacts bucket), `modules/secure_bucket/` |
-| `docker/compose.yaml` | local PostgreSQL 17 + SQL Server 2022 (sources 1-4 and the consumer) |
-| `docs/`, `evidence/` | documentation; outputs produced by real runs only (`evidence/local/<backend>/`, `evidence/databases/`, `evidence/tests/`, `evidence/refactor/`) |
+| `apps/hybrid-runner/` | existing `erl` CLI, configuration/checkpoints, SQL extraction, local composition, AWS service calls; own extraction SQL |
+| `apps/publisher/` | package validation/export, transactional publisher, own consumer SQL |
+| `apps/source-generator/` | synthetic fixtures and scenarios; caller supplies connections through `SourceEnvironment` |
+| `lambda/{market-data,internal-xml,external-xml}/` | own handler and parser, dependency and contract declaration in `unit.json` |
+| `glue/{db-gb,db-tb,gold-load}/` | own entry point, native Spark code and pinned SDK requirements |
+| `contracts/` | published Bronze/consumer/XSD/source-schema interfaces; one source of truth |
+| `protocols/integrity-v2/erl_protocol/` | explicit `2.0.0` integrity dependency, vendored per artifact; hash/commit/checksum/atomic I/O guarantees |
+| `dbt/`, `airflow/`, `infra/` | model ownership, orchestration, project/environment Terraform state |
 
-## Commands
+## Permanent engineering rules
+
+* Own implementation belongs to its executable unit. No global implementation root, private imports
+  between units, empty scaffolds or default shared library. Public integrations go in `unit.json`.
+  The runner deliberately consumes publisher/generator and parser APIs for local composition.
+* The pinned integrity dependency is the exception for guarantees that must not diverge. Change its
+  version deliberately, test affected consumers, and vendor selected modules into each artifact.
+  Format-specific parsing and Spark operations remain local. No mutable global runtime ZIP.
+* Contracts precede implementation. Preserve hash v2/legacy separation, commit visibility,
+  immutable deliveries, quarantine, exact decimals, consumer-only ASCII and compatible checkpoints.
+* Python 3.12, shared code compatible with Glue Python 3.11. Native PySpark expressions; no UDFs or
+  unbounded driver materialisation. Close connections and multipart uploads even on failure.
+* SQL is versioned beside its consumer; values are binds and identifiers use allowlists. Source
+  schema/view DDL in `contracts/source_schemas.py` defines synthetic fixtures, not pipeline queries.
+* `Timestamp`/`Dec` in the integrity dependency preserve DATETIME2 and exact SQLite decimals.
+  SQL execution, publication and business rules are unchanged by an ownership move.
+* Build before Terraform. Per-unit artifacts and hashes live in ignored `dist/`. Independent changes
+  must preserve unrelated artifact bytes; a declared consumer may legitimately rebuild.
+  Glue uses immutable content keys for script/library coherence; deploy with jobs idle.
+* DB tests use `db_settings`: SQLite by default; real engines only with `ERL_IT_CONTAINERS=1` and
+  `-m integration`. Keep local data/evidence isolated. Label mocks/import tests honestly.
+* Small coherent commits ending in an agent attribution line. On this Windows drive
+  (`core.filemode=false`), mark new shell scripts executable with `git update-index --chmod=+x`.
+
+## Checks
 
 ```bash
-uv sync                                    # install (locked)
-uv run ruff check src tests airflow glue lambda scripts && uv run ruff format --check src tests airflow glue lambda scripts
-uv run pytest -m "not dbt and not integration"
-uv run pytest -m "dbt and not integration" # end-to-end with dbt (~6 min)
-uv run python scripts/build/build_artifacts.py && uv run python scripts/build/smoke_artifacts.py   # dist/
-uv run erl generate && uv run erl run --date 2026-10-26
-uv run python scripts/collect_evidence.py  # regenerates evidence/local/<ERL_SOURCE_BACKEND>/
-# real databases (containers must already be running; see docs/LOCAL_RUNTIME.md):
-set -a; . ./.env; set +a
-ERL_IT_CONTAINERS=1 uv run pytest -m integration           # isolated it_* databases
-uv run python scripts/collect_evidence.py && uv run python scripts/collect_db_evidence.py   # ev_* databases
-scripts/airflow_local.sh setup|test <date>
-scripts/terraform_checks.sh   # fmt, validate, mocked tests, TFLint, Checkov on a temporary copy, AWS credentials hidden
-# Never run terraform directly in infra/environments/dev on this machine: its .terraform/ still
-# holds S3 backend metadata from the destroyed lab and would try to refresh SSO credentials.
+uv sync --frozen
+uv run ruff check apps protocols contracts tests airflow glue lambda scripts
+uv run ruff format --check apps protocols contracts tests airflow glue lambda scripts
+DBT_SEND_ANONYMOUS_USAGE_STATS=false uv run pytest -m 'not integration'
+uv run python scripts/build/build_artifacts.py                  # offline cache only
+uv run python scripts/build/build_artifacts.py --unit glue/db-gb
+uv run python scripts/build/smoke_artifacts.py                  # built units, local emulation
+scripts/terraform_checks.sh                                   # isolated copy, mocked provider
 ```
 
-## Conventions
+## Safety
 
-* Python 3.12 runtime, code compatible with 3.11 (Glue 5.0). Ruff, line length 110.
-* Money is `Decimal`/`DECIMAL`; never binary floats. Bronze stores canonical text (ISO 8601 dates and
-  timestamps, plain decimals); typing in Silver. Extraction types its result columns from the source
-  metadata so every engine yields the same text (SQLite would otherwise return raw stored strings).
-* Timestamps use `utils.sqltypes.Timestamp` (DATETIME2 on SQL Server; legacy DATETIME rounds to 1/300 s).
-* SQL lives in `src/sql` (values as binds; identifiers only through `utils.sql_files.render_identifiers`
-  with a contract allowlist). The publisher keeps SQLAlchemy Core DML built from the consumer
-  contract. dbt SQL stays in `dbt/`.
-* Functions receive their operational values (codec, batch size, SQL text, keys) from the caller;
-  `pipeline` composes. No module-level AWS calls or logging configuration in entry points.
-* Parquet codec: `bronze_contract.json` `parquet_compression`; writers prove it with
-  `storage.parquet.require_codec` before the first write of a delivery.
-* Artifacts: `dist/` is generated (git-ignored). Terraform only uploads/references it; change the
-  build in `scripts/build/build_artifacts.py` and keep `tests/test_layout_and_artifacts.py` green.
-* Synthetic dates: scenario roles are positional (D1 clean, D2 problems, D3 late arrival).
-* Database tests take the `db_settings` fixture: they run on SQLite by default and on the real
-  containers with `-m integration` (`it_*` databases). Behaviour that differs by engine needs a test
-  in `tests/test_integration_containers.py`.
-* Business logic in the `src/python` packages; Airflow operators only call the CLI.
-* Bronze and publication packages are append-only (run-scoped keys, conditional writes).
-* Any engine-specific SQL goes in `dbt/macros/platform.sql`.
-* Contracts: change `bronze_contract.json` / `consumer_contract.json` first, then code; tests
-  check consistency with dbt and Terraform.
-* Small, coherent commits; end commit messages with the agent attribution line.
-* The working copy lives on a Windows drive (`core.filemode=false`): mark new scripts executable
-  with `git update-index --chmod=+x <file>`, or CI fails with exit code 126.
-
-## Safety rules (non-negotiable)
-
-* Never run `terraform apply`/`destroy`, create AWS resources, run Glue/Athena with cost, or
-  start/install container runtimes or system packages without explicit human authorisation.
-  (On 2026-10-29 the owner authorised running this project's two database containers locally;
-  that does not cover installing or reconfiguring Docker/WSL, `.wslconfig`, or other projects'
-  containers and volumes — never remove volumes you did not create.)
-* AWS account: data-dev only (`allowed_account_ids`); region sa-east-1; SSO credentials only.
-  Never use the `default` AWS profile (it holds static keys). Never touch data-prod.
-* No secrets, credentials, tfstate, plans or `.env` in git.
-* No real/proprietary data, names or schemas. Synthetic rules are not regulatory rules.
-* Never claim AWS validation without real AWS evidence; label status honestly
-  (Validated locally / Validated on AWS / Implemented, not validated / Planned).
-* Do not modify the portfolio site repository.
-
-## Acceptance criteria (summary)
-
-Seven sources contribute; extraction → Bronze → Silver → two Gold products → consumer works;
-idempotent re-runs; reference date parameterised; critical failures block publication and keep
-the last valid version; automated tests pass; Terraform fmt/validate/TFLint/Checkov/tests pass;
-CI defined; README verifiable; limitations explicit. Current state: [docs/HANDOFF.md](docs/HANDOFF.md).
+* No AWS, SSO, paid processing, apply/destroy, deploy or push without explicit authorisation.
+  AWS, if later authorised: data-dev via SSO, sa-east-1, expected-account guard; never default
+  (static keys) or data-prod. This migration authorises local work and a local commit only.
+* Never run Terraform directly in the real dev directory: its ignored `.terraform/` retains the
+  destroyed remote backend. Offline checks require a clean temporary copy and provider mocks.
+* No secrets, passwords, `.env`, tfvars, state, plans or real/proprietary data in Git or evidence.
+* Do not install/reconfigure Docker/WSL/system packages, remove others' volumes, or change the
+  portfolio site repository. Preserve existing evidence; write new evidence to its own directory.
+* Never claim Glue/Spark/Athena/AWS validation from local imports, moto or Terraform mocks.

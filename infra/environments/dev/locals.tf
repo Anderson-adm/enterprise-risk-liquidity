@@ -15,24 +15,25 @@ locals {
   results_bucket   = "${var.name_prefix}-athena-results-${local.account_id}"
   artifacts_bucket = "${var.name_prefix}-artifacts-${local.account_id}"
 
-  # Built by scripts/build (dist/manifest.json lists the same keys and SHA-256 values).
-  lambda_package     = "${var.artifacts_dir}/lambda/bronze/file_ingestion.zip"
-  lambda_package_key = "case01/lambda/bronze/file_ingestion.zip"
-  glue_artifacts = {
-    db_ingest = "glue/bronze/db_ingest.py"
-    gold_load = "glue/load/gold_load.py"
-    library   = "glue/lib/erl_glue_lib.zip"
-  }
+  # Independent artifacts built before planning; no code generation in Terraform.
+  glue_units = { for name in ["db-gb", "db-tb", "gold-load"] : name => jsondecode(file("${var.artifacts_dir}/glue/${name}/manifest.json")) }
+  glue_artifacts = merge([for unit, manifest in local.glue_units : {
+    for filename, artifact in manifest.artifacts : "${unit}/${filename}" => {
+      path   = "glue/${unit}/${filename}"
+      key    = artifact.s3_key
+      sha256 = artifact.sha256
+    }
+  }]...)
   glue_db_prefix = replace(var.name_prefix, "-", "_")
 
   # Bronze contract shared with the Python ingestion code (single source of truth).
-  bronze_contract = jsondecode(file("${path.module}/../../../src/contracts/bronze_contract.json"))
+  bronze_contract = jsondecode(file("${path.module}/../../../contracts/bronze_contract.json"))
   bronze_entities = local.bronze_contract.entities
 
   file_sources = {
-    market_data  = { function = "ingest-market-data", handler = "file_ingestion.market_data_handler" }
-    internal_xml = { function = "ingest-internal-xml", handler = "file_ingestion.internal_xml_handler" }
-    external_xml = { function = "ingest-external-xml", handler = "file_ingestion.external_xml_handler" }
+    market_data  = { unit = "market-data", function = "ingest-market-data", handler = "handler.handler" }
+    internal_xml = { unit = "internal-xml", function = "ingest-internal-xml", handler = "handler.handler" }
+    external_xml = { unit = "external-xml", function = "ingest-external-xml", handler = "handler.handler" }
   }
   db_sources = ["fund_ops", "portfolio_risk", "legacy_finance", "exposure_compliance"]
 }

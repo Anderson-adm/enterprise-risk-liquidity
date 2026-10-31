@@ -7,6 +7,9 @@ on:
     branches: [main]
   workflow_dispatch:
 
+env:
+  DBT_SEND_ANONYMOUS_USAGE_STATS: "false"
+
 permissions:
   contents: read
 
@@ -27,11 +30,11 @@ jobs:
         with:
           enable-cache: true
       - name: Install (locked)
-        run: uv sync --frozen
+        run: uv sync --frozen --python 3.12
       - name: Ruff
         run: |
-          uv run ruff check src tests airflow glue lambda scripts
-          uv run ruff format --check src tests airflow glue lambda scripts
+          uv run ruff check apps protocols contracts tests airflow glue lambda scripts
+          uv run ruff format --check apps protocols contracts tests airflow glue lambda scripts
       - name: dbt parse (configuration check, no warehouse needed)
         run: uv run dbt parse --project-dir dbt --profiles-dir dbt --target local
       - name: Unit and contract tests
@@ -56,7 +59,7 @@ jobs:
         with:
           enable-cache: true
       - name: Install (locked)
-        run: uv sync --frozen
+        run: uv sync --frozen --python 3.12
       - name: Start databases (docker/compose.yaml; throwaway passwords generated per run)
         run: |
           umask 077

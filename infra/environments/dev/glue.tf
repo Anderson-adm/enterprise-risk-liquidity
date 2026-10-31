@@ -6,19 +6,16 @@
 locals {
   glue_jobs = {
     db-gb = {
-      script  = "db_ingest"
       role    = aws_iam_role.glue_db_ingest.arn
       workers = var.glue_workers["db_gb"]
       args    = { "--volume_profile" = "gb" }
     }
     db-tb = {
-      script  = "db_ingest"
       role    = aws_iam_role.glue_db_ingest.arn
       workers = var.glue_workers["db_tb"]
       args    = { "--volume_profile" = "tb" }
     }
     gold-load = {
-      script  = "gold_load"
       role    = aws_iam_role.glue_gold_load.arn
       workers = var.glue_workers["gold_load"]
       args = {
@@ -31,17 +28,26 @@ locals {
   }
 }
 
-# Scripts and the project library ZIP, built and smoke-tested by scripts/build BEFORE plan
-# (dist/manifest.json). Stable keys: replacing the library does not change the job definition by
-# itself, so each job is tagged with the SHA-256 of the exact script and library it references
-# (visible in the plan). Deploy serially; no Glue run may be in progress during an update.
+# Per-job scripts and libraries, built and smoke-tested by scripts/build BEFORE plan
+# Each object key contains its content hash: a job definition always names a compatible pair.
+# Deploy serially with jobs idle: replaced keys can be deleted after the job update; immutable
+# keys prevent version mixing, not continued availability for an old job starting during deploy.
 resource "aws_s3_object" "glue" {
   for_each = local.glue_artifacts
 
   bucket      = module.artifacts_bucket.id
-  key         = "case01/${each.value}"
-  source      = "${var.artifacts_dir}/${each.value}"
-  source_hash = filebase64sha256("${var.artifacts_dir}/${each.value}")
+  key         = each.value.key
+  source      = "${var.artifacts_dir}/${each.value.path}"
+  source_hash = filebase64sha256("${var.artifacts_dir}/${each.value.path}")
+
+  lifecycle {
+    create_before_destroy = true
+
+    precondition {
+      condition     = filesha256("${var.artifacts_dir}/${each.value.path}") == each.value.sha256
+      error_message = "Glue artifact bytes differ from the built manifest; rebuild and smoke-test before planning."
+    }
+  }
 }
 
 resource "aws_cloudwatch_log_group" "glue" {
@@ -85,7 +91,7 @@ resource "aws_glue_job" "this" {
   command {
     name            = "glueetl"
     python_version  = "3"
-    script_location = "s3://${module.artifacts_bucket.id}/${aws_s3_object.glue[each.value.script].key}"
+    script_location = "s3://${module.artifacts_bucket.id}/${aws_s3_object.glue["${each.key}/job.py"].key}"
   }
 
   execution_property {
@@ -93,17 +99,17 @@ resource "aws_glue_job" "this" {
   }
 
   default_arguments = merge({
-    "--additional-python-modules" = join(",", [for line in split("\n", file("${path.module}/../../../glue/requirements.txt")) : trimspace(line) if trimspace(line) != "" && !startswith(trimspace(line), "#")])
+    "--additional-python-modules" = join(",", local.glue_units[each.key].python_modules)
     "--job-language"              = "python"
     "--custom-logGroup-prefix"    = "/aws-glue/${var.name_prefix}"
     "--enable-metrics"            = "true"
     "--job-bookmark-option"       = "job-bookmark-disable"
-    "--extra-py-files"            = "s3://${module.artifacts_bucket.id}/${aws_s3_object.glue["library"].key}"
+    "--extra-py-files"            = "s3://${module.artifacts_bucket.id}/${aws_s3_object.glue["${each.key}/lib.zip"].key}"
     "--TempDir"                   = "s3://${module.data_bucket.id}/tmp/glue/spark/"
   }, each.value.args)
 
   tags = {
-    ScriptSha256  = filesha256("${var.artifacts_dir}/${local.glue_artifacts[each.value.script]}")
-    LibrarySha256 = filesha256("${var.artifacts_dir}/${local.glue_artifacts["library"]}")
+    ScriptSha256  = filesha256("${var.artifacts_dir}/glue/${each.key}/job.py")
+    LibrarySha256 = filesha256("${var.artifacts_dir}/glue/${each.key}/lib.zip")
   }
 }

@@ -11,13 +11,14 @@ import pytest
 from sqlalchemy import Date, bindparam, text
 
 from connect.databases import engine_for
-from ingestion import manifests, snapshots
+from erl_protocol import manifests
+from erl_protocol.checksums import sha256_hex
+from erl_protocol.errors import ContractError, SourceUnavailableError
+from erl_protocol.records import stringify
+from ingestion import snapshots
 from pipeline import extraction_catalog
 from sources import seed, synthetic
 from tests.conftest import CODEC, D1, D2, EXTRACT, run_id
-from transform.bronze_records import stringify
-from utils.checksums import sha256_hex
-from utils.errors import ContractError, SourceUnavailableError
 
 
 @pytest.fixture
@@ -37,7 +38,7 @@ def _extract(settings, store, source, ref, run=None, **overrides):
 
 
 def test_every_database_entity_in_the_contract_has_an_extract(seeded):
-    from utils.contracts import bronze_contract
+    from erl_protocol.contracts import bronze_contract
 
     db_entities = {
         (s["source_system"], s["entity"])

@@ -1,5 +1,48 @@
 # HANDOFF
 
+_Last update: 2026-10-30 (America/Fortaleza), Codex: autonomous-unit migration from independently
+approved `3e11db9`, using data-project-engineering v1.3. Local commit only; no push or AWS action._
+
+## Current state — autonomous units
+
+* Nine independently packaged units: three Glue jobs, three Lambdas, hybrid runner, publisher,
+  source generator. Each owns its implementation/dependencies; publisher owns its SQL and each
+  Glue owns its Spark. Public interfaces: root contracts. Full tree/map: [REFACTORING.md](REFACTORING.md).
+* Integrity is the explicit pinned exception (`erl_protocol` 2.0.0), vendored into each artifact;
+  no global mutable runtime ZIP. Parsers and native Spark remain unit-owned. Critical GB/TB
+  control-flow composition has independent conformance tests; producer/consumer use one protocol.
+* Existing CLI, business rules, all 18 SQL files, dbt models and Airflow DAG preserved. Source
+  database schemas are one public contract; local apps import without the runner. The runner
+  explicitly consumes public publisher/generator/parser APIs for local composition.
+* Tested locally: 145 fast cases, 11 dbt cases, then 8 additional GB/TB commit-flow cases;
+  build/layout 28 and Terraform-runner 4 rechecked. Nine actual artifacts passed isolated smoke;
+  non-editable wheel imports/SQL resources/single-date generation passed. Integration containers
+  were not started/retested. Spark processing is stubbed for flow/import checks, never claimed run.
+* All eight scenarios replayed on approved baseline and migrated source in isolated ext4 copies:
+  identical outcomes, 24 + 24 consumer rows, 248 exact decimal values and six publication-log rows.
+* Terraform fmt/validate, 15 mocked cases, TFLint 0, Checkov 162 passed / 0 failed / 40 skipped.
+  The check runner copies only infra/contracts without credentials/backend metadata. A negative
+  mock rejects Glue bytes differing from the build manifest. No real provider plan/apply occurred.
+* Three Lambda object versions and six Glue artifact objects replace the former common objects.
+  Existing job/function/role identifiers, project state and buckets remain. Glue content keys bind
+  compatible script/lib versions; deploy only with jobs idle. These changes were never deployed.
+* Evidence: [../evidence/units/](../evidence/units/), especially verification.json, build_manifest.json,
+  source_inputs.json, smoke_report.json and comparison/diff.json. Build records pre-commit provenance;
+  the final source commit is the local commit containing this handoff; ignored dist/ is rebuilt
+  afterwards to verify identical bytes and record that commit without a circular evidence commit.
+
+Residual limits: real Glue/Spark, corrected Lambda on AWS, Athena/Iceberg and full hybrid cloud
+publication remain unvalidated. Local ZIPs need their declared external environment; installed
+runner needs the separate dbt project configured. Protocol/contract changes deliberately affect
+consumers. Immutable Glue keys prevent mixed versions, not availability of removed old keys;
+rollback needs rebuild/test/deploy and does not revert data/state. AWS remains historically
+fully decommissioned; no new cloud inventory was queried. No private state or configuration changed.
+
+Next step: independently review this local migration, then separately authorise push/CI if desired.
+No push, provisioning, cloud execution or teardown is authorised by this migration.
+
+## Earlier review and implementation records (historical)
+
 _Last update: 2026-10-30 (America/Fortaleza) by Claude Code: offline fix of the two defects found
 on AWS, refactoring to the `data-project-engineering` layout, pre-Terraform build of artifacts.
 **Local commits only; nothing was pushed.** `origin/main` is still `4bc1f65` (last green CI

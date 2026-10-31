@@ -17,12 +17,13 @@ from jinja2 import Environment
 from sqlalchemy import text
 
 from connect.databases import engine_for
-from ingestion import files, manifests, snapshots
+from erl_protocol import manifests
+from erl_protocol.errors import ConfigurationError, ErlError, PublicationError
+from ingestion import files, snapshots
 from load import package
 from pipeline import extraction_catalog, steps
 from sources import seed, synthetic
 from tests.conftest import CODEC, D1, D2, EXTRACT, product_rows, run_id, write_package
-from utils.errors import ConfigurationError, ErlError, PublicationError
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -229,7 +230,7 @@ def test_terraform_checks_propagates_failures(tmp_path, failed_check):
 
 
 def test_rejected_required_market_delivery_cannot_fall_back_to_old_prices(settings):
-    from utils.errors import ContractError
+    from erl_protocol.errors import ContractError
 
     seed.generate_all(settings)
     first = run_id()
@@ -382,13 +383,13 @@ def test_dbt_subprocess_gets_the_settings_paths_over_inherited_ones(settings, mo
     ],
 )
 def test_row_identity_distinguishes_different_field_sequences(a, b):
-    from transform.bronze_records import row_hash
+    from erl_protocol.records import row_hash
 
     assert row_hash(a) != row_hash(b)
 
 
 def test_row_identity_is_stable_and_accepts_only_canonical_text():
-    from transform.bronze_records import row_hash
+    from erl_protocol.records import row_hash
 
     assert row_hash(["PRT-0001", None, "1250.25", "é"]) == row_hash(("PRT-0001", None, "1250.25", "é"))
     with pytest.raises(TypeError):
@@ -398,8 +399,8 @@ def test_row_identity_is_stable_and_accepts_only_canonical_text():
 def test_snapshots_differing_only_in_field_boundaries_are_both_accepted(store):
     from sqlalchemy import create_engine
 
+    from erl_protocol.layout import landing_db_prefix
     from extract.landing_snapshot import extract_to_landing
-    from ingestion.layout import landing_db_prefix
 
     def landed(a: str, b: str) -> dict:
         engine = create_engine("sqlite://")
@@ -427,7 +428,7 @@ def test_snapshots_differing_only_in_field_boundaries_are_both_accepted(store):
 
 
 def test_content_identities_of_different_versions_are_never_duplicates(store):
-    from transform.bronze_records import ROW_HASH_VERSION
+    from erl_protocol.records import ROW_HASH_VERSION
 
     prefix = "manifests/ingestion/fund_ops/fund/bronze_reference_date=2026-10-26/"
     accepted = {"status": "ACCEPTED", "input_sha256": "X", "ingested_at": "1", "run_id": "legacy"}

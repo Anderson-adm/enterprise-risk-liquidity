@@ -1,0 +1,24 @@
+{"ts": "2026-10-31T00:30:46.839+00:00", "level": "INFO", "logger": "sources.seed", "event": "synthetic_data_generated", "dates": ["2026-10-26"], "summary": {"fund_ops": {"fund": 4, "portfolio": 8, "source_identity_map": 34}, "portfolio_risk": {"processed_position": 23, "processing_batch": 1}, "legacy_finance": {"tb_cart": 8, "tb_resgate": 3, "tb_saldo_caixa": 8}, "exposure_compliance": {"concentration_limit": 1, "instrument_registry": 16, "stock_position": 31}, "inbox_files": 4}}
+{
+  "fund_ops": {
+    "fund": 4,
+    "portfolio": 8,
+    "source_identity_map": 34
+  },
+  "portfolio_risk": {
+    "processed_position": 23,
+    "processing_batch": 1
+  },
+  "legacy_finance": {
+    "tb_cart": 8,
+    "tb_resgate": 3,
+    "tb_saldo_caixa": 8
+  },
+  "exposure_compliance": {
+    "concentration_limit": 1,
+    "instrument_registry": 16,
+    "stock_position": 31
+  },
+  "inbox_files": 4
+}
+{"wheel_imports_from_archive": true, "both_owners_sql_resources": true, "single_date_cli_generation": true, "network": false}

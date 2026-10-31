@@ -3,6 +3,10 @@
 mock_provider "aws" {
   override_during = plan
 
+  mock_resource "aws_s3_object" {
+    defaults = { version_id = "mock-object-version" }
+  }
+
   mock_resource "aws_s3_bucket" {
     defaults = { arn = "arn:aws:s3:::erl-dev-mock", id = "erl-dev-mock" }
   }
@@ -196,37 +200,33 @@ run "rejects_too_small_athena_cutoff" {
 
 run "artifacts_come_from_the_dedicated_bucket" {
   command = plan
-
   assert {
-    condition = alltrue([for f in aws_lambda_function.ingest :
-      try(length(f.layers), 0) == 0 && f.s3_key == "case01/lambda/bronze/file_ingestion.zip" && f.filename == null
+    condition = length(aws_s3_object.lambda_package) == 3 && alltrue([for key, f in aws_lambda_function.ingest :
+      try(length(f.layers), 0) == 0 && f.handler == "handler.handler" &&
+      f.s3_key == "case01/lambda/${local.file_sources[key].unit}/function.zip" &&
+      f.s3_object_version == aws_s3_object.lambda_package[key].version_id && f.filename == null
     ])
-    error_message = "Lambdas must run the self-contained package from the artifacts bucket, without the managed pandas layer."
+    error_message = "Every Lambda must reference its own complete, versioned S3 package."
   }
-
   assert {
-    condition     = aws_s3_object.lambda_package.key == "case01/lambda/bronze/file_ingestion.zip" && aws_s3_object.lambda_package.source_hash != null
-    error_message = "The Lambda package must be uploaded from dist/ with its content hash."
+    condition = length(aws_s3_object.glue) == 6 && alltrue([for key, j in aws_glue_job.this :
+      j.command[0].script_location == "s3://erl-dev-mock/${aws_s3_object.glue["${key}/job.py"].key}" &&
+      j.default_arguments["--extra-py-files"] == "s3://erl-dev-mock/${aws_s3_object.glue["${key}/lib.zip"].key}" &&
+      strcontains(aws_s3_object.glue["${key}/job.py"].key, "case01/glue/${key}/") &&
+      strcontains(aws_s3_object.glue["${key}/lib.zip"].key, "case01/glue/${key}/") &&
+      length(j.tags["ScriptSha256"]) == 64 && length(j.tags["LibrarySha256"]) == 64 &&
+      !contains(keys(j.default_arguments), "--contract_s3_key")
+    ])
+    error_message = "Each Glue references its own content-addressed script and library."
   }
-
   assert {
     condition = (
-      aws_glue_job.this["db-gb"].command[0].script_location == "s3://erl-dev-mock/case01/glue/bronze/db_ingest.py" &&
-      aws_glue_job.this["gold-load"].command[0].script_location == "s3://erl-dev-mock/case01/glue/load/gold_load.py" &&
-      alltrue([for j in aws_glue_job.this :
-        j.default_arguments["--extra-py-files"] == "s3://erl-dev-mock/case01/glue/lib/erl_glue_lib.zip" &&
-        length(j.tags["ScriptSha256"]) == 64 && length(j.tags["LibrarySha256"]) == 64 &&
-        !contains(keys(j.default_arguments), "--contract_s3_key")
-      ])
+      strcontains(aws_iam_role_policy.glue_db_ingest.policy, "/case01/glue/db-gb/*") &&
+      strcontains(aws_iam_role_policy.glue_db_ingest.policy, "/case01/glue/db-tb/*") &&
+      strcontains(aws_iam_role_policy.glue_gold_load.policy, "/case01/glue/gold-load/*") &&
+      !strcontains(aws_iam_role_policy.glue_gold_load.policy, "/case01/glue/db-gb/*")
     )
-    error_message = "Glue jobs must run the built script + library from the artifacts bucket, tagged with their hashes."
-  }
-
-  assert {
-    condition = alltrue([for p in [aws_iam_role_policy.glue_db_ingest.policy, aws_iam_role_policy.glue_gold_load.policy] :
-      !strcontains(p, "/scripts/") && strcontains(p, "/case01/glue/*")
-    ])
-    error_message = "Glue roles read their code only from the artifacts bucket (never from the data lake)."
+    error_message = "Runtime code access must match the unit's owned artifact prefixes."
   }
 }
 
@@ -244,4 +244,12 @@ run "rejects_oversized_glue_jobs" {
     glue_workers = { db_gb = 2, db_tb = 10, gold_load = 2 }
   }
   expect_failures = [var.glue_workers]
+}
+
+run "rejects_artifacts_differing_from_manifest" {
+  command = plan
+  variables {
+    artifacts_dir = "tests/fixtures/corrupt-dist"
+  }
+  expect_failures = [aws_s3_object.glue["db-gb/job.py"]]
 }

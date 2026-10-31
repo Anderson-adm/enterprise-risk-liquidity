@@ -1,82 +1,116 @@
-# Refactoring map (2026-10-30)
+# Autonomous execution units
 
-Baseline: `4bc1f65` (clean tree). The layout follows the `data-project-engineering` skill:
-`src/python` and `src/spark` are import roots (no redundant project package), SQL lives in
-`src/sql`, contracts in `src/contracts`, runtime entry points in `glue/` and `lambda/`.
-Business behaviour, contracts, Bronze keys and publication semantics are unchanged; the two
-defects fixed beforehand (Parquet codec on Lambda, single-date generation) are described in
-[HANDOFF.md](HANDOFF.md).
+Migration baseline: independently approved `3e11db9` (H1/H2/H3). Business rules, CLI commands,
+seven sources, source/date routing and the portfolio macro diagram are preserved. This layout
+has not been deployed. Earlier refactors and evidence remain in Git history/evidence/refactor.
 
-| Before (`src/erl/...`) | After | Responsibility |
-|---|---|---|
-| `config.py` | `src/python/pipeline/config.py` | environment → `Settings`, connection URLs |
-| — (`_require` env lookups) | `src/python/connect/secrets.py` | `get_secret(provider, key)` |
-| `sources/seed.py::engine_for` | `src/python/connect/databases.py` | `postgres_connect`, `sqlserver_connect`, `engine_for` |
-| `aws/runtime.py::_session`, account guard | `src/python/connect/aws.py` | SSO/runner session, expected-account check |
-| `aws/runtime.py` (Lambda/Glue calls) | `src/python/pipeline/aws_services.py` | hybrid AWS orchestration |
-| `pipeline.py` | `src/python/pipeline/{steps,state,extraction_catalog}.py` | step composition, run state, entity -> SQL file |
-| `cli.py` | `src/python/pipeline/cli.py` | `erl` command |
-| `sources/extract.py` (SQL strings) | `src/python/extract/{sql_query,landing_snapshot}.py` + `src/sql/extract/*.sql` | generic chunked query executor; landing snapshot writer |
-| `ingestion/bronze.py` | `src/python/ingestion/{layout,manifests}.py`, `src/python/transform/bronze_records.py` | keys/manifests/quarantine; pure record shaping |
-| `ingestion/files.py`, `ingestion/database.py` | `src/python/ingestion/{parsers,files,snapshot_manifests,snapshots}.py` | parsing/XSD; file acceptance; snapshot steps shared with Glue; local snapshot writer |
-| `storage.py` | `src/python/storage/objects.py`, `src/python/storage/parquet.py` | object I/O; Parquet bytes + codec check |
-| `publish/package.py`, `publish/publisher.py` | `src/python/load/{package,package_manifest,publisher}.py` + `src/sql/load/*.sql` | package, transactional publication |
-| `errors.py`, `log.py`, `sqltypes.py` | `src/python/utils/{errors,structured_log,sqltypes,run_ids,checksums,contracts}.py` | transversal helpers |
-| `contracts/*.json, *.xsd` | `src/contracts/` | data contracts (no functions) |
-| `sources/{schemas,synthetic}.py`, seeding | `src/python/sources/` | simulated source systems (dev/test data) |
-| `aws/lambda_handlers.py` | `lambda/bronze/file_ingestion.py` | thin Lambda handlers |
-| `glue/jobs/db_ingest.py` | `glue/bronze/db_ingest.py` + `src/spark/{readers,transforms,writers}` | thin Glue entry point |
-| `glue/jobs/gold_load.py` | `glue/load/gold_load.py` + `src/spark/...` | thin Glue entry point |
-| `scripts/build_lambda.sh` | `scripts/build/build_artifacts.py` → `dist/` | pre-Terraform build + manifest |
+Before:
 
-No `glue/silver` or `glue/gold`: dbt (DuckDB locally, Athena/Iceberg on AWS) owns Silver/Gold.
-No `src/sql/transform`: transformation SQL belongs to `dbt/`.
+```text
+src/python/{pipeline,connect,extract,ingestion,transform,storage,load,sources,utils}
+src/spark/{readers,transforms,writers}
+src/{sql,contracts}
+glue/{bronze/db_ingest.py,load/gold_load.py}     # one script served two Glue definitions
+lambda/bronze/file_ingestion.py                # one ZIP served all three functions
+```
 
-## Decisions
+After (only populated directories):
 
-* **SQLAlchemy Core stays for contract-driven DML** in the publisher (insert/select/delete built
-  from `consumer_contract.json` table metadata). Hand-written SQL text moved to `src/sql`.
-  Identifiers that SQL cannot bind (Gold model, columns) are validated against the contract
-  before rendering.
-* **Exception: simulated source DDL stays in `sources/`.** Creating the synthetic databases,
-  tables and legacy views (`sources/seed.py`, `sources/schemas.py`) is test-fixture tooling for
-  the fake source systems, not pipeline SQL; database names are validated by a regex before
-  DDL. Evidence scripts keep their small report queries inline for the same reason.
-* **Artifacts:** `dist/` is built and smoke-tested before any Terraform plan. A separate
-  versioned artifacts bucket holds Glue scripts, the Glue library ZIP and the Lambda ZIP
-  (the Lambda ZIP is above the 50 MB direct-upload limit because it bundles PyArrow).
-  Stable keys per project/service; the Terraform state bucket is never used for artifacts.
-* **Contracts and SQL travel with the code.** `src/contracts` and `src/sql` are resource
-  packages inside the wheel, the Lambda ZIP and the Glue library, read with
-  `importlib.resources` (works from zipimport). The Glue jobs no longer read a separate contract
-  copy from S3 (`--contract_s3_key`/`--consumer_contract_s3_key` removed).
-* **Shared acceptance steps.** The Glue `db_ingest` job and the local writer compose the same
-  `ingestion.snapshot_manifests` functions; Glue previously had its own copies of manifest keys,
-  duplicate detection and checksum logic.
-* **No bytes through the Spark driver.** Glue commits Spark parts with
-  `S3Store.copy_if_absent` (UploadPartCopy + `CompleteMultipartUpload` with `If-None-Match`)
-  instead of GET + conditional PUT. Verified with moto only.
-* **Gold Load single file is bounded.** `coalesce(1)` stays (one Parquet object per product, as
-  the publisher expects) after an explicit row-count check against `--max_product_rows`.
-* **Editable install.** hatch `dev-mode-dirs` puts the three roots on `sys.path` in development
-  (which also exposes empty `python`/`spark` namespaces there); wheels and runtime ZIPs contain
-  exactly the declared packages. `tests/test_layout_and_artifacts.py` checks that no top-level
-  name collides with the standard library or another installed distribution. The Glue runtime's
-  own module list could not be checked offline.
-* **Log logger names** changed with the module paths (`erl.ingestion.files` → `ingestion.files`);
-  event names and fields are unchanged.
+```text
+apps/hybrid-runner/{erl.py,unit.json,python/,sql/extract/}
+apps/publisher/{unit.json,requirements.txt,python/load/}     # own sql/ inside load package
+apps/source-generator/{unit.json,requirements.txt,python/sources/}
+glue/{db-gb,db-tb,gold-load}/{job.py,spark/unit_spark.py,requirements.txt,unit.json}
+lambda/market-data/{handler.py,python/market_data/,unit.json}
+lambda/internal-xml/{handler.py,python/internal_xml/,unit.json}
+lambda/external-xml/{handler.py,python/external_xml/,unit.json}
+contracts/{bronze_contract.json,consumer_contract.json,*.xsd,source_schemas.py}
+protocols/integrity-v2/erl_protocol/             # pinned 2.0.0 integrity exception
+dbt/  airflow/  infra/  scripts/build/  tests/  evidence/  dist/ (ignored)
+```
 
-## Historical test cases (106) after the move
+## Units and interfaces
 
-All 106 cases still run. Calls now pass the codec and batch size explicitly; four cases were
-rewritten because the code they exercised moved or was replaced:
+| Unit | Public entry point / responsibility | Input → output | Artifact / resource |
+|---|---|---|---|
+| hybrid-runner | `erl` / `pipeline.cli:main`; configure, extract, coordinate, resume | sources/inbox + date/run → landing and step state/report | `apps/hybrid-runner/runner.zip`; local process, existing Airflow CLI calls |
+| publisher | `load.package`, `load.publisher:publish` | passed gate + committed package → atomic consumer publication/log | `apps/publisher/publisher.zip`; local SQL Server consumer |
+| source-generator | `sources.seed:generate_all` and scenario APIs | dates + caller's SourceEnvironment → synthetic databases/inbox | `apps/source-generator/source-generator.zip`; local fixtures |
+| db-gb | `glue/db-gb/job.py` | landing manifests → committed Bronze snapshots | own `job.py` + `lib.zip`; existing `*-db-gb` job/ingestion role |
+| db-tb | `glue/db-tb/job.py` | landing manifests → partitioned committed Bronze | own `job.py` + `lib.zip`; existing `*-db-tb` job/ingestion role |
+| gold-load | `glue/gold-load/job.py` | Iceberg Gold + passed gate → committed publication package | own `job.py` + `lib.zip`; existing Gold load job/role |
+| market-data | own `handler.handler`, public `market_data.parse` | CSV delivery/event → acceptance/quarantine manifest + Bronze | own `function.zip`; existing market Lambda/role |
+| internal-xml | own `handler.handler`, public `internal_xml.parse` | internal XML → acceptance/quarantine manifest + Bronze | own `function.zip`; existing internal Lambda/role |
+| external-xml | own `handler.handler`, public `external_xml.parse` | external XML → acceptance/quarantine manifest + Bronze | own `function.zip`; existing external Lambda/role |
 
-| Before | After | Why |
-|---|---|---|
-| `test_glue_bronze_part_commit_cannot_overwrite_an_existing_object` (AST-extracted Glue helper) | `test_bronze_part_commit_cannot_overwrite_an_existing_object` | Glue now commits with `S3Store.copy_if_absent` |
-| `test_glue_dedup_compares_only_the_latest_accepted_delivery` (Glue copy of the logic) | `test_dedup_on_s3_compares_only_the_latest_accepted_delivery` | Glue uses the shared `find_accepted_duplicate` |
-| `test_wrong_aws_account_is_refused`, `test_aws_session_refuses_implicit_or_default_credentials[2]` | same names | session/account guard moved to `connect.aws` + `Settings.aws_session` |
-| `test_chunked_extraction_produces_the_same_content` (monkeypatched `CHUNK_ROWS`) | same name, `batch_rows=3` argument | batch size is a parameter now |
+`db-gb` / `db-tb` are volume patterns, not liquidity/exposure products. The contract still routes
+fund_ops and portfolio_risk to GB; legacy_finance to TB; exposure_compliance uses both. Their
+initial scripts/libraries can have identical bytes; source ownership and S3 prefixes are separate.
+The TB profile repartitions; this small lab has no TB-performance validation.
 
-Terraform mocked tests: `rejects_untrusted_lambda_layer` was replaced (no layer is used) by
-`artifacts_come_from_the_dedicated_bucket` and `rejects_short_artifact_recovery_window`.
+dbt continues to own Silver/Gold SQL and Airflow continues to call `erl step`. No new services,
+commands, schedulers, Terraform state/bucket, or business functions were invented.
+
+## Explicit dependencies, not global implementation
+
+* The runner consumes the publisher/generator public APIs and, in local mode, the three public
+  parser APIs. Those declared integrations are bundled for a standalone local artifact. A parser
+  change legitimately changes its own Lambda and the runner; other cloud units stay unchanged.
+* Publisher and generator import without the runner. Publisher owns consumer SQL. The source
+  generator receives connections through its small `SourceEnvironment` interface; source schema
+  declarations moved once to contracts because extraction also needs their physical types.
+* The integrity implementation is deliberately shared at **version 2.0.0**: canonical identity,
+  manifest compatibility/commit/duplicate semantics, checksums, conditional writes/copies,
+  codec proof, XML structural safety, and shared financial SQL types. These guarantees must not
+  diverge across producers/readers. Parsers, Spark operations, source generation, orchestration
+  and consumer publication are not in it. Version and selected module files are recorded per unit.
+* It is source-vendored into each artifact, not loaded from a global mutable S3 ZIP. Updating the
+  protocol requires an explicit version decision and tests of affected consumers. Copying business
+  code into this exception is not the default for future units.
+* Contracts have one source: root JSON/XSD/schema declarations and the pinned protocol's manifest
+  types. SQL loaders bind to each owner's package; their common allowlist mechanism is versioned.
+
+The GB/TB stage composition is intentionally owned twice. Conformance tests execute both real
+job control flows with only Spark processing stubbed: bad checksum, write/copy failure, commit
+after all parts, and completed-delivery reuse. These checks do not claim Spark execution.
+
+## Build, Terraform and rollback
+
+`build_artifacts.py --unit <runtime>/<unit>` builds only that declared unit; without `--unit` it
+builds all. Dependencies come from the existing uv cache with unconditional `--offline`; no
+installation or download is implicit. Lambda owns pinned PyArrow; only XML Lambdas need lxml.
+Local ZIPs require their declared external dependencies (the existing locked development env).
+Each unit manifest records entry point, runtime, included files, dependency/protocol versions,
+artifact SHA-256, S3 key, Git and uv.lock provenance. `smoke_artifacts.py` tests actual ZIPs in
+separate `python -I -S` interpreters.
+
+S3 artifact layout (future deployment, never uploaded by this migration):
+
+```text
+case01/lambda/<unit>/function.zip
+case01/glue/<unit>/<script-content-sha256>/job.py
+case01/glue/<unit>/<library-content-sha256>/lib.zip
+```
+
+Each Lambda uses its own object version. Each Glue definition names an immutable script/library
+pair; SDK arguments come from the built unit manifest. This prevents mixed code versions during
+an update. Deploy serially with jobs idle: Terraform can remove replaced content keys after the
+job update, so old runs are not guaranteed continued access to removed keys. Content addressing
+protects coherence, not availability of deleted artifacts. Rollback means rebuild/test the Git
+commit and deploy again; it does not revert data, schemas or state.
+
+One project/environment Terraform state remains. Existing job/function/IAM identifiers remain;
+S3 objects now have per-unit ownership (six Glue objects and three Lambda objects instead of
+one common library/script pair/package). Future init/plan needs renewed identity and explicit
+approval; the destroyed backend and archived state must not be reused blindly. No state migration
+or AWS action was performed here.
+
+## Validation limits
+
+Tests preserve H1/H2/H3, monetary precision, quarantine, idempotence, checkpoint ownership,
+publication rollback and local dbt behavior. Build tests perturb one owner, add and remove units
+in an isolated copy, compare unrelated artifacts, and reject missing declared consumers.
+Cloud unit imports cannot resolve other units' private implementation. Smoke checks native
+codecs/handlers with moto and import graphs with Spark/Glue stubs: no Spark/JVM, Glue, Athena,
+Iceberg or AWS execution is claimed. Results and artifact hashes: `evidence/units/` and ignored
+`dist/manifest.json`.
