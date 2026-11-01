@@ -1,0 +1,32 @@
+{
+  "apps/hybrid-runner": {
+    "runner.zip": "c891adf9b995d98837fc6c2647a66079e3e6767c45b3c8e8105e848f739ac1c2"
+  },
+  "apps/publisher": {
+    "publisher.zip": "2836d5f13dc2c06579c8c63e1e1a1f7a445d7226dab993424834d1e5bd631c63"
+  },
+  "apps/source-generator": {
+    "source-generator.zip": "ae08e9fc6657bfab36fb08f021a59d8d132c1b7077d66309a19ee2651998968b"
+  },
+  "glue/export-risk-analytics": {
+    "job.py": "24a577ecc20e3efd42f8ba4ff094d913fb0c3bdf135c1290d83a0c0979b96450",
+    "lib.zip": "7d62fd67d249972e4d3d99a49ce3f914ae5f15e68dfe19c653e8fb69be8ec4d0"
+  },
+  "glue/extract-enquadramento": {
+    "job.py": "74fcfe66d5ea136e6e7d4f02371b8db60141b1d0ebbd8e109255b811f9ea2464",
+    "lib.zip": "a58935c3bb96689866df02111102d98188df9de6cff408735c58826bb1b6f924"
+  },
+  "glue/extract-liquidez": {
+    "job.py": "07ebfb556b80e16abf7b32dcf1bad361a24b9baf84af595792a62b5276065b69",
+    "lib.zip": "a58935c3bb96689866df02111102d98188df9de6cff408735c58826bb1b6f924"
+  },
+  "lambda/external-xml": {
+    "function.zip": "980cbb2e217930c39eeabab75ab6c8238d670b51b08c6f1d1b5d6068f634c082"
+  },
+  "lambda/internal-xml": {
+    "function.zip": "2a59912bc3e0923affc0aa6baa87997f365084fac7d5b527006054ddd096f9d5"
+  },
+  "lambda/market-data": {
+    "function.zip": "f16c958d3337b17ea44252aadccffae230719119babd1ec916d9cf15f98bb30e"
+  }
+}

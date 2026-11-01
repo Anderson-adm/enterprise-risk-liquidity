@@ -1,5 +1,23 @@
 # HANDOFF
 
+_Last update: 2026-11-01 (America/Fortaleza), Codex: scoped CI packaging fix on published
+`b01a512`. Local commit only; no push, AWS, remote Terraform or business-code change._
+
+## Current CI packaging status
+
+* Push run [41307647915](https://github.com/Anderson-adm/enterprise-risk-liquidity/actions/runs/41307647915):
+  integration/Terraform passed; Python checks/tests passed but artifact build failed because
+  `uv pip install --offline` could not resolve the target lxml from the runner cache.
+* CI now explicitly runs `build_artifacts.py --prepare-wheels` before packaging. It derives names
+  from unit declarations and versions from `uv.lock`, using the same target installer as build.
+  Build/smoke retain offline mode, also enforced by `UV_OFFLINE=true` on that CI step.
+* Verified with an isolated initially empty cache: 45 affected tests, two complete offline builds
+  and nine built-unit smokes passed. All 12 artifact hashes equal the published baseline; no
+  dependency version changed. Evidence: `evidence/ci-packaging/`. The three CI jobs remain.
+  No runtime/business changes; corrected remote CI is pending a new authorised push.
+
+## Previous naming and SQL ownership record
+
 _Last update: 2026-10-31 (America/Fortaleza), Codex: owner-selected Glue naming and scoped SQL
 ownership check from `fec9280`. Local/offline only; no AWS, remote Terraform, deploy or push._
 

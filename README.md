@@ -79,7 +79,7 @@ flowchart LR
 | Airflow | local Airflow 3.3.2, one task per step, retries, alerts, failure watcher | Validated locally on PostgreSQL + SQL Server (`airflow dags test`, success and quality-failure runs) |
 | CloudWatch / SNS | log groups, Lambda error alarms, Glue failure EventBridge rule, DAG failure → SNS | Real Lambda error logs and successful alarm action to SNS observed; human receipt and other alert paths not verified |
 | Terraform | bootstrap + dev root module + 1 module; uploads pre-built artifacts to a separate artifacts bucket | local checks pass (fmt, validate, 15 mocked tests, TFLint, Checkov 162/0/40); the earlier layout was applied (7 bootstrap + 69 dev) and fully destroyed; the current layout was **never applied** |
-| CI | GitHub Actions (Python, dbt on DuckDB, PostgreSQL + SQL Server integration, per-unit build/smoke, Terraform checks), actions pinned by SHA | Historical baseline green; autonomous-unit changes checked locally, not pushed |
+| CI | GitHub Actions (Python, dbt on DuckDB, PostgreSQL + SQL Server integration, per-unit build/smoke, Terraform checks), actions pinned by SHA | Published migration: integration/Terraform passed; Python failed on the offline wheel cache. Explicit target-wheel preparation fixed locally, pending push/CI |
 
 Why a publication package between Gold and SQL Server: AWS must not connect to a local
 database (no VPN/NAT, nothing exposed). The Glue `export-risk-analytics` job exports the audited Gold rows

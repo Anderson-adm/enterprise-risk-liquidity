@@ -112,8 +112,11 @@ is never copied into generic loaders. dbt/SQL content and published contracts re
 ## Build, Terraform and rollback
 
 `build_artifacts.py --unit <runtime>/<unit>` builds only that declared unit; without `--unit` it
-builds all. Dependencies come from the existing uv cache with unconditional `--offline`; no
-installation or download is implicit. Lambda owns pinned PyArrow; only XML Lambdas need lxml.
+builds all. Before packaging, the explicit `--prepare-wheels` command may use the network to
+prepare the target wheels: names come from unit declarations, versions from `uv.lock`, and the
+same Python/platform/only-binary arguments are used as in the build. `uv sync` alone is not a
+packaging-cache guarantee. The build remains unconditionally offline; CI also sets `UV_OFFLINE=true`
+for build/smoke. Lambda owns pinned PyArrow; only XML Lambdas need lxml.
 Local ZIPs require their declared external dependencies (the existing locked development env).
 Each unit manifest records entry point, runtime, included files, dependency/protocol versions,
 artifact SHA-256, S3 key, Git and uv.lock provenance. `smoke_artifacts.py` tests actual ZIPs in

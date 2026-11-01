@@ -1,0 +1,56 @@
+{
+  "checked_at_utc": "2026-11-01T13:13:34.715181+00:00",
+  "baseline": "b01a512f51a86c8edad0d90966d2a8a4e3c2a9f3",
+  "failed_ci_run": "https://github.com/Anderson-adm/enterprise-risk-liquidity/actions/runs/41307647915",
+  "root_cause": "uv sync prepared the host development environment but did not guarantee the resolver/wheel cache required by uv pip install --offline for the artifact target. CI could not resolve lxml==6.1.3 from that cache; earlier local checks used a warmed developer cache.",
+  "fix": "Explicit --prepare-wheels stage derives packaged dependency names from unit.json and exact versions from uv.lock. Preparation and offline build use the same installer/target flags. Only explicit preparation enables downloads; build/smoke also receive UV_OFFLINE=true in CI.",
+  "packaging_target": {
+    "python": "3.12",
+    "platform": "x86_64-manylinux_2_28",
+    "only_binary": true,
+    "no_deps": true
+  },
+  "prepared_pins": {
+    "lxml": "6.1.3",
+    "pyarrow": "26.0.0"
+  },
+  "verification": {
+    "empty_isolated_cache": true,
+    "developer_cache_used": false,
+    "offline_failure_reproduced_before_preparation": [
+      "lxml",
+      "pyarrow"
+    ],
+    "offline_full_builds_after_preparation": 2,
+    "units_built": 9,
+    "physical_artifacts": 12,
+    "identical_hashes_between_builds": 12,
+    "identical_hashes_vs_published_baseline": 12,
+    "built_unit_smokes_passed": 9,
+    "affected_tests_passed": 45,
+    "ruff": "passed; 88 files formatted",
+    "CI_jobs_preserved": [
+      "python",
+      "integration",
+      "terraform"
+    ],
+    "integration_and_terraform_workflow_unchanged": true,
+    "approved_nonbuilder_source_inputs_unchanged": 107
+  },
+  "limits": "Smokes use moto and Spark/Glue stubs; no real AWS/Spark validation. Corrected remote CI is pending a separately authorised push; no CI rerun was requested.",
+  "restrictions": {
+    "AWS_calls": 0,
+    "Terraform_or_deploy": false,
+    "push": false,
+    "dependency_versions_changed": false,
+    "business_or_runtime_code_changed": false,
+    "global_installations": false
+  },
+  "provenance": "Build/smoke were executed before the local fix commit; smoke metadata honestly records baseline + dirty=true. Source hashes below identify changed build inputs. The local commit containing this evidence completes the fix; all runtime artifact hashes equal the published baseline.",
+  "source_hashes": {
+    "scripts/build/build_artifacts.py": "b56bf61c1627821c77d7cea4274b6735bd3568ee73be4e20cc7b351ebd02d800",
+    ".github/workflows/ci.yml": "a9e4868a89a11b0b0003e7dfb9153e8b45cc7285ebb88203cf4c0073a463342a",
+    "tests/test_build_preparation.py": "24feba18e6bcf84b608abaa242f1ea64d400633a3f7f5b7772ec0c2e6ee8017b",
+    "uv.lock": "154b51ede5e99fe3c5b8a3b7d221dd2f456b92d68d97373b2c4757f715d663aa"
+  }
+}

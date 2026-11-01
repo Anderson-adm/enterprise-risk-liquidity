@@ -1,0 +1,15 @@
+{
+  "initial_cache": "empty isolated cache; both dependencies failed offline before explicit preparation",
+  "prepared_pins": {
+    "lxml": "6.1.3",
+    "pyarrow": "26.0.0"
+  },
+  "developer_cache_used": false,
+  "online_stage": "--prepare-wheels only",
+  "offline_full_builds": 2,
+  "units": 9,
+  "artifacts": 12,
+  "hashes_reproduced": true,
+  "all_hashes_equal_published_baseline": true,
+  "network_in_build": false
+}

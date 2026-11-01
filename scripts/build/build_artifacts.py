@@ -78,14 +78,23 @@ def locked_versions(names: set[str], root: Path = ROOT) -> dict[str, str]:
     return result
 
 
-def install_wheels(pins: dict[str, str], target: Path) -> None:
-    # A build never implicitly authorises dependency downloads. CI warms this cache with uv sync.
+def packaged_pins(unit_paths: list[Path], root: Path = ROOT) -> dict[str, str]:
+    names = {
+        name
+        for unit in unit_paths
+        for name in json.loads((unit / "unit.json").read_text()).get("dependencies", [])
+    }
+    return locked_versions(names, root)
+
+
+def install_wheels(pins: dict[str, str], target: Path, *, offline: bool = True) -> None:
+    # Only the explicit preparation command may download; build calls retain offline=True.
     subprocess.run(  # noqa: S603 - fixed offline installer argv and locked versions
         [
             shutil.which("uv") or "uv",
             "pip",
             "install",
-            "--offline",
+            *(["--offline"] if offline else []),
             "--quiet",
             "--target",
             str(target),
@@ -100,6 +109,15 @@ def install_wheels(pins: dict[str, str], target: Path) -> None:
         ],
         check=True,
     )
+
+
+def prepare_wheels() -> dict[str, str]:
+    """Warm uv's cache for the packaging target, independently of the host uv sync environment."""
+    pins = packaged_pins(list(units().values()))
+    if pins:
+        with tempfile.TemporaryDirectory() as tmp:
+            install_wheels(pins, Path(tmp), offline=False)
+    return pins
 
 
 def own_files(unit: Path, root: Path = ROOT) -> tuple[dict, dict[str, Path]]:
@@ -218,17 +236,13 @@ def build(selected: list[str] | None = None) -> dict:
     chosen = selected or list(discovered)
     if unknown := set(chosen) - discovered.keys():
         raise ValueError(f"unknown units: {sorted(unknown)}")
-    names = {
-        name
-        for key in chosen
-        for name in json.loads((discovered[key] / "unit.json").read_text()).get("dependencies", [])
-    }
+    pins = packaged_pins([discovered[key] for key in chosen])
     if selected is None:
         shutil.rmtree(DIST, ignore_errors=True)
     result = {}
     with tempfile.TemporaryDirectory() as tmp:
         dependency_files = {}
-        for name, version in locked_versions(names).items():
+        for name, version in pins.items():
             target = Path(tmp) / name
             install_wheels({name: version}, target)
             dependency_files[name] = tree(target)
@@ -245,10 +259,20 @@ def build(selected: list[str] | None = None) -> dict:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument(
+    mode = parser.add_mutually_exclusive_group()
+    mode.add_argument(
         "--unit", action="append", help="Build only a declared unit, e.g. glue/extract-liquidez"
     )
-    result = build(parser.parse_args().unit)
+    mode.add_argument(
+        "--prepare-wheels",
+        action="store_true",
+        help="Explicit network preparation of locked target wheels; no build",
+    )
+    args = parser.parse_args()
+    if args.prepare_wheels:
+        print(json.dumps({"prepared_wheels": prepare_wheels()}, sort_keys=True))
+        return
+    result = build(args.unit)
     for key, unit in result["units"].items():
         for name, artifact in unit["artifacts"].items():
             print(f"{key}/{name}: {artifact['sha256']} ({artifact['bytes']} bytes)")
