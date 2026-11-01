@@ -1,191 +1,167 @@
-# Enterprise Risk & Liquidity Data Platform
+<div align="center">
 
-**Case 01 do meu portfólio de Engenharia de Dados** · [ver o case no portfólio](https://anderson-adm.github.io/data-engineer-portfolio-site/cases/risk-liquidity.html)
+# Risk & Liquidity Data Platform
 
-Reconstrução autoral de um projeto real do mercado financeiro: sete fontes heterogêneas
-integradas em um lakehouse na AWS, com qualidade de dados como portão, reprocessamento
-idempotente e publicação transacional para um sistema de controle e relatórios.
+**De sete fontes desconectadas a dados confiáveis de liquidez e enquadramento,<br>com qualidade validada antes de qualquer publicação.**
 
-> Todos os dados, códigos, limites e regras deste repositório são **sintéticos**. Nada vem de
-> nenhuma empresa real.
+[![CI](https://github.com/Anderson-adm/enterprise-risk-liquidity/actions/workflows/ci.yml/badge.svg)](https://github.com/Anderson-adm/enterprise-risk-liquidity/actions/workflows/ci.yml)
+![Python 3.12](https://img.shields.io/badge/Python-3.12-3776AB?logo=python&logoColor=white)
+![dbt](https://img.shields.io/badge/dbt-modelos%20e%20testes-FF694B?logo=dbt&logoColor=white)
+![Terraform](https://img.shields.io/badge/Terraform-IaC-844FBA?logo=terraform&logoColor=white)
 
-![Arquitetura da plataforma](docs/img/architecture.png)
+[Case no portfólio](https://anderson-adm.github.io/data-engineer-portfolio-site/cases/risk-liquidity.html) · [Arquitetura](#a-solução) · [Como rodar](#explore-em-poucos-comandos)
 
----
+</div>
+
+## Em 30 segundos
+
+- **Desafio:** dados de risco, liquidez e enquadramento espalhados em sete fontes. Conciliar
+  levava uma semana e cobria só liquidez.
+- **Meu papel:** atuar junto às áreas de negócio para entender as demandas e validar fontes e
+  recursos; desenhar a arquitetura; construir a solução de ponta a ponta e conduzir a
+  sustentação e as melhorias contínuas.
+- **Solução:** lakehouse medalhão na AWS com ingestão por padrão, dbt com testes como portão de
+  qualidade e publicação transacional no sistema consumidor.
+- **Resultado (caso original):** −80% no tempo de disponibilizar dados validados, com liquidez
+  e enquadramento na mesma base.
 
 ## O desafio
 
-Dados semanais e incompletos, sem fonte única.
+**Os dados existiam. Uma visão confiável e no prazo, não.**
 
-No mercado financeiro, risco, liquidez e enquadramento dependem de dados que precisam estar
-corretos e no horário. No cenário original, eles vinham de sete fontes com formatos, volumes e
-janelas diferentes: bancos operacionais, uma base legada na casa dos terabytes, dados de
-mercado e arquivos XML. Conciliar e gerar o relatório levava cerca de uma semana e cobria só
-liquidez. Nesse contexto, surgiu a urgência de integrar um novo software regulatório,
-alimentado por todas essas fontes.
+Em uma operação de administração de fundos, responder **quanto cada carteira tem de liquidez e
+se respeita os limites de concentração** exige combinar posições, caixa, resgates, preços e
+cadastros. Esses dados chegavam de **sete fontes heterogêneas**, em formatos e horários
+diferentes, com identificadores nem sempre compatíveis.
 
-O desafio de engenharia:
+No caso real que inspirou este projeto, a conciliação levava cerca de uma semana, cobria apenas
+parte da necessidade do negócio e ainda precisava alimentar um novo sistema de controle e
+relatórios regulatórios.
 
-- integrar bancos, views legadas, um CSV diário e dois formatos de XML;
-- normalizar identificadores que não batem entre sistemas;
-- lidar com entregas atrasadas, corrigidas e duplicadas;
-- reprocessar qualquer data com segurança, sem duplicar nada;
-- impedir que dado inválido chegue ao consumidor, mantendo a última versão válida;
-- rastrear cada número publicado até a entrega de origem.
+| O problema | Por que importava |
+|:--|:--|
+| **Uma semana para conciliar** | Informação disponível tarde demais para decisões e controles. |
+| **Números divergentes** | A mesma carteira identificada de formas diferentes entre sistemas. |
+| **Cobertura incompleta** | Liquidez sem a mesma visão consolidada de enquadramento. |
+| **Prazo e rastreabilidade** | Um erro não podia chegar ao sistema consumidor sem ser percebido. |
+
+O desafio de engenharia não era apenas mover dados: era **reconciliar, validar, reprocessar
+datas passadas e publicar com segurança**, sem perder a última versão correta quando uma carga
+falhasse.
 
 ## O resultado
 
-Dados diários e confiáveis.
+| −80% no tempo | 7 fontes | 2 domínios |
+|:--:|:--:|:--:|
+| de cerca de uma semana para um dia na disponibilização de dados validados | integradas em uma base única | liquidez e enquadramento na mesma camada Gold |
 
-**No projeto original**, a plataforma reduziu em cerca de 80% o tempo de construção,
-validação e entrega dos dados de liquidez e enquadramento (de uma semana para um dia) e passou
-a cobrir os dois domínios, atendendo aos requisitos regulatórios no prazo. Esses números são
-do contexto profissional e **não são medidos por esta reconstrução**.
+> **Importante:** esses indicadores pertencem ao caso original. Esta reconstrução usa dados,
+> fontes e regras totalmente sintéticos.
 
-**Nesta reconstrução**, o que está comprovado por testes e evidências:
-
-- pipeline completo validado localmente, em PostgreSQL 17 + SQL Server 2022 (containers) e em
-  SQLite, com **valores publicados idênticos** entre os dois ambientes;
-- **8 cenários de falha** reproduzíveis (duplicidade, XML inválido, atraso, correção, falha de
-  qualidade, fonte indisponível, falha no meio da publicação, publicadores concorrentes),
-  todos com o comportamento esperado;
-- infraestrutura AWS provisionada e destruída com Terraform, com evidências.
-
-O status exato de cada componente está em [Status de validação](#status-de-validação).
+**Nesta reconstrução**, o resultado pode ser inspecionado no código: um pipeline reproduzível
+com dois produtos Gold, publicação transacional, cenários de falha e reprocessamento testados,
+nove unidades independentes e CI verde.
 
 ## A solução
 
-Lakehouse medalhão na AWS.
+**Um lakehouse com qualidade antes da publicação.**
 
-As fontes são agrupadas por **padrão de ingestão**, não uma a uma:
+![Arquitetura da plataforma](docs/img/architecture.png)
 
-| No diagrama | No código |
-|---|---|
-| Aurora, PostgreSQL e SQL Server de liquidez → Glue job (volume em GB) | `glue/extract-liquidez/` |
-| SQL Server de enquadramento → Glue job (volume em TB) | `glue/extract-enquadramento/` |
-| B3 (dados de mercado, CSV diário) → Lambda | `lambda/market-data/` |
-| XML internos → Lambda | `lambda/internal-xml/` |
-| XML externos → Lambda | `lambda/external-xml/` |
-| Bronze, Silver e Gold com dbt sobre Athena + Iceberg | `dbt/` |
-| Gold → Glue job · Load → SQL Server de controle e relatórios | `glue/export-risk-analytics/` + `apps/publisher/` |
-| Orquestração | `airflow/dags/erl_pipeline.py` |
-| CloudWatch + SNS, infra via Terraform | `infra/` |
+1. **Ingestão por padrão.** Bancos entram por jobs do Glue, perfilados por volume (GB e TB);
+   dados de mercado e os dois tipos de XML entram por Lambdas, uma por fonte.
+2. **Bronze.** Cada entrega fica imutável, com manifesto, checksum, detecção de duplicidade e
+   quarentena para arquivos inválidos.
+3. **Silver e Gold.** O dbt reconcilia identificadores e constrói os produtos de liquidez e de
+   enquadramento. Os testes de qualidade decidem se a Gold pode ser promovida.
+4. **Publicação protegida.** A Gold auditada é exportada como pacote e carregada no SQL Server
+   em uma única transação, preservando a versão anterior se algo falhar.
+5. **Operação.** Airflow orquestra por data de referência; CloudWatch e SNS alertam a etapa que
+   falhou; Terraform define a infraestrutura.
 
-Fontes de dados (stand-ins sintéticos): `apps/source-generator/`. Extração SQL e CLI:
-`apps/hybrid-runner/`.
+**Decisões de engenharia**
 
-### Decisões de engenharia
+- **Ingestão por padrão, não por fonte.** Uma fonte nova reaproveita um padrão existente.
+- **Qualidade como portão.** Dado inválido não chega ao consumidor: fica em quarentena para
+  análise, e a última versão válida continua publicada.
+- **Reprocessamento idempotente.** Rodar a mesma data de novo não duplica nada.
+- **dbt sobre Athena em vez de jobs Spark por camada.** Transformações em SQL versionado, com
+  testes, documentação e linhagem, e menos código Spark para manter.
+- **Pacote entre a Gold e o SQL Server.** A nuvem não acessa o banco do consumidor
+  diretamente, sem VPN nem exposição de rede; a transação final acontece do lado do consumidor.
 
-- **Ingestão por padrão.** Três padrões cobrem as sete fontes. Uma fonte nova entra
-  reaproveitando um padrão, sem código novo do zero.
-- **Medalhão com Iceberg.** A Bronze guarda o dado como chegou (append-only, com manifestos e
-  checksums), permitindo auditar e recalcular qualquer dia.
-- **Qualidade como portão.** Testes do dbt rodam sobre candidatos (write-audit-publish) e
-  bloqueiam a promoção entre camadas. Dado inválido não chega ao consumidor: fica em
-  quarentena para análise.
-- **Operação previsível.** Reprocessamento idempotente por data de referência, com
-  checkpoints por etapa e alerta da etapa exata que falhou.
-- **Publicação transacional.** A carga no SQL Server usa staging, validação no banco, uma
-  única transação, idempotência por hash de conteúdo e trava de publicação. Se algo falha, a
-  versão anterior continua intacta.
-- **Um pacote entre a Gold e o SQL Server.** A AWS não se conecta a um banco local (sem VPN
-  nem NAT). O Glue exporta a Gold auditada para o S3 e o publisher local faz a carga. Em uma
-  rede corporativa, o mesmo job escreveria via conexão JDBC do Glue.
+### Quando algo dá errado
 
-## Status de validação
+| Situação | Comportamento |
+|:--|:--|
+| XML malformado ou fora do XSD | Arquivo vai para quarentena com o motivo da rejeição. |
+| Identificadores divergentes e duplicidades | Reconciliação por mapeamento; rejeições rastreáveis. |
+| Mesma carga executada de novo | Nada é duplicado; a publicação idêntica é ignorada. |
+| Falha crítica de qualidade | Gold e consumidor mantêm a última versão válida. |
+| Falha no meio da publicação | Rollback da transação; nenhuma versão parcial é exposta. |
+| Publicadores concorrentes | Serializados por trava; exatamente uma versão ativa. |
 
-| Componente | Status |
-|---|---|
-| 7 fontes, extração, Bronze, quarentena | ✅ Validado localmente (PostgreSQL + SQL Server e SQLite) |
-| Silver e Gold (dbt) e portão de qualidade | ✅ Validado localmente em DuckDB · ⚠️ Athena/Iceberg não validados na AWS |
-| Publicação transacional no SQL Server | ✅ Validado localmente, inclusive com publicadores concorrentes |
-| Airflow | ✅ Validado localmente (`airflow dags test`, sucesso e falha de qualidade) |
-| Lambdas | ✅ Pacotes testados localmente · ⚠️ a única execução na AWS falhou (codec Zstandard); a correção não foi validada na AWS |
-| Glue jobs | ⚠️ Implementados, não executados (sem Spark local e sem execução na AWS) |
-| CloudWatch + SNS | ⚠️ Logs reais e alarme para o SNS observados; demais caminhos de alerta não verificados |
-| Terraform | ✅ Checks locais (fmt, validate, testes, TFLint, Checkov) · infraestrutura anterior aplicada e destruída; o layout atual nunca foi aplicado |
+## Engenharia para evoluir sem quebrar tudo
 
-Os recursos de AWS foram removidos após a validação. Detalhes: [docs/AWS_VALIDATION.md](docs/AWS_VALIDATION.md)
-e [evidence/aws/](evidence/aws/).
+O projeto é organizado em **nove unidades autônomas**: integrações criadas em momentos
+diferentes podem mudar, ser substituídas ou sair sem refatorar as demais. Cada Glue e Lambda
+tem código e build próprios, sem acoplar duas integrações só porque hoje se parecem.
 
-## Como rodar
-
-Requisitos: [uv](https://docs.astral.sh/uv/) e Python 3.12 (o uv instala). Docker é opcional
-([docs/LOCAL_RUNTIME.md](docs/LOCAL_RUNTIME.md)).
-
-```bash
-uv sync                                 # dependências travadas (uv.lock)
-cp .env.example .env                    # padrão: ERL_MODE=local, ERL_SOURCE_BACKEND=sqlite
-uv run erl generate                     # 4 bancos de origem + arquivos de 2026-10-26 a 28
-uv run erl run --date 2026-10-26        # pipeline completo; mostra run id, etapas e relatório
-uv run erl publications                 # log de publicações no consumidor
+```text
+apps/
+  hybrid-runner/          # extração SQL, CLI e orquestração local
+  publisher/              # publicação transacional no SQL Server
+  source-generator/       # fontes e cenários sintéticos
+glue/
+  extract-liquidez/       # snapshot de bancos, perfil GB
+  extract-enquadramento/  # snapshot de bancos, perfil TB
+  export-risk-analytics/  # pacote de publicação dos produtos Gold
+lambda/
+  market-data/            # CSV de dados de mercado
+  internal-xml/           # XML interno
+  external-xml/           # XML externo
+dbt/                      # staging, Silver, Gold e testes
+airflow/                  # orquestração do pipeline
+infra/                    # Terraform
 ```
 
-Airflow (venv separado, metadados em SQLite):
+## Explore em poucos comandos
+
+Executa a reconstrução localmente, sem provisionar recursos na AWS. Requer Python 3.12
+gerenciado pelo [uv](https://docs.astral.sh/uv/).
 
 ```bash
-scripts/airflow_local.sh setup && scripts/airflow_local.sh test 2026-10-26
+uv sync
+cp .env.example .env
+
+# Gerar fontes sintéticas e arquivos de entrada
+uv run erl generate
+
+# Executar uma data de referência
+uv run erl run --date 2026-10-26
+
+# Consultar o histórico de publicações
+uv run erl publications
 ```
 
-Testes:
+Testes e builds:
 
 ```bash
 uv run ruff check apps protocols contracts tests airflow glue lambda scripts
 uv run pytest -m "not dbt and not integration"
 DBT_SEND_ANONYMOUS_USAGE_STATS=false uv run pytest -m "dbt and not integration"
-scripts/terraform_checks.sh             # sem credenciais
+
+# Construir os artefatos de cada unidade e rodar os smoke tests
+uv run python scripts/build/build_artifacts.py --prepare-wheels
+uv run python scripts/build/build_artifacts.py
+uv run python scripts/build/smoke_artifacts.py
 ```
-
-## Cenários de falha e reprocessamento
-
-Reproduza todos com `uv run python scripts/collect_evidence.py`.
-
-| Cenário | Comportamento observado |
-|---|---|
-| Identificadores divergentes, duplicidades, carteira sem mapeamento | resolvidos via crosswalk; rejeições registradas em `silver_rejected_records` |
-| XML malformado ou fora do XSD | arquivo em quarentena com `.rejection.json`; aviso de completude |
-| Data de referência atrasada | entra na partição correta; o reprocessamento publica nova versão e a anterior vira `SUPERSEDED` |
-| Reexecução da mesma carga | snapshots `DUPLICATE`; publicação `SKIPPED_IDENTICAL` |
-| Correção de posição publicada | nova versão publicada; reconciliação sinaliza a divergência |
-| Falha crítica de qualidade | portão bloqueia; Gold intocada; consumidor mantém a última versão válida |
-| Fonte indisponível | `source_unavailable`, código de saída 3, relatório gerado |
-| Falha no meio da publicação | transação desfeita; versão anterior intacta; log `FAILED` |
-| Publicadores concorrentes | serializados por trava; exatamente uma versão `ACTIVE` |
-
-## Estrutura do repositório
-
-| Caminho | Responsabilidade |
-|---|---|
-| `apps/hybrid-runner/` | CLI, configuração, checkpoints, extração SQL e orquestração local |
-| `apps/publisher/` | validação do pacote e publicação transacional |
-| `apps/source-generator/` | sistemas de origem sintéticos e cenários |
-| `lambda/` | uma pasta por função, com handler, parser, dependências e ZIP próprios |
-| `glue/` | uma pasta por job, com entry point, Spark e artefatos próprios |
-| `dbt/` | staging, Silver, Gold e testes |
-| `airflow/` | DAG do pipeline |
-| `infra/` | Terraform (bootstrap, ambiente dev e módulos) |
-| `contracts/` | contratos JSON, XSD e schemas de origem |
-| `protocols/integrity-v2/` | protocolo de integridade versionado |
-| `evidence/` | evidências locais e de AWS (sanitizadas) |
-
-## Limitações
-
-- PostgreSQL e SQL Server rodam como containers locais, não como instâncias gerenciadas.
-- Glue, Athena e Iceberg não foram executados na AWS; nenhum produto Gold foi publicado a
-  partir da AWS.
-- Volumes pequenos por design: não há afirmações de performance.
-- As regras de liquidez e concentração são demonstrações sintéticas, não cálculos regulatórios.
-
-Lista completa: [docs/HANDOFF.md](docs/HANDOFF.md) e [docs/INDEPENDENT_REVIEW.md](docs/INDEPENDENT_REVIEW.md).
-
-## Documentação
-
-- Modelo de dados, fontes e regras: [docs/DATA_MODEL.md](docs/DATA_MODEL.md)
-- Organização do código: [docs/REFACTORING.md](docs/REFACTORING.md)
-- Terraform, segurança e custos: [docs/TERRAFORM.md](docs/TERRAFORM.md)
-- Execução na AWS e teardown: [docs/AWS_VALIDATION.md](docs/AWS_VALIDATION.md)
-- Acordos de trabalho para pessoas e agentes: [AGENTS.md](AGENTS.md)
 
 ---
 
-Feito por **Anderson Nascimento** · [Portfólio](https://anderson-adm.github.io/data-engineer-portfolio-site/) · [LinkedIn](https://www.linkedin.com/in/anderson-santos-do-nascimento)
+<div align="center">
+
+**Anderson Nascimento** · Data Engineer<br>
+[Portfólio](https://anderson-adm.github.io/data-engineer-portfolio-site/) · [LinkedIn](https://www.linkedin.com/in/anderson-santos-do-nascimento)
+
+</div>
